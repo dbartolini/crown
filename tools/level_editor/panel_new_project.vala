@@ -30,7 +30,7 @@ public class PanelNewProject : Gtk.Viewport
 	public Gtk.Box _buttons_box;
 	public Gtk.Box _box;
 	public Gtk.Grid _grid;
-	public Clamp _clamp;
+	public Hdy.Clamp _clamp;
 
 	public PanelNewProject(User user, Project project)
 	{
@@ -166,7 +166,7 @@ public class PanelNewProject : Gtk.Viewport
 		_box.pack_start(_grid, false, true);
 		_box.pack_start(_label_message, false, true);
 
-		_clamp = new Clamp();
+		_clamp = new Hdy.Clamp();
 		_clamp.add(_box);
 
 		this.add(_clamp);

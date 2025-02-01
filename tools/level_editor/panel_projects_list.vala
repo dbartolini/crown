@@ -77,7 +77,7 @@ public class PanelProjectsList : Gtk.ScrolledWindow
 	public Gtk.Button _button_new_project;
 	public Gtk.Box _buttons_box;
 	public Gtk.Box _projects_box;
-	public Clamp _clamp;
+	public Hdy.Clamp _clamp;
 
 	public PanelProjectsList(User user)
 	{
@@ -139,7 +139,7 @@ public class PanelProjectsList : Gtk.ScrolledWindow
 		_projects_box.pack_start(_buttons_box, false, true);
 		_projects_box.pack_start(_list_projects, false, true);
 
-		_clamp = new Clamp();
+		_clamp = new Hdy.Clamp();
 		_clamp.add(_projects_box);
 
 		this.add(_clamp);

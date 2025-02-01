@@ -42,7 +42,7 @@ Linux (Ubuntu >= 20.04)
 .. code::
 
 	sudo apt install build-essential mesa-common-dev libgl1-mesa-dev \
-	libpulse-dev libxrandr-dev libc6-dev-i386 libgtk-3-dev
+	libpulse-dev libxrandr-dev libc6-dev-i386 libgtk-3-dev libhandy
 
 	sudo add-apt-repository ppa:vala-team
 	sudo apt install valac libgee-0.8-dev
@@ -83,7 +83,7 @@ Windows (MSYS2)
 
 	pacman -Sy make mingw-w64-x86_64-gcc mingw-w64-x86_64-pkgconf \
 	mingw-w64-x86_64-gtk3 mingw-w64-x86_64-sassc \
-	mingw-w64-x86_64-vala mingw-w64-x86_64-libgee
+	mingw-w64-x86_64-vala mingw-w64-x86_64-libgee mingw-w64-x86_64-libhandy
 
 4. :ref:`Build for Windows (MSYS2)<build_msys2>`.
 
