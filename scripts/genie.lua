@@ -80,7 +80,7 @@ else
 end
 
 dofile ("openal.lua")
-openal_project(os.is("windows") and "SharedLib" or "StaticLib")
+--openal_project(os.is("windows") and "SharedLib" or "StaticLib")
 
 dofile ("bullet.lua")
 dofile ("lua.lua")

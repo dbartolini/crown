@@ -57,11 +57,11 @@
 	&& !defined(CROWN_SOUND_NOOP)
 
 	#ifndef CROWN_SOUND_OPENAL
-		#define CROWN_SOUND_OPENAL 1
+		#define CROWN_SOUND_OPENAL 0
 	#endif
 
 	#ifndef CROWN_SOUND_NOOP
-		#define CROWN_SOUND_NOOP 0
+		#define CROWN_SOUND_NOOP 1
 	#endif
 #else
 	#ifndef CROWN_SOUND_OPENAL

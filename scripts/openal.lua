@@ -37,9 +37,6 @@ function openal_project(_kind)
 				"HAVE_DLFCN_H",
 				"HAVE_GCC_GET_CPUID",
 			}
-			links {
-				"pthread",
-			}
 
 		configuration { "not android-*" }
 			defines {
@@ -69,6 +66,9 @@ function openal_project(_kind)
 			}
 			files {
 				AL_DIR .. "alc/backends/pulseaudio.cpp",
+			}
+			links {
+				"pthread",
 			}
 
 		configuration { "vs* or mingw-*"}

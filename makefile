@@ -30,7 +30,7 @@ MAKE_JOBS=1
 # LuaJIT
 NDKABI=$(ANDROID_NDK_ABI)
 NDKDIR=$(ANDROID_NDK_ROOT)
-NDKBIN=$(NDKDIR)/toolchains/llvm/prebuilt/linux-x86_64/bin
+NDKBIN=$(NDKDIR)/toolchains/llvm/prebuilt/windows-x86_64/bin
 NDKCROSS=$(NDKBIN)/arm-linux-androideabi-
 NDKCC=$(NDKBIN)/armv7a-linux-androideabi$(NDKABI)-clang
 NDKCROSS64=$(NDKBIN)/aarch64-linux-android-
@@ -50,12 +50,14 @@ build/android-arm/bin/libluajit.a:
 
 build/android-arm64/bin/libluajit.a:
 	"$(MAKE)" -j$(MAKE_JOBS) -R -C 3rdparty/luajit/src \
+		CC="$(MINGW)/bin/x86_64-w64-mingw32-gcc -m64"  \
 		CROSS=$(NDKCROSS64)                            \
 		STATIC_CC=$(NDKCC64)                           \
 		DYNAMIC_CC="$(NDKCC64) -fPIC"                  \
 		TARGET_LD=$(NDKCC64)                           \
 		TARGET_STRIP=$(NDKBIN)/llvm-strip              \
 		TARGET_AR="$(NDKBIN)/llvm-ar rcus"
+		TARGET_SYS=Linux
 	-@install -m775 -D 3rdparty/luajit/src/libluajit.a $@
 	-@"$(MAKE)" -j$(MAKE_JOBS) -R -C 3rdparty/luajit/src clean
 

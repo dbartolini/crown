@@ -91,7 +91,6 @@ function crown_project(_name, _kind, _defines)
 				"EGL",
 				"GLESv2",
 				"OpenSLES",
-				"openal",
 			}
 			includedirs {
 				CROWN_DIR .. "3rdparty/android",
