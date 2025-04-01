@@ -8,6 +8,7 @@ ifeq ($(UNAME), $(filter $(UNAME), Linux))
 	OS=linux
 	EXE_PREFIX=./
 	EXE_SUFFIX=
+	ANDROID_LIBLUAJIT_PLATFORM=
 else
 ifeq ($(UNAME), $(filter $(UNAME), windows32))
 	OS=windows
@@ -15,12 +16,14 @@ ifeq ($(UNAME), $(filter $(UNAME), windows32))
 	EXE_SUFFIX=.exe
 	ARG_PREFIX=/
 	MKDIR=mkdir
+	ANDROID_LIBLUAJIT_PLATFORM=Linux
 else
 	OS=windows
 	EXE_PREFIX=
 	EXE_SUFFIX=.exe
 	ARG_PREFIX=//
 	MKDIR=mkdir -p
+	ANDROID_LIBLUAJIT_PLATFORM=Linux
 endif
 endif
 
@@ -30,7 +33,7 @@ MAKE_JOBS=1
 # LuaJIT
 NDKABI=$(ANDROID_NDK_ABI)
 NDKDIR=$(ANDROID_NDK_ROOT)
-NDKBIN=$(NDKDIR)/toolchains/llvm/prebuilt/linux-x86_64/bin
+NDKBIN=$(NDKDIR)/toolchains/llvm/prebuilt/$(OS)-x86_64/bin
 NDKCROSS=$(NDKBIN)/arm-linux-androideabi-
 NDKCC=$(NDKBIN)/armv7a-linux-androideabi$(NDKABI)-clang
 NDKCROSS64=$(NDKBIN)/aarch64-linux-android-
@@ -44,7 +47,8 @@ build/android-arm/bin/libluajit.a:
 		DYNAMIC_CC="$(NDKCC) -fPIC"                    \
 		TARGET_LD=$(NDKCC)                             \
 		TARGET_STRIP=$(NDKBIN)/llvm-strip              \
-		TARGET_AR="$(NDKBIN)/llvm-ar rcus"
+		TARGET_AR="$(NDKBIN)/llvm-ar rcus"             \
+		TARGET_SYS=$(ANDROID_LIBLUAJIT_PLATFORM)
 	-@install -m775 -D 3rdparty/luajit/src/libluajit.a $@
 	-@"$(MAKE)" -j$(MAKE_JOBS) -R -C 3rdparty/luajit/src clean
 
@@ -55,7 +59,8 @@ build/android-arm64/bin/libluajit.a:
 		DYNAMIC_CC="$(NDKCC64) -fPIC"                  \
 		TARGET_LD=$(NDKCC64)                           \
 		TARGET_STRIP=$(NDKBIN)/llvm-strip              \
-		TARGET_AR="$(NDKBIN)/llvm-ar rcus"
+		TARGET_AR="$(NDKBIN)/llvm-ar rcus"             \
+		TARGET_SYS=$(ANDROID_LIBLUAJIT_PLATFORM)
 	-@install -m775 -D 3rdparty/luajit/src/libluajit.a $@
 	-@"$(MAKE)" -j$(MAKE_JOBS) -R -C 3rdparty/luajit/src clean
 
