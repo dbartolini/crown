@@ -8,6 +8,7 @@ Crown |version| Manual
    introduction
    installing_crown/index
    getting_started/index
+   deploy/index
    reference/index
    lua_api
    glossary
