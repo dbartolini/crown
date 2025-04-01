@@ -42,6 +42,85 @@ public Gtk.Button make_deploy_button(TargetPlatform platform)
 	return btn;
 }
 
+public delegate int DeployerCheckConfig();
+
+public class DeployerPage : Gtk.Bin
+{
+	public Gtk.Button _check_config_button;
+	public Gtk.Box _check_config_box;
+	public Gtk.Widget _deployer_options;
+	public Gtk.Stack _stack;
+	public unowned DeployerCheckConfig _check_config;
+
+	public DeployerPage(TargetPlatform target_platform, Gtk.Widget deployer_options, DeployerCheckConfig? check_config = null)
+	{
+		_deployer_options = deployer_options;
+		_check_config = check_config;
+
+		string h1 = "<span font_weight=\"bold\" size=\"x-large\">Not configured</span>";
+		string p1 = "The %s deployer has not been configured yet".printf(target_platform.to_label());
+		string p2 = "Follow <a href=\"\">these instructions</a> to get started";
+
+		var h1l = new Gtk.Label(null);
+		h1l.set_markup(h1);
+		h1l.valign = Gtk.Align.CENTER;
+
+		var p1l = new Gtk.Label(null);
+		p1l.set_markup(p1);
+		p1l.valign = Gtk.Align.CENTER;
+
+		var p2l = new Gtk.Label(null);
+		p2l.track_visited_links = false;
+		p2l.set_markup(p2);
+		p2l.valign = Gtk.Align.CENTER;
+		p2l.activate_link.connect(() => {
+				try {
+					string CROWN_DEPLOY_URL = CROWN_LATEST_DOCS_URL + "/deploy";
+					string CROWN_DEPLOY_CONFIG_URL = CROWN_DEPLOY_URL + "/%s.html".printf(target_platform.to_key());
+					AppInfo.launch_default_for_uri(CROWN_DEPLOY_CONFIG_URL, null);
+				} catch (Error e) {
+					loge(e.message);
+				}
+				return true;
+			});
+		_check_config_button = new Gtk.Button.with_label("Check configuration");
+		_check_config_button.get_style_context().add_class("suggested-action");
+		_check_config_button.valign = Gtk.Align.CENTER;
+		_check_config_button.halign = Gtk.Align.CENTER;
+		_check_config_button.clicked.connect(on_check_config_clicked);
+		_check_config_box = new Gtk.Box(Gtk.Orientation.VERTICAL, 12);
+		_check_config_box.valign = Gtk.Align.CENTER;
+		_check_config_box.pack_start(h1l);
+		_check_config_box.pack_start(p1l);
+		_check_config_box.pack_start(p2l);
+		_check_config_box.pack_start(_check_config_button);
+
+		_stack = new Gtk.Stack();
+		_stack.add(_check_config_box);
+		_stack.add(_deployer_options);
+
+		this.map.connect(on_map);
+		this.add(_stack);
+	}
+
+	private void on_map()
+	{
+		on_check_config_clicked();
+	}
+
+	private void on_check_config_clicked()
+	{
+		if (_check_config != null) {
+			if (_check_config() != 0)
+				_stack.set_visible_child(_check_config_box);
+			else
+				_stack.set_visible_child(_deployer_options);
+		} else {
+				_stack.set_visible_child(_deployer_options);
+		}
+	}
+}
+
 #if CROWN_PLATFORM_WINDOWS
 public bool can_build_32bit_arm = false;
 #else
@@ -70,6 +149,8 @@ public class DeployDialog : Gtk.Dialog
 	public Gtk.Entry _android_app_version_name;
 	public PropertyGridSet _android_set;
 	public Gtk.Box _android_box;
+	public AndroidDeployer _android;
+	public DeployerPage _android_page;
 
 	// HTML5 page.
 	public Gtk.Button _html5_deploy_button;
@@ -78,6 +159,8 @@ public class DeployDialog : Gtk.Dialog
 	public Gtk.Entry _html5_app_title;
 	public PropertyGridSet _html5_set;
 	public Gtk.Box _html5_box;
+	public HTML5Deployer _html5;
+	public DeployerPage _html5_page;
 
 	// Linux page.
 	public Gtk.Button _linux_deploy_button;
@@ -86,6 +169,7 @@ public class DeployDialog : Gtk.Dialog
 	public Gtk.Entry _linux_app_title;
 	public PropertyGridSet _linux_set;
 	public Gtk.Box _linux_box;
+	public DeployerPage _linux_page;
 
 	// Windows page.
 	public Gtk.Button _windows_deploy_button;
@@ -94,6 +178,7 @@ public class DeployDialog : Gtk.Dialog
 	public EntryText _windows_app_title;
 	public PropertyGridSet _windows_set;
 	public Gtk.Box _windows_box;
+	public DeployerPage _windows_page;
 
 	public Gtk.Notebook _notebook;
 
@@ -217,25 +302,31 @@ public class DeployDialog : Gtk.Dialog
 		_android_armv8.value = true;
 		_android_use_debug_keystore = new CheckBox();
 		_android_use_debug_keystore.value_changed.connect(() => { android_set_debug_keystore(); });
-		_android_use_debug_keystore.value = true;
+		_android_use_debug_keystore.value = false;
 		_android_keystore = new Gtk.FileChooserButton("Select file", Gtk.FileChooserAction.OPEN);
 		_android_keystore_password = new Gtk.Entry();
 		_android_keystore_password.set_visibility(false);
 		_android_keystore_password.input_purpose = Gtk.InputPurpose.PASSWORD;
+		_android_keystore_password.text = "123456";
 		_android_key_alias = new Gtk.Entry();
+		_android_key_alias.text = "test";
 		_android_key_password = new Gtk.Entry();
 		_android_key_password.set_visibility(false);
 		_android_key_password.input_purpose = Gtk.InputPurpose.PASSWORD;
+		_android_key_password.text = "123456";
 		_android_app_title = new EntryText();
 		_android_app_title.placeholder_text = "My Application";
 		_android_app_title.text = _project.name();
 		_android_app_identifier = new Gtk.Entry();
 		_android_app_identifier.placeholder_text = "org.company.product";
+		_android_app_identifier.text = "org.company.product";
 		_android_app_version_code = new Gtk.Entry();
 		_android_app_version_code.input_purpose = Gtk.InputPurpose.DIGITS;
 		_android_app_version_code.placeholder_text = "1";
+		_android_app_version_code.text = "1";
 		_android_app_version_name = new Gtk.Entry();
 		_android_app_version_name.placeholder_text = "1.0";
+		_android_app_version_name.text = "1.0";
 
 		android_set_debug_keystore();
 
@@ -276,6 +367,8 @@ public class DeployDialog : Gtk.Dialog
 		_android_box = new Gtk.Box(Gtk.Orientation.VERTICAL, 0);
 		_android_box.pack_start(_android_deploy_button, false, true, 0);
 		_android_box.pack_start(_android_set, false, true, 0);
+		_android = new AndroidDeployer();
+		_android_page = new DeployerPage(TargetPlatform.ANDROID, _android_box, _android.check_config);
 
 		// HTML5 page.
 		_html5_deploy_button = make_deploy_button(TargetPlatform.HTML5);
@@ -318,6 +411,8 @@ public class DeployDialog : Gtk.Dialog
 		_html5_box = new Gtk.Box(Gtk.Orientation.VERTICAL, 0);
 		_html5_box.pack_start(_html5_deploy_button, false, true, 0);
 		_html5_box.pack_start(_html5_set, false, true, 0);
+		_html5 = new HTML5Deployer();
+		_html5_page = new DeployerPage(TargetPlatform.HTML5, _html5_box, _html5.check_config);
 
 		// HTML5 General page.
 		cv = new PropertyGrid();
@@ -373,6 +468,7 @@ public class DeployDialog : Gtk.Dialog
 		_linux_box = new Gtk.Box(Gtk.Orientation.VERTICAL, 0);
 		_linux_box.pack_start(_linux_deploy_button, false, true, 0);
 		_linux_box.pack_start(_linux_set, false, true, 0);
+		_linux_page = new DeployerPage(TargetPlatform.LINUX, _linux_box);
 
 		// Linux General page.
 		cv = new PropertyGrid();
@@ -428,6 +524,7 @@ public class DeployDialog : Gtk.Dialog
 		_windows_box = new Gtk.Box(Gtk.Orientation.VERTICAL, 0);
 		_windows_box.pack_start(_windows_deploy_button, false, true, 0);
 		_windows_box.pack_start(_windows_set, false, true, 0);
+		_windows_page = new DeployerPage(TargetPlatform.LINUX, _windows_box);
 
 		// Windows General page.
 		cv = new PropertyGrid();
@@ -444,12 +541,12 @@ public class DeployDialog : Gtk.Dialog
 
 		// Add pages.
 		_notebook = new Gtk.Notebook();
-		_notebook.append_page(_android_box, new Gtk.Label(TargetPlatform.ANDROID.to_label()));
-		_notebook.append_page(_html5_box, new Gtk.Label(TargetPlatform.HTML5.to_label()));
+		_notebook.append_page(_android_page, new Gtk.Label(TargetPlatform.ANDROID.to_label()));
+		_notebook.append_page(_html5_page, new Gtk.Label(TargetPlatform.HTML5.to_label()));
 #if CROWN_PLATFORM_LINUX
-		_notebook.append_page(_linux_box, new Gtk.Label(TargetPlatform.LINUX.to_label()));
+		_notebook.append_page(_linux_page, new Gtk.Label(TargetPlatform.LINUX.to_label()));
 #elif CROWN_PLATFORM_WINDOWS
-		_notebook.append_page(_windows_box, new Gtk.Label(TargetPlatform.WINDOWS.to_label()));
+		_notebook.append_page(_windows_page, new Gtk.Label(TargetPlatform.WINDOWS.to_label()));
 #endif
 		_notebook.vexpand = true;
 		_notebook.show_border = false;
