@@ -3265,7 +3265,7 @@ public class LevelEditorApplication : Gtk.Application
 		var android_jar_path = Path.build_path(Path.DIR_SEPARATOR_S, android._sdk_path, "platforms", "android-" + android._sdk_api_level, "android.jar");
 		var libcrown_src_name = "libcrown-" + config_name[config] + ".so";
 		var libcpp_name = "libc++_shared.so";
-		var signed_apk = Path.build_path(Path.DIR_SEPARATOR_S, bin_path, apk_name + ".signed.apk");
+		var unsigned_apk = Path.build_path(Path.DIR_SEPARATOR_S, bin_path, apk_name + ".unsigned.apk");
 		var unaligned_apk = Path.build_path(Path.DIR_SEPARATOR_S, bin_path, apk_name + ".unaligned.apk");
 		var final_apk = Path.build_path(Path.DIR_SEPARATOR_S, config_path, apk_name + ".apk");
 
@@ -3633,41 +3633,41 @@ public class LevelEditorApplication : Gtk.Application
 						return -1;
 					}
 
-					args = new string[]
-					{
-						android._jarsigner_path,
-						"-keystore",
-						keystore_path,
-						"-storepass",
-						keystore_pass,
-						"-keypass",
-						key_pass,
-						"-signedjar",
-						signed_apk,
-						unaligned_apk,
-						key_alias
-					};
-
-					pid = _subprocess_launcher.spawnv_async(subprocess_flags(), args, ENGINE_DIR);
-					exit_status = _subprocess_launcher.wait(pid);
-					if (exit_status != 0) {
-						loge("Failed sign APK. exit_status %d".printf(exit_status));
-						return -1;
-					}
-
+					// See: https://developer.android.com/tools/zipalign
 					args = new string[]
 					{
 						android._zipalign_path,
 						"-f",
 						"4",
-						signed_apk,
-						final_apk
+						unaligned_apk,
+						unsigned_apk
 					};
 
 					pid = _subprocess_launcher.spawnv_async(subprocess_flags(), args, ENGINE_DIR);
 					exit_status = _subprocess_launcher.wait(pid);
 					if (exit_status != 0) {
 						loge("Failed align APK. exit_status %d".printf(exit_status));
+						return -1;
+					}
+
+					// See: https://developer.android.com/tools/apksigner
+					args = new string[]
+					{
+						android._apksigner_path,
+						"sign",
+						"--ks",
+						keystore_path,
+						"--ks-pass",
+						"pass:%s".printf(keystore_pass),
+						"--out",
+						final_apk,
+						unsigned_apk
+					};
+
+					pid = _subprocess_launcher.spawnv_async(subprocess_flags(), args, ENGINE_DIR);
+					exit_status = _subprocess_launcher.wait(pid);
+					if (exit_status != 0) {
+						loge("Failed sign APK. exit_status %d".printf(exit_status));
 						return -1;
 					}
 				} catch (Error e) {
