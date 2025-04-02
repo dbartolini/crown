@@ -9,7 +9,6 @@ public class AndroidDeployer
 {
 	public string? _java_home;
 	public string _javac_path;
-	public string _jarsigner_path;
 
 	public string? _sdk_path;
 	public string? _sdk_api_level;
@@ -17,6 +16,7 @@ public class AndroidDeployer
 	public string? _build_tools_path;
 	public string _d8_path;
 	public string _aapt_path;
+	public string _apksigner_path;
 	public string _zipalign_path;
 
 	public AndroidDeployer()
@@ -43,15 +43,8 @@ public class AndroidDeployer
 			, "bin"
 			, "javac"
 			);
-
-		_jarsigner_path = Path.build_path(Path.DIR_SEPARATOR_S
-			, _java_home
-			, "bin"
-			, "jarsigner"
-			);
 #elif CROWN_PLATFORM_LINUX
 		_javac_path = "javac";
-		_jarsigner_path = "jarsigner";
 #endif
 
 		_sdk_path = GLib.Environment.get_variable("ANDROID_SDK_PATH");
@@ -86,6 +79,11 @@ public class AndroidDeployer
 		_aapt_path = Path.build_path(Path.DIR_SEPARATOR_S
 			, _build_tools_path
 			, "aapt"
+			);
+
+		_apksigner_path = Path.build_path(Path.DIR_SEPARATOR_S
+			, _build_tools_path
+			, "apksigner"
 			);
 
 		_zipalign_path = Path.build_path(Path.DIR_SEPARATOR_S
