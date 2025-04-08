@@ -35,6 +35,7 @@ components = [
 			]
 			intensity = 500
 			range = 15
+			shadow_bias = 0.0007
 			spot_angle = 0.52359900000000004
 			type = "omni"
 		}

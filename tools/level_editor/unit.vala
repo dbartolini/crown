@@ -83,9 +83,10 @@ public struct Unit
 		return (bool)get_component_property(component_id, key);
 	}
 
-	public double get_component_property_double(Guid component_id, string key)
+	public double get_component_property_double(Guid component_id, string key, double deffault = 0.0f)
 	{
-		return (double)get_component_property(component_id, key);
+		Value? val = get_component_property(component_id, key);
+		return val != null ? (double)val : deffault;
 	}
 
 	public string get_component_property_string(Guid component_id, string key)
@@ -339,6 +340,7 @@ public struct Unit
 			_db.set_property_double (component_id, "data.intensity", 1.0);
 			_db.set_property_double (component_id, "data.spot_angle", 45.0 * (Math.PI/180.0));
 			_db.set_property_vector3(component_id, "data.color", VECTOR3_ONE);
+			_db.set_property_double (component_id, "data.shadow_bias", 0.004);
 		} else if (component_type == OBJECT_TYPE_SCRIPT) {
 			_db.set_property_string(component_id, "data.script_resource", "core/components/noop");
 		} else if (component_type == OBJECT_TYPE_COLLIDER) {
@@ -490,6 +492,7 @@ public struct Unit
 						, unit.get_component_property_double (component_id, "data.intensity")
 						, unit.get_component_property_double (component_id, "data.spot_angle")
 						, unit.get_component_property_vector3(component_id, "data.color")
+						, unit.get_component_property_double (component_id, "data.shadow_bias")
 						));
 				} else if (component_type == OBJECT_TYPE_SCRIPT) {
 					/*
@@ -622,6 +625,7 @@ public struct Unit
 							, unit.get_component_property_double (component_id, "data.intensity")
 							, unit.get_component_property_double (component_id, "data.spot_angle")
 							, unit.get_component_property_vector3(component_id, "data.color")
+							, unit.get_component_property_double (component_id, "data.shadow_bias")
 							);
 						sb.append(s);
 					}
@@ -712,6 +716,7 @@ public struct Unit
 						, unit.get_component_property_double (component_id, "data.intensity")
 						, unit.get_component_property_double (component_id, "data.spot_angle")
 						, unit.get_component_property_vector3(component_id, "data.color")
+						, unit.get_component_property_double (component_id, "data.shadow_bias")
 						));
 				} else if (component_type == OBJECT_TYPE_SCRIPT) {
 					/* No sync. */

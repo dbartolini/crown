@@ -238,11 +238,16 @@ static s32 compile_light(Buffer &output, const char *json, CompileOptions &opts)
 		);
 
 	LightDesc ld;
-	ld.type       = lt;
-	ld.range      = RETURN_IF_ERROR(sjson::parse_float  (obj["range"]), opts);
-	ld.intensity  = RETURN_IF_ERROR(sjson::parse_float  (obj["intensity"]), opts);
-	ld.spot_angle = RETURN_IF_ERROR(sjson::parse_float  (obj["spot_angle"]), opts);
-	ld.color      = RETURN_IF_ERROR(sjson::parse_vector3(obj["color"]), opts);
+	ld.type        = lt;
+	ld.range       = RETURN_IF_ERROR(sjson::parse_float  (obj["range"]), opts);
+	ld.intensity   = RETURN_IF_ERROR(sjson::parse_float  (obj["intensity"]), opts);
+	ld.spot_angle  = RETURN_IF_ERROR(sjson::parse_float  (obj["spot_angle"]), opts);
+	ld.color       = RETURN_IF_ERROR(sjson::parse_vector3(obj["color"]), opts);
+	if (json_object::has(obj, "shadow_bias")) {
+		ld.shadow_bias = RETURN_IF_ERROR(sjson::parse_float(obj["shadow_bias"]), opts);
+	} else {
+		ld.shadow_bias = 0.004;
+	}
 
 	FileBuffer fb(output);
 	BinaryWriter bw(fb);
@@ -251,6 +256,7 @@ static s32 compile_light(Buffer &output, const char *json, CompileOptions &opts)
 	bw.write(ld.intensity);
 	bw.write(ld.spot_angle);
 	bw.write(ld.color);
+	bw.write(ld.shadow_bias);
 	return 0;
 }
 

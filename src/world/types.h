@@ -318,11 +318,12 @@ struct AnimationStateMachineDesc
 /// @ingroup World
 struct LightDesc
 {
-	u32 type;       ///< LightType::Enum
-	f32 range;      ///< In meters.
-	f32 intensity;  ///<
-	f32 spot_angle; ///< In radians.
-	Vector3 color;  ///< Color of the light.
+	u32 type;        ///< LightType::Enum
+	f32 range;       ///< In meters.
+	f32 intensity;   ///<
+	f32 spot_angle;  ///< In radians.
+	Vector3 color;   ///< Color of the light.
+	f32 shadow_bias; ///<
 };
 
 /// Script description.
