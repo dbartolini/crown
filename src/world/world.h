@@ -166,7 +166,7 @@ struct World
 	void update(f32 dt);
 
 	/// Renders the world using @a view.
-	void render(const Matrix4x4 &view);
+	void render(const Matrix4x4 &view, const Matrix4x4 &proj);
 
 	/// Plays the sound @a sr at the given @a position, with the given
 	/// @a volume and @a range. @a loop controls whether the sound must loop or not.

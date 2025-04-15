@@ -9,6 +9,8 @@
 #include "resource/shader_resource.h"
 #include <bgfx/bgfx.h>
 
+#define MAX_NUM_CASCADES 4
+
 #define VIEW_SPRITE_0     1
 #define VIEW_SPRITE_1     2
 #define VIEW_SPRITE_2     3
@@ -17,9 +19,10 @@
 #define VIEW_SPRITE_5     6
 #define VIEW_SPRITE_6     7
 #define VIEW_SPRITE_7     8
-#define VIEW_LIGHTS      15 // Global lighting data.
-#define VIEW_MESH        16
-#define VIEW_WORLD_GUI   17
+#define VIEW_CASCADE_0   14
+#define VIEW_LIGHTS      (VIEW_CASCADE_0 + MAX_NUM_CASCADES) // Global lighting data.
+#define VIEW_MESH        (VIEW_LIGHTS + 1)
+#define VIEW_WORLD_GUI   30
 #define VIEW_SELECTION   32
 #define VIEW_OUTLINE     33
 #define VIEW_DEBUG      100
@@ -66,6 +69,10 @@ struct Pipeline
 	ShaderData _debug_line_shader;
 	ShaderData _outline_shader;
 	ShaderData _selection_shader;
+	ShaderData _shadow_shader;
+
+	// Global settings.
+	u16 _shadow_map_resolution;
 
 	///
 	Pipeline(ShaderManager &sm);

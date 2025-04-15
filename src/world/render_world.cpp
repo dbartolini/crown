@@ -10,6 +10,7 @@
 #include "core/math/aabb.h"
 #include "core/math/color4.inl"
 #include "core/math/constants.h"
+#include "core/math/frustum.inl"
 #include "core/math/intersection.h"
 #include "core/math/matrix4x4.inl"
 #include "core/strings/string_id.inl"
@@ -24,8 +25,12 @@
 #include "world/scene_graph.h"
 #include "world/shader_manager.h"
 #include "world/unit_manager.h"
-#include <bgfx/bgfx.h>
 #include <algorithm> // std::sort
+#include <bgfx/bgfx.h>
+#include <bx/math.h>
+
+#include "device/log.h"
+LOG_SYSTEM(RW, "rw")
 
 namespace crown
 {
@@ -60,6 +65,12 @@ static void selection_draw_override(u8 view_id, UnitId unit_id, RenderWorld *rw)
 	bgfx::submit(view_id, rw->_pipeline->_selection_shader.program);
 }
 
+static void shadow_draw_override(u8 view_id, UnitId unit_id, RenderWorld *rw)
+{
+	bgfx::setState(rw->_pipeline->_shadow_shader.state);
+	bgfx::submit(view_id, rw->_pipeline->_shadow_shader.program);
+}
+
 RenderWorld::RenderWorld(Allocator &a
 	, ResourceManager &rm
 	, ShaderManager &sm
@@ -67,6 +78,7 @@ RenderWorld::RenderWorld(Allocator &a
 	, UnitManager &um
 	, Pipeline &pl
 	, SceneGraph &sg
+	, DebugLine &dl
 	)
 	: _marker(RENDER_WORLD_MARKER)
 	, _resource_manager(&rm)
@@ -75,11 +87,13 @@ RenderWorld::RenderWorld(Allocator &a
 	, _unit_manager(&um)
 	, _pipeline(&pl)
 	, _scene_graph(&sg)
+	, _lines(&dl)
 	, _debug_drawing(false)
 	, _mesh_manager(a, this)
 	, _sprite_manager(a, this)
 	, _light_manager(a)
 	, _selection(a)
+	, _num_cascades(min(4, MAX_NUM_CASCADES))
 {
 	_unit_destroy_callback.destroy = unit_destroyed_callback_bridge;
 	_unit_destroy_callback.user_data = this;
@@ -93,10 +107,43 @@ RenderWorld::RenderWorld(Allocator &a
 	// Lighting.
 	_u_lights_num = bgfx::createUniform("u_lights_num", bgfx::UniformType::Vec4, 1);
 	_u_lights_data = bgfx::createUniform("u_lights_data", bgfx::UniformType::Vec4, 3*32);
+
+	// Shadow mapping.
+	const bgfx::Caps *caps = bgfx::getCaps();
+	bool has_shadow_sampler = 0 != (caps->supported & BGFX_CAPS_TEXTURE_COMPARE_LEQUAL);
+	logi(RW, "has_shadow_sampler %d", (int)has_shadow_sampler);
+
+	// Create shadow map frame buffers.
+	for (u32 i = 0; i < countof(_shadow_map_frame_buffer); ++i) {
+		bgfx::TextureHandle fbtex = bgfx::createTexture2D(pl._shadow_map_resolution
+			, pl._shadow_map_resolution
+			, false
+			, 1
+			, bgfx::TextureFormat::D32F
+			, BGFX_TEXTURE_RT | BGFX_SAMPLER_COMPARE_LEQUAL
+			);
+		bgfx::TextureHandle fbtextures[] = { fbtex };
+		_shadow_map_frame_buffer[i] = bgfx::createFrameBuffer(countof(fbtextures), fbtextures, true);
+
+		char name[] = "u_shadow_mapX"; name[12] = '0' + i;
+		_u_shadow_map[i] = bgfx::createUniform(name, bgfx::UniformType::Sampler);
+	}
+
+	// Create shadow map samplers/uniforms.
+	_u_light_view_proj = bgfx::createUniform("u_light_view_proj", bgfx::UniformType::Mat4, MAX_NUM_CASCADES);
 }
 
 RenderWorld::~RenderWorld()
 {
+	// Destroy shadow map samplers/uniforms.
+	bgfx::destroy(_u_light_view_proj);
+
+	// Destroy shadow map frame buffers.
+	for (u32 i = 0, n = countof(_shadow_map_frame_buffer); i < n; ++i) {
+		bgfx::destroy(_u_shadow_map[n - i - 1]);
+		bgfx::destroy(_shadow_map_frame_buffer[n - i - 1]);
+	}
+
 	// Destroy lighting uniforms.
 	bgfx::destroy(_u_lights_data);
 	bgfx::destroy(_u_lights_num);
@@ -452,13 +499,144 @@ void RenderWorld::update_transforms(const UnitId *begin, const UnitId *end, cons
 
 void sort(RenderWorld::LightManager &m);
 
-void RenderWorld::render(const Matrix4x4 &view)
+static void debug_draw_box(const AABB &box, const Matrix4x4 &tm, DebugLine *lines, const Color4 &color = COLOR4_GREEN)
+{
+	// Debug draw bounding box.
+	Vector3 vertices[8];
+	aabb::to_vertices(vertices, box);
+
+	// Transform box corners to world-space.
+	for (u32 j = 0; j < 8; ++j)
+		vertices[j] = vertices[j] * tm;
+
+	// Bottom face.
+	lines->add_line(vertices[0], vertices[1], color);
+	lines->add_line(vertices[1], vertices[2], color);
+	lines->add_line(vertices[2], vertices[3], color);
+	lines->add_line(vertices[3], vertices[0], color);
+	// Top face.
+	lines->add_line(vertices[4], vertices[5], color);
+	lines->add_line(vertices[5], vertices[6], color);
+	lines->add_line(vertices[6], vertices[7], color);
+	lines->add_line(vertices[7], vertices[4], color);
+	// Connect faces.
+	lines->add_line(vertices[0], vertices[4], color);
+	lines->add_line(vertices[1], vertices[5], color);
+	lines->add_line(vertices[2], vertices[6], color);
+	lines->add_line(vertices[3], vertices[7], color);
+
+	lines->add_sphere(box.min * tm, 1.0f, COLOR4_RED);
+	lines->add_sphere(box.max * tm, 1.0f, COLOR4_BLUE);
+}
+
+void RenderWorld::render(const Matrix4x4 &real_view, const Matrix4x4 &real_proj)
 {
 	LightManager::LightInstanceData &lid = _light_manager._data;
 
-	// Set lighting data.
 	sort(_light_manager);
 
+	const bgfx::Caps *caps = bgfx::getCaps();
+#if 0
+	f32 proj_tmp[16];
+	bx::mtxProj(proj_tmp, fdeg(45), 16.0f/9.0f, 0.1f, 100.0f, caps->homogeneousDepth, bx::Handedness::Right);
+	const Matrix4x4 proj = from_array(proj_tmp);
+	static f32 deg = 0.0f;
+	// deg += 1.0/144.0f * 5.0f;
+	const Matrix4x4 rotate_x_90 = from_matrix3x3(from_x_axis_angle(frad(90.0f)));
+	const Matrix4x4 rotate_z = from_matrix3x3(from_z_axis_angle(frad(0.0f + deg)));
+	const Matrix4x4 translate   = from_translation({ 0, 0, 0 });
+	const Matrix4x4 view = get_inverted(rotate_x_90 * rotate_z * translate);
+#else
+	const Matrix4x4 proj = real_proj;
+	const Matrix4x4 view = real_view;
+#endif
+	Matrix4x4 light_proj[MAX_NUM_CASCADES];
+	Matrix4x4 light_view_proj[MAX_NUM_CASCADES];
+	Matrix4x4 inv_view = view;
+	invert(inv_view);
+
+	// Render cascaded shadow maps.
+	// CSMs are only computed for the brightest directional light (index = 0) in the scene.
+	if (lid.num[LightType::DIRECTIONAL] > 0) {
+		// Compute light view matrix.
+		float lightView[16];
+		const Vector3 &light_dir = lid.shader[0].direction;
+		const bx::Vec3 at  = { -light_dir.x,  -light_dir.y, -light_dir.z };
+		const bx::Vec3 eye = { 0.0, 0.0, 0.0 };
+		const bx::Vec3 up = { 0.0f, 0.0f, 1.0f };
+		bx::mtxLookAt(lightView, eye, at, up, bx::Handedness::Right);
+		Matrix4x4 light_view = from_array(lightView);
+
+		// Split the view frustum into _num_cascades frustums.
+		Frustum splits[MAX_NUM_CASCADES];
+		Frustum frustum;
+		frustum::from_matrix(frustum, proj, caps->homogeneousDepth, bx::Handedness::Right);
+		frustum::split(splits, _num_cascades, frustum, 0.75f);
+		Color4 split_colors[MAX_NUM_CASCADES] = { COLOR4_GREEN, COLOR4_BLUE, COLOR4_YELLOW, COLOR4_ORANGE };
+
+		// Render the scene once per cascade.
+		for (u32 i = 0; i < _num_cascades; ++i) {
+			Frustum split_i_world;
+			frustum::transform(split_i_world, splits[i], inv_view);
+			_lines->add_frustum(split_i_world, split_colors[i]);
+
+			// Compute light projection matrix.
+			// Get frustum corners in view space.
+			Vector3 vertices[8];
+			frustum::vertices(vertices, splits[i]);
+
+			for (u32 j = 0; j < 8; ++j) {
+				// Transform frustum corners to light space.
+				vertices[j] = vertices[j] * inv_view;   // To world space.
+				vertices[j] = vertices[j] * light_view; // To light space.
+			}
+			// Compute frustum bounding box in light space.
+			AABB box;
+			aabb::from_points(box, countof(vertices), vertices);
+			// debug_draw_box(box, get_inverted(light_view), _lines, COLOR4_YELLOW); // Debug draw in world space.
+
+			float lightProj[16];
+			float mtxLightViewProjCrop[16];
+			bx::mtxOrtho(lightProj
+				, box.min.x
+				, box.max.x
+				, box.min.y
+				, box.max.y
+				, -1000.0f
+				,  1000.0f
+				, 0.0f
+				, caps->homogeneousDepth
+				, bx::Handedness::Right
+				);
+
+			const float sy = caps->originBottomLeft ? 0.5f : -0.5f;
+			const float sz = caps->homogeneousDepth ? 0.5f :  1.0f;
+			const float tz = caps->homogeneousDepth ? 0.5f :  0.0f;
+			float mtxCrop[16] =
+			{
+				0.5f, 0.0f, 0.0f, 0.0f,
+				0.0f,   sy, 0.0f, 0.0f,
+				0.0f, 0.0f, sz,   0.0f,
+				0.5f, 0.5f, tz,   1.0f,
+			};
+			// bx::mtxIdentity(mtxCrop);
+
+			float mtxTmp[16];
+			bx::mtxMul(mtxTmp,               lightProj, mtxCrop);
+			bx::mtxMul(mtxLightViewProjCrop, lightView, mtxTmp);
+			light_proj[i] = from_array(mtxLightViewProjCrop);
+
+			light_view_proj[i] = from_array(mtxLightViewProjCrop);
+			bgfx::setViewTransform(VIEW_CASCADE_0 + i, lightView, lightProj);
+			bgfx::setViewClear(VIEW_CASCADE_0 + i, BGFX_CLEAR_COLOR | BGFX_CLEAR_DEPTH, 0xffffffff, 1.0f, 0);
+			bgfx::setViewFrameBuffer(VIEW_CASCADE_0 + i, _shadow_map_frame_buffer[i]);
+			bgfx::setViewRect(VIEW_CASCADE_0 + i, 0, 0, _pipeline->_shadow_map_resolution, _pipeline->_shadow_map_resolution);
+
+			_mesh_manager.draw(VIEW_CASCADE_0 + i, *_scene_graph, shadow_draw_override);
+		}
+	}
+
+	// Set lighting data.
 	Vector4 h;
 	h.x = lid.num[LightType::DIRECTIONAL];
 	h.y = lid.num[LightType::OMNI];
@@ -467,6 +645,17 @@ void RenderWorld::render(const Matrix4x4 &view)
 	bgfx::setUniform(_u_lights_num, &h);
 	bgfx::setUniform(_u_lights_data, (char *)lid.shader, lid.size*sizeof(*lid.shader) / sizeof(Vector4));
 	bgfx::touch(VIEW_LIGHTS);
+
+	// Bind shadow maps.
+#define SHADOW_MAP_0 10
+	for (u32 i = 0; i < _num_cascades; ++i) {
+		bgfx::setTexture(SHADOW_MAP_0 + i
+			, _u_shadow_map[i]
+			, bgfx::getTexture(_shadow_map_frame_buffer[i])
+			);
+	}
+	// Bind light matrices.
+	bgfx::setUniform(_u_light_view_proj, light_view_proj, _num_cascades);
 
 	// Render objects.
 	_mesh_manager.draw(VIEW_MESH, *_scene_graph);
@@ -1220,7 +1409,15 @@ void sort(RenderWorld::LightManager &m)
 
 	std::sort(m._data.index
 		, m._data.index + m._data.size
-		, [](const RenderWorld::LightManager::Index &in_a, const RenderWorld::LightManager::Index &in_b) { return in_a.type < in_b.type; });
+		, [m](const RenderWorld::LightManager::Index &in_a, const RenderWorld::LightManager::Index &in_b) {
+			const RenderWorld::LightManager::ShaderData &a = m._data.shader[in_a.index];
+			const RenderWorld::LightManager::ShaderData &b = m._data.shader[in_b.index];
+
+			if (in_a.type == in_b.type)
+				return a.intensity > b.intensity;
+
+			return in_a.type < in_b.type;
+		});
 
 	for (u32 i = 0; i < m._data.size; ++i) {
 		m._data.new_shader[i] = m._data.shader[m._data.index[i].index];
