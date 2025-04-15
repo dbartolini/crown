@@ -13,6 +13,7 @@
 #include "resource/mesh_skeleton_resource.h"
 #include "resource/shader_resource.h"
 #include "resource/types.h"
+#include "world/debug_line.h"
 #include "world/types.h"
 #include <bgfx/bgfx.h>
 
@@ -31,6 +32,7 @@ struct RenderWorld
 		, UnitManager &um
 		, Pipeline &pl
 		, SceneGraph &sg
+		, DebugLine &dl
 		);
 
 	///
@@ -161,10 +163,11 @@ struct RenderWorld
 	/// Fills @a dl with debug lines from the @a light.
 	void light_debug_draw(LightInstance light, DebugLine &dl);
 
+	///
 	void update_transforms(const UnitId *begin, const UnitId *end, const Matrix4x4 *world);
 
 	///
-	void render(const Matrix4x4 &view);
+	void render(const Matrix4x4 &view, const Matrix4x4 &proj);
 
 	/// Sets whether to @a enable debug drawing
 	void enable_debug_drawing(bool enable);
@@ -256,7 +259,7 @@ struct RenderWorld
 		void swap(u32 inst_a, u32 inst_b);
 
 		///
-		void draw(u8 view, SceneGraph &scene_graph, DrawOverride draw_override = NULL);
+		void draw(u8 view, SceneGraph &scene_graph, const Matrix4x4 *light_view_proj = NULL, DrawOverride draw_override = NULL);
 
 		///
 		MeshInstance make_instance(u32 i)
@@ -431,6 +434,7 @@ struct RenderWorld
 	UnitManager *_unit_manager;
 	Pipeline *_pipeline;
 	SceneGraph *_scene_graph;
+	DebugLine *_lines;
 
 	bool _debug_drawing;
 	MeshManager _mesh_manager;
@@ -446,6 +450,12 @@ struct RenderWorld
 	// Lighting.
 	bgfx::UniformHandle _u_lights_num;
 	bgfx::UniformHandle _u_lights_data;
+
+	// Shadow mapping.
+	u32 _num_cascades;
+	bgfx::FrameBufferHandle _shadow_map_frame_buffer[MAX_NUM_CASCADES];
+	bgfx::UniformHandle _u_shadow_map[MAX_NUM_CASCADES];
+	bgfx::UniformHandle _u_light_view_proj;
 };
 
 } // namespace crown

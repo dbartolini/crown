@@ -900,7 +900,7 @@ void Device::render(World &world, UnitId camera_unit)
 	bgfx::setTexture(0, _pipeline->_html5_default_sampler, _pipeline->_html5_default_texture);
 #endif
 
-	world.render(view);
+	world.render(view, proj);
 }
 
 World *Device::create_world()

@@ -64,7 +64,7 @@ World::World(Allocator &a
 {
 	_lines = create_debug_line(true);
 	_scene_graph   = CE_NEW(*_allocator, SceneGraph)(*_allocator, um);
-	_render_world  = CE_NEW(*_allocator, RenderWorld)(*_allocator, rm, sm, mm, um, pl, *_scene_graph);
+	_render_world  = CE_NEW(*_allocator, RenderWorld)(*_allocator, rm, sm, mm, um, pl, *_scene_graph, *_lines);
 	_physics_world = CE_NEW(*_allocator, PhysicsWorld)(*_allocator, rm, um, *_lines);
 	_sound_world   = CE_NEW(*_allocator, SoundWorld)(*_allocator, rm);
 	_script_world  = CE_NEW(*_allocator, ScriptWorld)(*_allocator, um, rm, env, *this);
@@ -280,9 +280,9 @@ void World::update(f32 dt)
 	update_scene(dt);
 }
 
-void World::render(const Matrix4x4 &view)
+void World::render(const Matrix4x4 &view, const Matrix4x4 &proj)
 {
-	_render_world->render(view);
+	_render_world->render(view, proj);
 
 	_physics_world->debug_draw();
 	_render_world->debug_draw(*_lines);
