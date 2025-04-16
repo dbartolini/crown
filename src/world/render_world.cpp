@@ -632,7 +632,7 @@ void RenderWorld::render(const Matrix4x4 &real_view, const Matrix4x4 &real_proj)
 			bgfx::setViewFrameBuffer(VIEW_CASCADE_0 + i, _shadow_map_frame_buffer[i]);
 			bgfx::setViewRect(VIEW_CASCADE_0 + i, 0, 0, _pipeline->_shadow_map_resolution, _pipeline->_shadow_map_resolution);
 
-			_mesh_manager.draw(VIEW_CASCADE_0 + i, *_scene_graph, shadow_draw_override);
+			_mesh_manager.draw(VIEW_CASCADE_0 + i, *_scene_graph, NULL, shadow_draw_override);
 		}
 	}
 
@@ -646,23 +646,12 @@ void RenderWorld::render(const Matrix4x4 &real_view, const Matrix4x4 &real_proj)
 	bgfx::setUniform(_u_lights_data, (char *)lid.shader, lid.size*sizeof(*lid.shader) / sizeof(Vector4));
 	bgfx::touch(VIEW_LIGHTS);
 
-	// Bind shadow maps.
-#define SHADOW_MAP_0 10
-	for (u32 i = 0; i < _num_cascades; ++i) {
-		bgfx::setTexture(SHADOW_MAP_0 + i
-			, _u_shadow_map[i]
-			, bgfx::getTexture(_shadow_map_frame_buffer[i])
-			);
-	}
-	// Bind light matrices.
-	bgfx::setUniform(_u_light_view_proj, light_view_proj, _num_cascades);
-
 	// Render objects.
-	_mesh_manager.draw(VIEW_MESH, *_scene_graph);
+	_mesh_manager.draw(VIEW_MESH, *_scene_graph, &light_view_proj[0]);
 	_sprite_manager.draw(VIEW_SPRITE_0);
 
 	// Render outlines.
-	_mesh_manager.draw(VIEW_SELECTION, *_scene_graph, selection_draw_override);
+	_mesh_manager.draw(VIEW_SELECTION, *_scene_graph, NULL, selection_draw_override);
 	_sprite_manager.draw(VIEW_SELECTION, selection_draw_override);
 }
 
@@ -936,7 +925,7 @@ void RenderWorld::MeshManager::destroy()
 	_allocator->deallocate(_data.buffer);
 }
 
-void RenderWorld::MeshManager::draw(u8 view_id, SceneGraph &scene_graph, DrawOverride draw_override)
+void RenderWorld::MeshManager::draw(u8 view_id, SceneGraph &scene_graph, const Matrix4x4 *light_view_proj, DrawOverride draw_override)
 {
 	for (u32 ii = 0; ii < _data.first_hidden; ++ii) {
 		if (_data.skeleton[ii] != NULL) {
@@ -961,10 +950,22 @@ void RenderWorld::MeshManager::draw(u8 view_id, SceneGraph &scene_graph, DrawOve
 		bgfx::setVertexBuffer(0, _data.mesh[ii].vbh);
 		bgfx::setIndexBuffer(_data.mesh[ii].ibh);
 
-		if (draw_override)
+		if (draw_override) {
 			draw_override(view_id, _data.unit[ii], _render_world);
-		else
+		} else {
+			// Bind shadow maps.
+		#define SHADOW_MAP_0 10
+			for (u32 i = 0; i < _render_world->_num_cascades; ++i) {
+				bgfx::setTexture(SHADOW_MAP_0 + i
+					, _render_world->_u_shadow_map[i]
+					, bgfx::getTexture(_render_world->_shadow_map_frame_buffer[i])
+					);
+			}
+			// Bind light matrices.
+			bgfx::setUniform(_render_world->_u_light_view_proj, light_view_proj, _render_world->_num_cascades);
+
 			_data.material[ii]->bind(view_id);
+		}
 	}
 }
 

@@ -259,7 +259,7 @@ struct RenderWorld
 		void swap(u32 inst_a, u32 inst_b);
 
 		///
-		void draw(u8 view, SceneGraph &scene_graph, DrawOverride draw_override = NULL);
+		void draw(u8 view, SceneGraph &scene_graph, const Matrix4x4 *light_view_proj = NULL, DrawOverride draw_override = NULL);
 
 		///
 		MeshInstance make_instance(u32 i)
