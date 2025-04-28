@@ -75,7 +75,6 @@ namespace audio_globals
 
 		AL_CHECK(alDistanceModel(AL_LINEAR_DISTANCE_CLAMPED));
 		AL_CHECK(alDopplerFactor(1.0f));
-		AL_CHECK(alDopplerVelocity(343.0f));
 	}
 
 	void shutdown()
