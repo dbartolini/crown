@@ -7,6 +7,7 @@
 
 #if CROWN_SOUND_OPENAL
 #include "core/containers/array.inl"
+#include "core/filesystem/file.h"
 #include "core/math/constants.h"
 #include "core/math/matrix4x4.inl"
 #include "core/strings/string_id.inl"
@@ -15,11 +16,16 @@
 #include "device/log.h"
 #include "resource/resource_manager.h"
 #include "resource/sound_resource.h"
+#include "resource/sound_ogg.h"
 #include "world/audio.h"
 #include "world/sound_world.h"
+#include "core/time.h"
 #include <AL/al.h>
 #include <AL/alc.h>
 #include <AL/alext.h>
+#define STB_VORBIS_HEADER_ONLY
+#define STB_VORBIS_NO_PULLDATA_API
+#include <stb_vorbis.c>
 
 LOG_SYSTEM(SOUND, "sound")
 
@@ -87,58 +93,290 @@ namespace audio_globals
 
 struct SoundInstance
 {
-	const SoundResource *_resource;
 	SoundInstanceId _id;
-	ALuint _buffer;
+
+	const SoundResource *_resource;
+	StringId64 _name;
+	bool _loop;
+	f32 _volume;
+
+	ALuint _buffer[4];
 	ALuint _source;
+	ALenum _format;
 
-	void create(const SoundResource *sr, const Vector3 &pos, f32 range)
+	enum { BLOCK_MS = 200 }; ///< Size of each buffer in milliseconds.
+	u32 _block_samples; ///< Number of samples in each block per channel.
+	u32 _block_size;    ///< Size of each block of samples in bytes.
+
+	File *_stream;        ///< Streaming data source.
+	void *_stream_mem;    ///< Total memory to allow streaming.
+	u8 *_stream_data;     ///< Current block of encoded streaming data.
+	f32 *_stream_decoded; ///< Current block of decoded audio samples.
+	u32 _stream_pos;      ///< Size of encoded data.
+
+	// Vorbis-specific.
+	stb_vorbis_alloc *_vorbis_alloc;
+	unsigned char *_vorbis_headers;
+	stb_vorbis *_vorbis;
+
+	void create(const SoundResource *sr, File *stream, bool loop, f32 volume, f32 range, const Vector3 &pos)
 	{
-		using namespace sound_resource;
+		_resource = sr;
+		_stream = stream;
+		_loop = loop;
 
+		_stream_mem = NULL;
+		_vorbis = NULL;
+
+		// Create source.
 		AL_CHECK(alGenSources(1, &_source));
 		CE_ASSERT(alIsSource(_source), "alGenSources: error");
 
 		AL_CHECK(alSourcef(_source, AL_REFERENCE_DISTANCE, 0.01f));
 		AL_CHECK(alSourcef(_source, AL_MAX_DISTANCE, range));
 		AL_CHECK(alSourcef(_source, AL_PITCH, 1.0f));
+		AL_CHECK(alSourcei(_source, AL_LOOPING, (loop ? AL_TRUE : AL_FALSE)));
+		set_volume(volume);
+		set_position(pos);
 
-		// Generates AL buffers
-		AL_CHECK(alGenBuffers(1, &_buffer));
-		CE_ASSERT(alIsBuffer(_buffer), "alGenBuffers: error");
+		// Generate buffers.
+		AL_CHECK(alGenBuffers(countof(_buffer), &_buffer[0]));
+		for (u32 i = 0; i < countof(_buffer); ++i)
+			CE_ASSERT(alIsBuffer(_buffer[i]), "alGenBuffers: error");
 
-		ALenum fmt = AL_INVALID_ENUM;
+		u32 bytes_per_sample = sr->bit_depth / 8;
+		_block_samples = sr->sample_rate * BLOCK_MS / 1000;
+		_block_size = bytes_per_sample * _block_samples * sr->channels;
+
+		logi(SOUND, "channels %u bits %u size %u bufsize %u", sr->channels, sr->bit_depth, sr->pcm_size, _block_size);
+
 		switch (sr->bit_depth) {
-		case  8: fmt = sr->channels > 1 ? AL_FORMAT_STEREO8  : AL_FORMAT_MONO8; break;
-		case 16: fmt = sr->channels > 1 ? AL_FORMAT_STEREO16 : AL_FORMAT_MONO16; break;
-		case 32: fmt = sr->channels > 1 ? AL_FORMAT_STEREO_FLOAT32 : AL_FORMAT_MONO_FLOAT32; break;
+		case  8: _format = sr->channels > 1 ? AL_FORMAT_STEREO8  : AL_FORMAT_MONO8; break;
+		case 16: _format = sr->channels > 1 ? AL_FORMAT_STEREO16 : AL_FORMAT_MONO16; break;
+		case 32: _format = sr->channels > 1 ? AL_FORMAT_STEREO_FLOAT32 : AL_FORMAT_MONO_FLOAT32; break;
 		default: CE_FATAL("Number of bits per sample not supported."); break;
 		}
-		AL_CHECK(alBufferData(_buffer, fmt, pcm_data(sr), sr->size, sr->sample_rate));
 
-		_resource = sr;
-		set_position(pos);
+		buffer_decoded_samples();
 	}
 
-	void destroy()
+	// Fill buffers with a bunch of already decoded samples.
+	void buffer_decoded_samples()
+	{
+		const u8 *pcm_data = sound_resource::pcm_data(_resource);
+		for (u32 i = 0, p = 0; i < countof(_buffer) && p != _resource->pcm_size; ++i) {
+			const u32 num = min(_block_size, _resource->pcm_size - p);
+			AL_CHECK(alBufferData(_buffer[i]
+				, _format
+				, &pcm_data[p]
+				, num
+				, _resource->sample_rate
+				));
+			AL_CHECK(alSourceQueueBuffers(_source, 1, &_buffer[i]));
+			p += num;
+		}
+	}
+
+	void create(ResourceManager *rm, StringId64 name, bool loop, f32 volume, f32 range, const Vector3 &pos)
+	{
+		const SoundResource *sr = (SoundResource *)rm->get(RESOURCE_TYPE_SOUND, name);
+
+		File *stream = NULL;
+		if (sr->stream_format != StreamFormat::NONE)
+			stream = rm->open_stream(RESOURCE_TYPE_SOUND, name);
+
+		_name = name;
+		return create(sr, stream, loop, volume, range, pos);
+	}
+
+	/// Decodes a block of samples of size BLOCK_MS or less, and feeds it to AL.
+	/// Returns the number of samples that have been decoded.
+	u32 decode_samples(ALuint al_buffer)
+	{
+		if (!_stream)
+			return 0;
+
+		if (_resource->stream_format == StreamFormat::OGG) {
+			const OggStreamMetadata *ogg = (OggStreamMetadata *)sound_resource::stream_metadata(_resource);
+			int used;
+
+			// Open the stream.
+			if (_stream_mem == NULL) {
+				const u32 stream_mem_size = 0
+					+ sizeof(stb_vorbis_alloc) + alignof(stb_vorbis_alloc)
+					+ ogg->alloc_buffer_size
+					+ ogg->headers_size
+					+ ogg->max_frame_size
+					+ _block_size*2 + alignof(f32)
+					;
+				_stream_mem = default_allocator().allocate(stream_mem_size);
+
+				_vorbis_alloc = (stb_vorbis_alloc *)memory::align_top(_stream_mem, alignof(stb_vorbis_alloc));
+				_vorbis_alloc->alloc_buffer = (char *)&_vorbis_alloc[1];
+				_vorbis_alloc->alloc_buffer_length_in_bytes = ogg->alloc_buffer_size;
+
+				_vorbis_headers = (unsigned char *)&_vorbis_alloc[1] + ogg->alloc_buffer_size;
+
+				_stream_data = (unsigned char *)_vorbis_headers + ogg->headers_size;
+				_stream_decoded = (f32 *)memory::align_top(_stream_data + ogg->max_frame_size, alignof(f32));
+				_stream_pos = 0;
+
+				_stream->read(_vorbis_headers, ogg->headers_size);
+			}
+
+			if (_vorbis == NULL) {
+				int error;
+				_vorbis = stb_vorbis_open_pushdata(_vorbis_headers, ogg->headers_size, &used, &error, _vorbis_alloc);
+				CE_ENSURE(error == VORBIS__no_error);
+				CE_ENSURE(_vorbis != NULL);
+				CE_ENSURE(used == ogg->headers_size);
+			}
+
+			// Decode samples.
+			int n;
+			int tot_n = 0;
+			f32 *ss = _stream_decoded;
+
+			// Try to decode at least _block_size samples.
+			s64 t0 = time::now();
+			while (tot_n < _block_samples) {
+				float **output;
+				int q = ogg->max_frame_size;
+
+			retry:
+				if (q > _stream->size() - _stream_pos)
+					q = _stream->size() - _stream_pos;
+				if (_stream_pos < q) {
+					u32 k = _stream->position();
+					u32 x = _stream->read(&_stream_data[_stream_pos], q - _stream_pos);
+					logi(SOUND, "stream_pos %u pos %u x %u size %u data %02x%02x%02x%02x", k, _stream_pos, x, _stream->size(), _stream_data[0], _stream_data[1], _stream_data[2], _stream_data[3]);
+					_stream_pos += x;
+				}
+
+				used = stb_vorbis_decode_frame_pushdata(_vorbis
+					, _stream_data
+					, _stream_pos
+					, NULL
+					, &output
+					, &n
+					);
+
+				if (used == 0) {
+					if (_stream->end_of_file()) {
+						if (true || _loop) {
+							_stream_pos = 0;
+							_stream->seek(ogg->headers_size);
+							stb_vorbis_close(_vorbis);
+							_vorbis = NULL;
+							logi(SOUND, "STREAM LOOP");
+							break;
+						}
+						logi(SOUND, "STREAM ENDED");
+						break; // No more data.
+					}
+
+					logi(SOUND, "NEED MORE DATA");
+					goto retry;
+				}
+
+				_stream_pos = q - used;
+				memmove(_stream_data, &_stream_data[used], _stream_pos);
+				if (n == 0) {
+					logi(SOUND, "SEEKING (q %u usee %u)", q, used);
+					continue; // Seek/error recovery.
+				}
+
+				// logi(SOUND, "decoded %d", n);
+				for (u32 i = 0; i < n; ++i) {
+					*ss++ = output[0][i];
+					*ss++ = output[1][i];
+				}
+				tot_n += n;
+			}
+			s64 t1 = time::now();
+
+			// logi(SOUND, "block decoded %u", tot_n);
+			logi(SOUND, "decoded %u p %u in %.4f", n, _stream_pos, time::seconds(t1 - t0));
+			return tot_n;
+		} else {
+			if (_stream_mem == NULL) {
+				_stream_mem = default_allocator().allocate(_block_size);
+				_stream_decoded = (f32 *)_stream_mem;
+			}
+
+			if (_stream->end_of_file())
+				return 0; // End-of-stream.
+
+			// Read samples.
+			u32 size = _block_size;
+			if (size > _stream->size() - _block_size)
+				size = _stream->size() - _block_size;
+
+			_stream->read(_stream_decoded, size);
+			return size / _block_size;
+		}
+	}
+
+	void update()
+	{
+		ALint processed;
+		AL_CHECK(alGetSourcei(_source, AL_BUFFERS_PROCESSED, &processed));
+
+		if (processed != 0)
+			logi(SOUND, "processed %d", processed);
+		while (processed > 0) {
+			ALuint buffer;
+			AL_CHECK(alSourceUnqueueBuffers(_source, 1, &buffer));
+			processed--;
+
+			// Decode a block of samples and enqueue it.
+			u32 n = decode_samples(buffer);
+			if (n > 0) {
+				const u32 size = n * _resource->channels * _resource->bit_depth / 8;
+				AL_CHECK(alBufferData(buffer, _format, _stream_decoded, size, _resource->sample_rate));
+				AL_CHECK(alSourceQueueBuffers(_source, 1, &buffer));
+			}
+		}
+
+		ALint state;
+		AL_CHECK(alGetSourcei(_source, AL_SOURCE_STATE, &state));
+
+		if (state != AL_PLAYING && state != AL_PAUSED) {
+			// At this point either the source underrun or no buffers were enqueued.
+			ALint queued;
+			AL_CHECK(alGetSourcei(_source, AL_BUFFERS_QUEUED, &queued));
+			if (queued == 0)
+				return; // Finished.
+
+			// Underrun, restart playback.
+			logi(SOUND, "UNDERRUN!!!");
+			AL_CHECK(alSourcePlay(_source));
+		}
+	}
+
+	void destroy(ResourceManager *rm)
 	{
 		stop();
 		AL_CHECK(alSourcei(_source, AL_BUFFER, 0));
-		AL_CHECK(alDeleteBuffers(1, &_buffer));
+		AL_CHECK(alDeleteBuffers(countof(_buffer), &_buffer[0]));
 		AL_CHECK(alDeleteSources(1, &_source));
+
+		// Deallocate streaming memory.
+		stb_vorbis_close(_vorbis);
+		default_allocator().deallocate(_stream_mem);
+
+		if (_stream != NULL)
+			rm->close_stream(_stream);
 	}
 
-	void reload(const SoundResource *new_sr)
+	void reload(ResourceManager *rm, const SoundResource *new_sr)
 	{
-		destroy();
-		create(new_sr, position(), range());
+		destroy(rm);
+		create(rm, _name, _loop, _volume, range(), position());
 	}
 
-	void play(bool loop, f32 volume)
+	void play()
 	{
-		set_volume(volume);
-		AL_CHECK(alSourcei(_source, AL_LOOPING, (loop ? AL_TRUE : AL_FALSE)));
-		AL_CHECK(alSourceQueueBuffers(_source, 1, &_buffer));
 		AL_CHECK(alSourcePlay(_source));
 	}
 
@@ -205,6 +443,7 @@ struct SoundInstance
 
 	void set_volume(f32 volume)
 	{
+		_volume = volume;
 		AL_CHECK(alSourcef(_source, AL_GAIN, volume));
 	}
 };
@@ -279,25 +518,29 @@ struct SoundWorldImpl
 		set_listener_pose(MATRIX4X4_IDENTITY);
 	}
 
+	~SoundWorldImpl()
+	{
+		for (u32 i = 0; i < _num_objects; ++i)
+			stop(_playing_sounds[i]._id);
+	}
+
 	SoundWorldImpl(const SoundWorldImpl &) = delete;
 
 	SoundWorldImpl &operator=(const SoundWorldImpl &) = delete;
 
 	SoundInstanceId play(StringId64 name, bool loop, f32 volume, f32 range, const Vector3 &pos)
 	{
-		const SoundResource *sr = (SoundResource *)_resource_manager->get(RESOURCE_TYPE_SOUND, name);
-
 		SoundInstanceId id = add();
 		SoundInstance &si = lookup(id);
-		si.create(sr, pos, range);
-		si.play(loop, volume);
+		si.create(_resource_manager, name, loop, volume, range, pos);
+		si.play();
 		return id;
 	}
 
 	void stop(SoundInstanceId id)
 	{
 		SoundInstance &si = lookup(id);
-		si.destroy();
+		si.destroy(_resource_manager);
 		remove(id);
 	}
 
@@ -352,7 +595,7 @@ struct SoundWorldImpl
 	{
 		for (u32 i = 0; i < _num_objects; ++i) {
 			if (_playing_sounds[i]._resource == old_sr) {
-				_playing_sounds[i].reload(new_sr);
+				_playing_sounds[i].reload(_resource_manager, new_sr);
 			}
 		}
 	}
@@ -376,12 +619,13 @@ struct SoundWorldImpl
 		TempAllocator256 alloc;
 		Array<SoundInstanceId> to_delete(alloc);
 
-		// Check what sounds finished playing
+		// Update instances with new samples.
 		for (u32 i = 0; i < _num_objects; ++i) {
 			SoundInstance &instance = _playing_sounds[i];
-			if (instance.finished()) {
+
+			instance.update();
+			if (instance.finished())
 				array::push_back(to_delete, instance._id);
-			}
 		}
 
 		// Destroy instances which finished playing

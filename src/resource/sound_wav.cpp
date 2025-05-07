@@ -99,6 +99,8 @@ namespace wav
 		s._sample_rate = wav->sample_rate;
 		s._channels = wav->channels;
 		s._bit_depth = wav->bit_depth;
+
+		opts._stream_output.write(array::begin(s._samples), 4*array::size(s._samples));
 		return 0;
 	}
 
