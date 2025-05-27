@@ -14,7 +14,8 @@ Game = Game or {
 }
 
 GameBase.game = Game
-GameBase.game_level = "levels/test"
+GameBase.show_help = false
+GameBase.game_level = "levels/lights"
 
 function Game.level_loaded()
 	Game.pw = World.physics_world(GameBase.world)

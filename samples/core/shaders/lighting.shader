@@ -9,13 +9,14 @@ bgfx_shaders = {
 
 		code = """
 		#if !defined(NO_LIGHT)
+		#	define LIGHT_SIZE 8 // In vec4 units.
+		#	define MAX_NUM_LIGHTS 32
+		#	define MAX_NUM_CASCADES 4
 			uniform vec4 u_lights_num;        // num_dir, num_omni, num_spot
-			uniform vec4 u_lights_data[4*32]; // dir_0, .., dir_n-1, omni_0, .., omni_n-1, spot_0, .., spot_n-1
+			uniform vec4 u_lights_data[LIGHT_SIZE * MAX_NUM_LIGHTS]; // dir_0, .., dir_n-1, omni_0, .., omni_n-1, spot_0, .., spot_n-1
+			uniform mat4 u_light_view_proj[MAX_NUM_CASCADES];
 
 			SAMPLER2DSHADOW(u_shadow_map0, 10);
-			SAMPLER2DSHADOW(u_shadow_map1, 11);
-			SAMPLER2DSHADOW(u_shadow_map2, 12);
-			SAMPLER2DSHADOW(u_shadow_map3, 13);
 
 			CONST(float PI) = 3.14159265358979323846;
 
@@ -138,10 +139,7 @@ bgfx_shaders = {
 				, vec3 n
 				, vec3 v
 				, vec3 frag_pos
-				, vec4 shadow_pos0
-				, vec4 shadow_pos1
-				, vec4 shadow_pos2
-				, vec4 shadow_pos3
+				, vec4 shadow_pos
 				, vec3 albedo
 				, float metallic
 				, float roughness
@@ -161,7 +159,12 @@ bgfx_shaders = {
 					float intensity   = u_lights_data[loffset + 0].w;
 					vec3 direction    = u_lights_data[loffset + 2].xyz;
 					float shadow_bias = u_lights_data[loffset + 3].r;
-					radiance += calc_dir_light(n
+					float atlas_u     = u_lights_data[loffset + 3].g;
+					float atlas_v     = u_lights_data[loffset + 3].b;
+					float atlas_size  = u_lights_data[loffset + 3].a;
+					loffset += LIGHT_SIZE;
+
+					vec3 local_radiance = calc_dir_light(n
 						, v
 						, toLinearAccurate(light_color)
 						, intensity
@@ -171,37 +174,43 @@ bgfx_shaders = {
 						, roughness
 						, f0
 						);
+
+					vec4 shadow_pos0 = mul(u_light_view_proj[0], shadow_pos);
+					vec4 shadow_pos1 = mul(u_light_view_proj[1], shadow_pos);
+					vec4 shadow_pos2 = mul(u_light_view_proj[2], shadow_pos);
+					vec4 shadow_pos3 = mul(u_light_view_proj[3], shadow_pos);
 
 					vec2 shadow0 = shadow_pos0.xy/shadow_pos0.w;
 					vec2 shadow1 = shadow_pos1.xy/shadow_pos1.w;
 					vec2 shadow2 = shadow_pos2.xy/shadow_pos2.w;
 					vec2 shadow3 = shadow_pos3.xy/shadow_pos3.w;
 
-					bool selection0 = all(lessThan(shadow0, vec2_splat(1.00))) && all(greaterThan(shadow0, vec2_splat(0.00)));
-					bool selection1 = all(lessThan(shadow1, vec2_splat(1.00))) && all(greaterThan(shadow1, vec2_splat(0.00)));
-					bool selection2 = all(lessThan(shadow2, vec2_splat(1.00))) && all(greaterThan(shadow2, vec2_splat(0.00)));
-					bool selection3 = all(lessThan(shadow3, vec2_splat(1.00))) && all(greaterThan(shadow3, vec2_splat(0.00)));
+					bool atlas0 = all(lessThan(shadow0, vec2_splat(0.99))) && all(greaterThan(shadow0, vec2_splat(0.01)));
+					bool atlas1 = all(lessThan(shadow1, vec2_splat(0.99))) && all(greaterThan(shadow1, vec2_splat(0.01)));
+					bool atlas2 = all(lessThan(shadow2, vec2_splat(0.99))) && all(greaterThan(shadow2, vec2_splat(0.01)));
+					bool atlas3 = all(lessThan(shadow3, vec2_splat(0.99))) && all(greaterThan(shadow3, vec2_splat(0.01)));
 
 					vec2 texel_size = vec2_splat(1.0/2048.0);
 
-					if (selection0)
-						radiance *= PCF(u_shadow_map0, shadow_pos0, shadow_bias*1.0, texel_size);
-					else if (selection1)
-						radiance *= PCF(u_shadow_map1, shadow_pos1, shadow_bias*2.0, texel_size);
-					else if (selection2)
-						radiance *= PCF(u_shadow_map2, shadow_pos2, shadow_bias*4.0, texel_size);
-					else if (selection3)
-						radiance *= PCF(u_shadow_map3, shadow_pos3, shadow_bias*8.0, texel_size);
+					if (atlas0)
+						local_radiance *= PCF(u_shadow_map0, shadow_pos0, shadow_bias, texel_size, vec3(atlas_u             , atlas_v             , atlas_size));
+					else if (atlas1)
+						local_radiance *= PCF(u_shadow_map0, shadow_pos1, shadow_bias, texel_size, vec3(atlas_u + atlas_size, atlas_v             , atlas_size));
+					else if (atlas2)
+						local_radiance *= PCF(u_shadow_map0, shadow_pos2, shadow_bias, texel_size, vec3(atlas_u             , atlas_v + atlas_size, atlas_size));
+					else if (atlas3)
+						local_radiance *= PCF(u_shadow_map0, shadow_pos3, shadow_bias, texel_size, vec3(atlas_u + atlas_size, atlas_v + atlas_size, atlas_size));
 
-					loffset += 4;
+					radiance += local_radiance;
 				}
 
 				// Others directional lights just add to radiance.
-				for (int di = 1; di < num_dir; ++di, loffset += 4) {
+				for (int di = 1; di < num_dir; ++di, loffset += LIGHT_SIZE) {
 					vec3 light_color  = u_lights_data[loffset + 0].rgb;
 					float intensity   = u_lights_data[loffset + 0].w;
 					vec3 direction    = u_lights_data[loffset + 2].xyz;
 					float shadow_bias = u_lights_data[loffset + 3].r;
+
 					radiance += calc_dir_light(n
 						, v
 						, toLinearAccurate(light_color)
@@ -214,13 +223,14 @@ bgfx_shaders = {
 						);
 				}
 
-				for (int oi = 0; oi < num_omni; ++oi, loffset += 4) {
+				for (int oi = 0; oi < num_omni; ++oi, loffset += LIGHT_SIZE) {
 					vec3 light_color  = u_lights_data[loffset + 0].rgb;
 					float intensity   = u_lights_data[loffset + 0].w;
 					vec3 position     = u_lights_data[loffset + 1].xyz;
 					float range       = u_lights_data[loffset + 1].w;
 					float shadow_bias = u_lights_data[loffset + 3].r;
-					radiance += calc_omni_light(n
+
+					vec3 local_radiance = calc_omni_light(n
 						, v
 						, frag_pos
 						, toLinearAccurate(light_color)
@@ -232,9 +242,11 @@ bgfx_shaders = {
 						, roughness
 						, f0
 						);
+
+					radiance += local_radiance;
 				}
 
-				for (int si = 0; si < num_spot; ++si, loffset += 4) {
+				for (int si = 0; si < num_spot; ++si, loffset += LIGHT_SIZE) {
 					vec3 light_color  = u_lights_data[loffset + 0].rgb;
 					float intensity   = u_lights_data[loffset + 0].w;
 					vec3 position     = u_lights_data[loffset + 1].xyz;
@@ -242,7 +254,15 @@ bgfx_shaders = {
 					vec3 direction    = u_lights_data[loffset + 2].xyz;
 					float spot_angle  = u_lights_data[loffset + 2].w;
 					float shadow_bias = u_lights_data[loffset + 3].r;
-					radiance += calc_spot_light(n
+					float atlas_u     = u_lights_data[loffset + 3].g;
+					float atlas_v     = u_lights_data[loffset + 3].b;
+					float atlas_size  = u_lights_data[loffset + 3].a;
+					vec4 axis_x       = u_lights_data[loffset + 4];
+					vec4 axis_y       = u_lights_data[loffset + 5];
+					vec4 axis_z       = u_lights_data[loffset + 6];
+					vec4 axis_t       = u_lights_data[loffset + 7];
+
+					vec3 local_radiance = calc_spot_light(n
 						, v
 						, frag_pos
 						, toLinearAccurate(light_color)
@@ -256,6 +276,30 @@ bgfx_shaders = {
 						, roughness
 						, f0
 						);
+
+				#if 0
+					mat4 mvp = mtxFromRows(
+						  vec4(1.73205, 0.0, 0.0, 0.0)
+						, vec4(0.0, 1.73205, 0.0, 0.0)
+						, vec4(0.0, 0.0, -1.01342, 15.0)
+						, vec4(0.0, 0.0, -1.0, 15.0)
+						);
+					mat4 crop = mtxFromCols(
+						  vec4(0.5, 0.0, 0.0, 0.0)
+						, vec4(0.0, 0.5, 0.0, 0.0)
+						, vec4(0.0, 0.0, 0.5, 0.0)
+						, vec4(0.5, 0.5, 0.5, 1.0)
+						);
+					mat4 idx = mtxFromRows(vec4(1,0,0,0), vec4(0,1,0,0), vec4(0,0,1,0), vec4(0,0,0,1));
+					vec4 shadow_pos0 = mul(mul(idx, mvp), shadow_pos);
+				#else
+					mat4 mvp = mtxFromCols(axis_x, axis_y, axis_z, axis_t);
+					vec4 shadow_pos0 = mul(mvp, shadow_pos);
+				#endif
+					vec2 texel_size = vec2_splat(1.0/1024.0);
+					local_radiance *= PCF(u_shadow_map0, shadow_pos0, shadow_bias, texel_size, vec3(atlas_u, atlas_v, atlas_size));
+
+					radiance += local_radiance;
 				}
 
 				return radiance;

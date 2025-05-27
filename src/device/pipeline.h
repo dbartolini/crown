@@ -9,27 +9,38 @@
 #include "resource/shader_resource.h"
 #include <bgfx/bgfx.h>
 
+#define MAX_NUM_LIGHTS 32
 #define MAX_NUM_CASCADES 4
+#define MAX_NUM_POINT_LIGHTS 20
+#define MAX_NUM_SPOT_LIGHTS  10
+#define MAX_NUM_SPRITE_LAYERS 8
 
-#define VIEW_SPRITE_0     1
-#define VIEW_SPRITE_1     2
-#define VIEW_SPRITE_2     3
-#define VIEW_SPRITE_3     4
-#define VIEW_SPRITE_4     5
-#define VIEW_SPRITE_5     6
-#define VIEW_SPRITE_6     7
-#define VIEW_SPRITE_7     8
-#define VIEW_CASCADE_0   14
-#define VIEW_LIGHTS      (VIEW_CASCADE_0 + MAX_NUM_CASCADES) // Global lighting data.
-#define VIEW_MESH        (VIEW_LIGHTS + 1)
-#define VIEW_WORLD_GUI   30
-#define VIEW_SELECTION   32
-#define VIEW_OUTLINE     33
-#define VIEW_DEBUG      100
-#define VIEW_SCREEN_GUI 128
-#define VIEW_GRAPH      200
-#define VIEW_BLIT       254
-#define VIEW_IMGUI      255
+struct View
+{
+	enum Enum
+	{
+		SPRITE_0,
+		SPRITE_LAST   = SPRITE_0 + MAX_NUM_SPRITE_LAYERS,
+		CASCADE_0     = SPRITE_LAST,
+		CASCADE_LAST  = CASCADE_0 + MAX_NUM_CASCADES,
+		SM_POINT_0    = CASCADE_LAST,
+		SM_POINT_LAST = SM_POINT_0 + MAX_NUM_POINT_LIGHTS,
+		SM_SPOT_0     = SM_POINT_LAST,
+		SM_SPOT_LAST  = SM_SPOT_0 + MAX_NUM_SPOT_LIGHTS,
+		LIGHTS        = SM_SPOT_LAST,
+		MESH,
+		WORLD_GUI,
+		SELECTION,
+		OUTLINE,
+		DEBUG,
+		SCREEN_GUI,
+		GRAPH,
+		BLIT,
+		IMGUI,
+
+		COUNT
+	};
+};
 
 namespace crown
 {

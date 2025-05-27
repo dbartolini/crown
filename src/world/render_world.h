@@ -358,7 +358,10 @@ struct RenderWorld
 			Vector3 direction;
 			f32 spot_angle;
 			f32 shadow_bias;
-			f32 pad[3];
+			f32 atlas_u;   // U-coord in shadow map atlas.
+			f32 atlas_v;   // V-coord in shadow map atlas.
+			f32 map_size;  // Tile size in shadow map atlas.
+			Matrix4x4 mvp; // Model-View-Proj-Crop.
 		};
 
 		struct Index
@@ -453,8 +456,8 @@ struct RenderWorld
 
 	// Shadow mapping.
 	u32 _num_cascades;
-	bgfx::FrameBufferHandle _shadow_map_frame_buffer[MAX_NUM_CASCADES];
-	bgfx::UniformHandle _u_shadow_map[MAX_NUM_CASCADES];
+	bgfx::FrameBufferHandle _shadow_map_frame_buffer;
+	bgfx::UniformHandle _u_shadow_map;
 	bgfx::UniformHandle _u_light_view_proj;
 };
 

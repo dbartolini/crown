@@ -25,6 +25,7 @@
 #include "world/scene_graph.h"
 #include "world/shader_manager.h"
 #include "world/unit_manager.h"
+#include "core/debug/debug.h"
 #include <algorithm> // std::sort
 #include <bgfx/bgfx.h>
 #include <bx/math.h>
@@ -114,20 +115,17 @@ RenderWorld::RenderWorld(Allocator &a
 	logi(RW, "has_shadow_sampler %d", (int)has_shadow_sampler);
 
 	// Create shadow map frame buffers.
-	for (u32 i = 0; i < countof(_shadow_map_frame_buffer); ++i) {
-		bgfx::TextureHandle fbtex = bgfx::createTexture2D(pl._shadow_map_resolution
-			, pl._shadow_map_resolution
-			, false
-			, 1
-			, bgfx::TextureFormat::D32F
-			, BGFX_TEXTURE_RT | BGFX_SAMPLER_COMPARE_LEQUAL
-			);
-		bgfx::TextureHandle fbtextures[] = { fbtex };
-		_shadow_map_frame_buffer[i] = bgfx::createFrameBuffer(countof(fbtextures), fbtextures, true);
+	bgfx::TextureHandle fbtex = bgfx::createTexture2D(pl._shadow_map_resolution
+		, pl._shadow_map_resolution
+		, false
+		, 1
+		, bgfx::TextureFormat::D32F
+		, BGFX_TEXTURE_RT | BGFX_SAMPLER_COMPARE_LEQUAL
+		);
+	bgfx::TextureHandle fbtextures[] = { fbtex };
+	_shadow_map_frame_buffer = bgfx::createFrameBuffer(countof(fbtextures), fbtextures, true);
 
-		char name[] = "u_shadow_mapX"; name[12] = '0' + i;
-		_u_shadow_map[i] = bgfx::createUniform(name, bgfx::UniformType::Sampler);
-	}
+	_u_shadow_map = bgfx::createUniform("u_shadow_map0", bgfx::UniformType::Sampler);
 
 	// Create shadow map samplers/uniforms.
 	_u_light_view_proj = bgfx::createUniform("u_light_view_proj", bgfx::UniformType::Mat4, MAX_NUM_CASCADES);
@@ -139,10 +137,8 @@ RenderWorld::~RenderWorld()
 	bgfx::destroy(_u_light_view_proj);
 
 	// Destroy shadow map frame buffers.
-	for (u32 i = 0, n = countof(_shadow_map_frame_buffer); i < n; ++i) {
-		bgfx::destroy(_u_shadow_map[n - i - 1]);
-		bgfx::destroy(_shadow_map_frame_buffer[n - i - 1]);
-	}
+	bgfx::destroy(_u_shadow_map);
+	bgfx::destroy(_shadow_map_frame_buffer);
 
 	// Destroy lighting uniforms.
 	bgfx::destroy(_u_lights_data);
@@ -619,22 +615,122 @@ void RenderWorld::render(const Matrix4x4 &real_view, const Matrix4x4 &real_proj)
 				0.0f, 0.0f, sz,   0.0f,
 				0.5f, 0.5f, tz,   1.0f,
 			};
-			// bx::mtxIdentity(mtxCrop);
 
 			float mtxTmp[16];
 			bx::mtxMul(mtxTmp,               lightProj, mtxCrop);
 			bx::mtxMul(mtxLightViewProjCrop, lightView, mtxTmp);
 			light_proj[i] = from_array(mtxLightViewProjCrop);
 
-			light_view_proj[i] = from_array(mtxLightViewProjCrop);
-			bgfx::setViewTransform(VIEW_CASCADE_0 + i, lightView, lightProj);
-			bgfx::setViewClear(VIEW_CASCADE_0 + i, BGFX_CLEAR_COLOR | BGFX_CLEAR_DEPTH, 0xffffffff, 1.0f, 0);
-			bgfx::setViewFrameBuffer(VIEW_CASCADE_0 + i, _shadow_map_frame_buffer[i]);
-			bgfx::setViewRect(VIEW_CASCADE_0 + i, 0, 0, _pipeline->_shadow_map_resolution, _pipeline->_shadow_map_resolution);
+			// Render into atlas.
+			//
+			// Screen space:
+			//
+			// (0;0)  (w;0)
+			//   +------>
+			//   |
+			//   |
+			//   |
+			// (0;h)
+			//
+			// Texture space:
+			//
+			// (0;1)
+			//   |
+			//   |
+			//   |
+			//   +------>
+			// (0;0)  (1;0)
+			Vector4 rects[] =
+			{
+				{    0, 2048, 2048, 2048 },
+				{ 2048, 2048, 2048, 2048 },
+				{    0,    0, 2048, 2048 },
+				{ 2048,    0, 2048, 2048 },
+			};
+			CE_STATIC_ASSERT(countof(rects) == MAX_NUM_CASCADES);
 
-			_mesh_manager.draw(VIEW_CASCADE_0 + i, *_scene_graph, NULL, shadow_draw_override);
+			lid.shader[0].atlas_u = rects[0].x / _pipeline->_shadow_map_resolution;
+			lid.shader[0].atlas_v = 1.0f - ((rects[0].y + rects[0].z) / _pipeline->_shadow_map_resolution);
+			lid.shader[0].map_size = rects[0].w / _pipeline->_shadow_map_resolution;
+
+			bgfx::setViewRect(View::CASCADE_0 + i, rects[i].x, rects[i].y, rects[i].z, rects[i].w);
+			bgfx::setViewFrameBuffer(View::CASCADE_0 + i, _shadow_map_frame_buffer);
+			bgfx::setViewClear(View::CASCADE_0 + i, BGFX_CLEAR_COLOR | BGFX_CLEAR_DEPTH, 0xffffffff, 1.0f, 0);
+
+			light_view_proj[i] = from_array(mtxLightViewProjCrop);
+			bgfx::setViewTransform(View::CASCADE_0 + i, lightView, lightProj);
+
+			_mesh_manager.draw(View::CASCADE_0 + i, *_scene_graph, NULL, shadow_draw_override);
 		}
 	}
+
+#if 1
+	// Render shadow map for spot lights.
+	for (u32 i = 0, si = lid.num[LightType::DIRECTIONAL]
+		; i < lid.num[LightType::SPOT] && i < MAX_NUM_SPOT_LIGHTS
+		; ++i, ++si
+		) {
+		// Compute light view matrix.
+		float lightView[16];
+		const Vector3 &light_dir = lid.shader[si].direction;
+		const Vector3 &light_pos = lid.shader[si].position;
+		const Vector3 global_up = { 0.0f, 1.0f, 0.0f };
+		Vector3 light_right = cross(global_up, -light_dir);
+		normalize(light_right);
+		Vector3 light_up    = cross(-light_dir, light_right);
+		normalize(light_up);
+
+		Matrix4x4 light_view;
+		light_view.x = { light_right.x, light_right.y, light_right.z, 0.0f };
+		light_view.y = { light_up.x, light_up.y, light_up.z, 0.0f };
+		light_view.z = { -light_dir.x, -light_dir.y, -light_dir.z, 0.0f };
+		light_view.t = { light_pos.x, light_pos.y, light_pos.z, 1.0f };
+		invert(light_view);
+		// { char b[512]; logi(RW, "v %s", to_string(b, sizeof(b), real_view)); }
+		// { char b[512]; logi(RW, "l %s", to_string(b, sizeof(b), light_view)); }
+		// { char b[512]; logi(RW, "d %s", to_string(b, sizeof(b), light_dir)); }
+
+		// Compute light projection matrix.
+		float lightProj[16];
+		float mtxLightViewProjCrop[16];
+		bx::mtxProj(lightProj
+			, fdeg(lid.shader[si].spot_angle) * 2.0f
+			, 1.0f // Square depth texture.
+			, 0.1
+			, lid.shader[si].range
+			, caps->homogeneousDepth
+			, bx::Handedness::Right
+			);
+		Matrix4x4 light_proj = from_array(lightProj);
+
+		const float sy = caps->originBottomLeft ? 0.5f : -0.5f;
+		const float sz = caps->homogeneousDepth ? 0.5f :  1.0f;
+		const float tz = caps->homogeneousDepth ? 0.5f :  0.0f;
+		float mtxCrop[16] =
+		{
+			0.5f, 0.0f, 0.0f, 0.0f,
+			0.0f,   sy, 0.0f, 0.0f,
+			0.0f, 0.0f, sz,   0.0f,
+			0.5f, 0.5f, tz,   1.0f,
+		};
+
+		lid.shader[si].mvp = light_view * light_proj * from_array(mtxCrop);
+		// { char b[512]; logi(RW, "mvp %s", to_string(b, sizeof(b), lid.shader[si].mvp)); }
+
+		Vector4 rect = { 0 + i*1024.0f, 4096, 1024, 1024 };
+
+		lid.shader[si].atlas_u = rect.x / _pipeline->_shadow_map_resolution;
+		lid.shader[si].atlas_v = 1.0f - ((rect.y + rect.z) / _pipeline->_shadow_map_resolution);
+		lid.shader[si].map_size = rect.w / _pipeline->_shadow_map_resolution;
+
+		bgfx::setViewRect(View::SM_SPOT_0 + i, rect.x, rect.y, rect.z, rect.w);
+		bgfx::setViewFrameBuffer(View::SM_SPOT_0 + i, _shadow_map_frame_buffer);
+		bgfx::setViewClear(View::SM_SPOT_0 + i, BGFX_CLEAR_COLOR | BGFX_CLEAR_DEPTH, 0xffffffff, 1.0f, 0);
+		bgfx::setViewTransform(View::SM_SPOT_0 + i, to_float_ptr(light_view), to_float_ptr(light_proj));
+
+		_mesh_manager.draw(View::SM_SPOT_0 + i, *_scene_graph, NULL, shadow_draw_override);
+	}
+#endif // if 1
 
 	// Set lighting data.
 	Vector4 h;
@@ -644,15 +740,15 @@ void RenderWorld::render(const Matrix4x4 &real_view, const Matrix4x4 &real_proj)
 	h.w = 0.0f;
 	bgfx::setUniform(_u_lights_num, &h);
 	bgfx::setUniform(_u_lights_data, (char *)lid.shader, lid.size*sizeof(*lid.shader) / sizeof(Vector4));
-	bgfx::touch(VIEW_LIGHTS);
+	bgfx::touch(View::LIGHTS);
 
 	// Render objects.
-	_mesh_manager.draw(VIEW_MESH, *_scene_graph, &light_view_proj[0]);
-	_sprite_manager.draw(VIEW_SPRITE_0);
+	_mesh_manager.draw(View::MESH, *_scene_graph, &light_view_proj[0]);
+	_sprite_manager.draw(View::SPRITE_0);
 
 	// Render outlines.
-	_mesh_manager.draw(VIEW_SELECTION, *_scene_graph, NULL, selection_draw_override);
-	_sprite_manager.draw(VIEW_SELECTION, selection_draw_override);
+	_mesh_manager.draw(View::SELECTION, *_scene_graph, NULL, selection_draw_override);
+	_sprite_manager.draw(View::SELECTION, selection_draw_override);
 }
 
 void RenderWorld::debug_draw(DebugLine &dl)
@@ -953,15 +1049,8 @@ void RenderWorld::MeshManager::draw(u8 view_id, SceneGraph &scene_graph, const M
 		if (draw_override) {
 			draw_override(view_id, _data.unit[ii], _render_world);
 		} else {
-			// Bind shadow maps.
-		#define SHADOW_MAP_0 10
-			for (u32 i = 0; i < _render_world->_num_cascades; ++i) {
-				bgfx::setTexture(SHADOW_MAP_0 + i
-					, _render_world->_u_shadow_map[i]
-					, bgfx::getTexture(_render_world->_shadow_map_frame_buffer[i])
-					);
-			}
-			// Bind light matrices.
+#define SHADOW_MAP_0 10
+			bgfx::setTexture(SHADOW_MAP_0, _render_world->_u_shadow_map, bgfx::getTexture(_render_world->_shadow_map_frame_buffer));
 			bgfx::setUniform(_render_world->_u_light_view_proj, light_view_proj, _render_world->_num_cascades);
 
 			_data.material[ii]->bind(view_id);

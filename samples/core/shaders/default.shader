@@ -206,10 +206,7 @@ bgfx_shaders = {
 			vec2 v_texcoord0 : TEXCOORD0 = vec2(0.0, 0.0);
 			vec3 v_position  : TEXCOORD1 = vec3(0.0, 0.0, 0.0);
 			vec3 v_camera    : TEXCOORD2 = vec3(0.0, 0.0, 0.0);
-			vec4 v_shadow0   : TEXCOORD3 = vec4(0.0, 0.0, 0.0, 0.0);
-			vec4 v_shadow1   : TEXCOORD4 = vec4(0.0, 0.0, 0.0, 0.0);
-			vec4 v_shadow2   : TEXCOORD5 = vec4(0.0, 0.0, 0.0, 0.0);
-			vec4 v_shadow3   : TEXCOORD6 = vec4(0.0, 0.0, 0.0, 0.0);
+			vec4 v_shadow    : TEXCOORD3 = vec4(0.0, 0.0, 0.0, 0.0);
 
 			vec3 a_position  : POSITION;
 			vec3 a_normal    : NORMAL;
@@ -226,12 +223,10 @@ bgfx_shaders = {
 		#else
 			$input a_position, a_normal, a_tangent, a_bitangent, a_texcoord0
 		#endif
-			$output v_normal, v_tangent, v_bitangent, v_texcoord0, v_position, v_camera, v_shadow0, v_shadow1, v_shadow2, v_shadow3
+			$output v_normal, v_tangent, v_bitangent, v_texcoord0, v_position, v_camera, v_shadow
 		"""
 
 		vs_code = """
-		#define MAX_NUM_CASCADES 4
-			uniform mat4 u_light_view_proj[MAX_NUM_CASCADES];
 			uniform vec4 u_use_normal_map;
 
 			void main()
@@ -266,15 +261,12 @@ bgfx_shaders = {
 
 				v_texcoord0 = a_texcoord0;
 				vec3 pos_offset = a_position + a_normal * 0.01;
-				v_shadow0 = mul(mul(u_light_view_proj[0], model), vec4(pos_offset, 1.0));
-				v_shadow1 = mul(mul(u_light_view_proj[1], model), vec4(pos_offset, 1.0));
-				v_shadow2 = mul(mul(u_light_view_proj[2], model), vec4(pos_offset, 1.0));
-				v_shadow3 = mul(mul(u_light_view_proj[3], model), vec4(pos_offset, 1.0));
+				v_shadow = mul(model, vec4(pos_offset, 1.0));
 			}
 		"""
 
 		fs_input_output = """
-			$input v_normal, v_tangent, v_bitangent, v_texcoord0, v_position, v_camera, v_shadow0, v_shadow1, v_shadow2, v_shadow3
+			$input v_normal, v_tangent, v_bitangent, v_texcoord0, v_position, v_camera, v_shadow
 		"""
 
 		code = """
@@ -317,7 +309,7 @@ bgfx_shaders = {
 				vec3 n = normalize(normal); // Fragment normal.
 				vec3 v = normalize(v_camera); // Versor from fragment to camera pos.
 				vec3 f0 = mix(vec3_splat(0.04), albedo, metallic);
-				vec3 radiance = calc_lighting(tbn, n, v, v_position, v_shadow0, v_shadow1, v_shadow2, v_shadow3, albedo, metallic, roughness, f0);
+				vec3 radiance = calc_lighting(tbn, n, v, v_position, v_shadow, albedo, metallic, roughness, f0);
 				radiance = radiance / (radiance + vec3_splat(1.0)); // Tone-mapping.
 		#endif // !defined(NO_LIGHT)
 
