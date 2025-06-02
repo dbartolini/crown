@@ -14,8 +14,7 @@ public class CounterLabel : Gtk.Box
 		Object(orientation: Gtk.Orientation.HORIZONTAL);
 
 		_label = new Gtk.Label("");
-		_label.get_style_context().add_class("counter-label");
-		_label.set_visible(true);
+		_label.add_css_class("counter-label");
 
 		this.append(_label);
 	}
@@ -221,7 +220,7 @@ public class ConsoleView : Gtk.Box
 		_text_view_controller_motion.motion.connect(on_motion_notify);
 		_text_view.add_controller(_text_view_controller_motion);
 
-		this.get_style_context().add_class("console-view");
+		this.add_css_class("console-view");
 
 		_console_view_valid = true;
 	}

@@ -1013,8 +1013,8 @@ public class ProjectBrowser : Gtk.Box
 		_toggle_folder_view_image = new Gtk.Image.from_icon_name("level-tree-symbolic");
 		_toggle_folder_view = new Gtk.Button();
 		_toggle_folder_view.set_child(_toggle_folder_view_image);
-		_toggle_folder_view.get_style_context().add_class("flat");
-		_toggle_folder_view.get_style_context().add_class("image-button");
+		_toggle_folder_view.add_css_class("flat");
+		_toggle_folder_view.add_css_class("image-button");
 		_toggle_folder_view.halign = Gtk.Align.END;
 		_toggle_folder_view.hexpand = true;
 		_toggle_folder_view.can_focus = false;
@@ -1125,8 +1125,8 @@ public class ProjectBrowser : Gtk.Box
 		_sort_items_popover.set_child(_sort_items_box);
 		_sort_items = new Gtk.MenuButton();
 		_sort_items.set_child(new Gtk.Image.from_icon_name("list-sort"));
-		_sort_items.get_style_context().add_class("flat");
-		_sort_items.get_style_context().add_class("image-button");
+		_sort_items.add_css_class("flat");
+		_sort_items.add_css_class("image-button");
 		_sort_items.can_focus = false;
 		_sort_items.set_popover(_sort_items_popover);
 
@@ -1134,8 +1134,8 @@ public class ProjectBrowser : Gtk.Box
 		_toggle_icon_view_image = new Gtk.Image.from_icon_name("browser-list-view");
 		_toggle_icon_view = new Gtk.Button();
 		_toggle_icon_view.set_child(_toggle_icon_view_image);
-		_toggle_icon_view.get_style_context().add_class("flat");
-		_toggle_icon_view.get_style_context().add_class("image-button");
+		_toggle_icon_view.add_css_class("flat");
+		_toggle_icon_view.add_css_class("image-button");
 		_toggle_icon_view.can_focus = false;
 		_toggle_icon_view.clicked.connect(() => {
 				Gtk.TreePath path;

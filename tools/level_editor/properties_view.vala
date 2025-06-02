@@ -137,7 +137,7 @@ public class PropertiesView : Gtk.Box
 		_stack.add_named(_scrolled_window, PROPERTIES);
 
 		this.append(_stack);
-		this.get_style_context().add_class("properties-view");
+		this.add_css_class("properties-view");
 
 		db._project.project_reset.connect(on_project_reset);
 	}
@@ -175,9 +175,9 @@ public class PropertiesView : Gtk.Box
 
 				if (component_id != GUID_ZERO) {
 					if (id == _db.object_owner(component_id))
-						cv._expander.get_style_context().remove_class("inherited");
+						cv._expander.remove_css_class("inherited");
 					else
-						cv._expander.get_style_context().add_class("inherited");
+						cv._expander.add_css_class("inherited");
 				}
 
 				cv._expander.expanded = was_expanded;

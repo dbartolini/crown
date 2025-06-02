@@ -67,7 +67,7 @@ public class NewProject : Gtk.Box
 		_button_back.action_name = "app.open-projects-list";
 
 		_button_create = new Gtk.Button.with_label("Create");
-		_button_create.get_style_context().add_class("suggested-action");
+		_button_create.add_css_class("suggested-action");
 		_button_create.clicked.connect(() => {
 				if (_entry_name.text == "") {
 					_label_message.label = "Choose project name";

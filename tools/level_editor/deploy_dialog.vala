@@ -36,7 +36,7 @@ public Gtk.Button make_deploy_button(TargetPlatform platform)
 	btn.margin_end = 12;
 	btn.margin_top = 12;
 	btn.halign = Gtk.Align.FILL;
-	btn.get_style_context().add_class("suggested-action");
+	btn.add_css_class("suggested-action");
 	return btn;
 }
 
@@ -69,7 +69,7 @@ public class DeployerPage : Gtk.Box
 		p1l.valign = Gtk.Align.CENTER;
 
 		var p2l = new Gtk.Label(null);
-		p2l.get_style_context().add_class("colorfast-link");
+		p2l.add_css_class("colorfast-link");
 		p2l.set_markup(p2);
 		p2l.valign = Gtk.Align.CENTER;
 		p2l.activate_link.connect(() => {

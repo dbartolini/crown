@@ -44,7 +44,7 @@ public Gtk.Box restart_compiler(string markup)
 	h1.set_markup(markup);
 
 	Gtk.Label p = new Gtk.Label(null);
-	p.get_style_context().add_class("colorfast-link");
+	p.add_css_class("colorfast-link");
 	p.set_markup("Fix errors and <a href=\"restart\">restart the compiler</a> to continue.");
 	p.activate_link.connect(() => {
 			GLib.Application.get_default().activate_action("restart-backend", null);
@@ -105,7 +105,7 @@ public Gtk.Dialog new_resource_changed_dialog(Gtk.Window? parent, string resourc
 		);
 	Gtk.Widget btn;
 	btn = md.add_button("Close _without Saving", Gtk.ResponseType.NO);
-	btn.get_style_context().add_class("destructive-action");
+	btn.add_css_class("destructive-action");
 	md.add_button("_Cancel", Gtk.ResponseType.CANCEL);
 	md.add_button("_Save", Gtk.ResponseType.YES);
 	md.set_default_response(Gtk.ResponseType.YES);

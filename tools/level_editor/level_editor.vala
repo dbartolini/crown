@@ -914,8 +914,8 @@ public class LevelEditorApplication : Gtk.Application
 			;
 		_game_run = new Gtk.Button();
 		_game_run.set_child(_game_run_stop_image);
-		_game_run.get_style_context().add_class("suggested-action");
-		_game_run.get_style_context().add_class("image-button");
+		_game_run.add_css_class("suggested-action");
+		_game_run.add_css_class("image-button");
 		_game_run.action_name = "app.test-level";
 		_game_run.can_focus = false;
 
@@ -2732,7 +2732,7 @@ public class LevelEditorApplication : Gtk.Application
 		Gtk.Widget btn;
 		md.add_button("_Cancel", Gtk.ResponseType.CANCEL);
 		btn = md.add_button("_Delete", Gtk.ResponseType.YES);
-		btn.get_style_context().add_class("destructive-action");
+		btn.add_css_class("destructive-action");
 		md.set_default_response(Gtk.ResponseType.CANCEL);
 
 		md.response.connect((response_id) => {
@@ -3030,7 +3030,7 @@ public class LevelEditorApplication : Gtk.Application
 		Gtk.Widget btn;
 		md.add_button("_No", Gtk.ResponseType.NO);
 		btn = md.add_button("_Yes", Gtk.ResponseType.YES);
-		btn.get_style_context().add_class("destructive-action");
+		btn.add_css_class("destructive-action");
 		return md;
 	}
 

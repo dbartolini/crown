@@ -59,17 +59,17 @@ public class InputVector4 : InputField, Gtk.Box
 
 		// Widgets
 		_x = new InputDouble(xyz.x, min.x, max.x, preview_decimals);
-		_x.get_style_context().add_class("axis");
-		_x.get_style_context().add_class("x");
+		_x.add_css_class("axis");
+		_x.add_css_class("x");
 		_y = new InputDouble(xyz.y, min.y, max.y, preview_decimals);
-		_y.get_style_context().add_class("axis");
-		_y.get_style_context().add_class("y");
+		_y.add_css_class("axis");
+		_y.add_css_class("y");
 		_z = new InputDouble(xyz.z, min.z, max.z, preview_decimals);
-		_z.get_style_context().add_class("axis");
-		_z.get_style_context().add_class("z");
+		_z.add_css_class("axis");
+		_z.add_css_class("z");
 		_w = new InputDouble(xyz.w, min.w, max.w, preview_decimals);
-		_w.get_style_context().add_class("axis");
-		_w.get_style_context().add_class("w");
+		_w.add_css_class("axis");
+		_w.add_css_class("w");
 
 		_x.value_changed.connect(on_value_changed);
 		_y.value_changed.connect(on_value_changed);
