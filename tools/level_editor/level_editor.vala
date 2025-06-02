@@ -863,7 +863,7 @@ public class LevelEditorApplication : Gtk.Application
 		_editor_stack_disconnected_label = new Gtk.Label("Disconnected.");
 		_editor_stack.add_child(_editor_stack_disconnected_label);
 		_editor_stack_oops_label = new Gtk.Label(null);
-		_editor_stack_oops_label.get_style_context().add_class("colorfast-link");
+		_editor_stack_oops_label.add_css_class("colorfast-link");
 		_editor_stack_oops_label.set_markup("Something went wrong.\rTry to <a href=\"restart\">restart this view</a>.");
 		_editor_stack_oops_label.activate_link.connect(() => {
 				activate_action("restart-editor-view", null);
@@ -880,7 +880,7 @@ public class LevelEditorApplication : Gtk.Application
 		_resource_preview_disconnected_label = new Gtk.Label("Disconnected");
 		_resource_preview_stack.add_child(_resource_preview_disconnected_label);
 		_resource_preview_oops_label = new Gtk.Label(null);
-		_resource_preview_oops_label.get_style_context().add_class("colorfast-link");
+		_resource_preview_oops_label.add_css_class("colorfast-link");
 		_resource_preview_oops_label.set_markup("Something went wrong.\rTry to <a href=\"restart\">restart this view</a>.");
 		_resource_preview_oops_label.activate_link.connect(() => {
 				restart_resource_preview.begin((obj, res) => {
@@ -914,8 +914,8 @@ public class LevelEditorApplication : Gtk.Application
 			;
 		_game_run = new Gtk.Button();
 		_game_run.set_child(_game_run_stop_image);
-		_game_run.get_style_context().add_class("suggested-action");
-		_game_run.get_style_context().add_class("image-button");
+		_game_run.add_css_class("suggested-action");
+		_game_run.add_css_class("image-button");
 		_game_run.action_name = "app.test-level";
 		_game_run.can_focus = false;
 
@@ -1523,7 +1523,7 @@ public class LevelEditorApplication : Gtk.Application
 	Gtk.Label compiler_crashed_label()
 	{
 		Gtk.Label label = new Gtk.Label(null);
-		label.get_style_context().add_class("colorfast-link");
+		label.add_css_class("colorfast-link");
 		label.set_markup("Data Compiler disconnected.\rTry to <a href=\"restart\">restart the compiler</a> to continue.");
 		label.activate_link.connect(() => {
 				restart_backend.begin(_project.source_dir(), _level._name != null ? _level._name : "");
@@ -1536,7 +1536,7 @@ public class LevelEditorApplication : Gtk.Application
 	Gtk.Label compiler_failed_compilation_label()
 	{
 		Gtk.Label label = new Gtk.Label(null);
-		label.get_style_context().add_class("colorfast-link");
+		label.add_css_class("colorfast-link");
 		label.set_markup("Data compilation failed.\rFix errors and <a href=\"restart\">restart the compiler</a> to continue.");
 		label.activate_link.connect(() => {
 				restart_backend.begin(_project.source_dir(), _level._name != null ? _level._name : "");
@@ -2427,7 +2427,7 @@ public class LevelEditorApplication : Gtk.Application
 			);
 		Gtk.Widget btn;
 		btn = md.add_button("Close _without Saving", Gtk.ResponseType.NO);
-		btn.get_style_context().add_class("destructive-action");
+		btn.add_css_class("destructive-action");
 		md.add_button("_Cancel", Gtk.ResponseType.CANCEL);
 		md.add_button("_Save", Gtk.ResponseType.YES);
 		md.set_default_response(Gtk.ResponseType.YES);
@@ -3005,7 +3005,7 @@ public class LevelEditorApplication : Gtk.Application
 		Gtk.Widget btn;
 		md.add_button("_Cancel", Gtk.ResponseType.CANCEL);
 		btn = md.add_button("_Delete", Gtk.ResponseType.YES);
-		btn.get_style_context().add_class("destructive-action");
+		btn.add_css_class("destructive-action");
 		md.set_default_response(Gtk.ResponseType.CANCEL);
 
 		md.response.connect((response_id) => {
@@ -3303,7 +3303,7 @@ public class LevelEditorApplication : Gtk.Application
 		Gtk.Widget btn;
 		md.add_button("_No", Gtk.ResponseType.NO);
 		btn = md.add_button("_Yes", Gtk.ResponseType.YES);
-		btn.get_style_context().add_class("destructive-action");
+		btn.add_css_class("destructive-action");
 		return md;
 	}
 

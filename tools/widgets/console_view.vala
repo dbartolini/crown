@@ -9,7 +9,7 @@ public class CounterLabel : Gtk.Label
 {
 	public CounterLabel()
 	{
-		this.get_style_context().add_class("counter-label");
+		this.add_css_class("counter-label");
 		this.set_visible(true);
 	}
 
@@ -202,7 +202,7 @@ public class ConsoleView : Gtk.Box
 		_text_view_controller_motion.motion.connect(on_motion_notify);
 		_text_view.add_controller(_text_view_controller_motion);
 
-		this.get_style_context().add_class("console-view");
+		this.add_css_class("console-view");
 
 		_console_view_valid = true;
 	}

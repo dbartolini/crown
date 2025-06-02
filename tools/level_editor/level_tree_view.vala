@@ -185,8 +185,8 @@ public class LevelTreeView : Gtk.Box
 		_sort_items_popover.set_child(_sort_items_box);
 		_sort_items = new Gtk.MenuButton();
 		_sort_items.set_child(new Gtk.Image.from_icon_name("list-sort"));
-		_sort_items.get_style_context().add_class("flat");
-		_sort_items.get_style_context().add_class("image-button");
+		_sort_items.add_css_class("flat");
+		_sort_items.add_css_class("image-button");
 		_sort_items.can_focus = false;
 		_sort_items.set_popover(_sort_items_popover);
 

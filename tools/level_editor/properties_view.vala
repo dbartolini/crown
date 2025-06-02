@@ -142,7 +142,7 @@ public class PropertiesView : Gtk.Stack
 		this.add_child(_scrolled_window);
 		this.add_child(_unknown_object_type);
 
-		this.get_style_context().add_class("properties-view");
+		this.add_css_class("properties-view");
 
 		db._project.project_reset.connect(on_project_reset);
 
@@ -210,7 +210,7 @@ public class PropertiesView : Gtk.Stack
 				if (id == owner_id)
 					expander.get_style_context().remove_class("inherited");
 				else
-					expander.get_style_context().add_class("inherited");
+					expander.add_css_class("inherited");
 
 				expander.show();
 				expander.expanded = was_expanded;

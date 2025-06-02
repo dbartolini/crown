@@ -565,7 +565,7 @@ public class SpriteImportDialog : Gtk.Window
 				close();
 			});
 		_import = new Gtk.Button.with_label("Import");
-		_import.get_style_context().add_class("suggested-action");
+		_import.add_css_class("suggested-action");
 		_import.clicked.connect(on_import);
 
 		_header_bar = new Gtk.HeaderBar();

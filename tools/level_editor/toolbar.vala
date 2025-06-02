@@ -64,8 +64,8 @@ public class Toolbar : Gtk.Box
 		if (action_target != null)
 			btn.action_target = action_target;
 		btn.can_focus = false;
-		btn.get_style_context().add_class("flat");
-		btn.get_style_context().add_class("image-button");
+		btn.add_css_class("flat");
+		btn.add_css_class("image-button");
 
 		var img = new Gtk.Image.from_icon_name(icon_name);
 		img.margin_bottom

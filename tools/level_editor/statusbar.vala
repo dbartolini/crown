@@ -31,14 +31,14 @@ public class Statusbar : Gtk.Box
 		_temporary_message = new Gtk.Label("");
 		_donate = new Gtk.Button.from_icon_name("hearth-symbolic");
 		_donate.can_focus = false;
-		_donate.get_style_context().add_class("flat");
+		_donate.add_css_class("flat");
 		_donate.clicked.connect(() => {
 				GLib.Application.get_default().activate_action("donate", null);
 			});
 		_version = new Gtk.Label(null);
-		_version.get_style_context().add_class("colorfast-link");
+		_version.add_css_class("colorfast-link");
 		_version.set_markup("<a href=\"\">" + CROWN_VERSION + "</a>");
-		_version.get_style_context().add_class("version-label");
+		_version.add_css_class("version-label");
 		_version.can_focus = false;
 		_version.activate_link.connect(() => {
 				GLib.Application.get_default().activate_action("changelog", null);
@@ -49,7 +49,7 @@ public class Statusbar : Gtk.Box
 		this.prepend(_temporary_message);
 		this.append(_version);
 		this.append(_donate);
-		this.get_style_context().add_class("statusbar");
+		this.add_css_class("statusbar");
 	}
 
 	~Statusbar()

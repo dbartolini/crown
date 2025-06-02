@@ -63,14 +63,14 @@ public class InputQuaternion : InputField, Gtk.Box
 
 		_rotation = QUATERNION_IDENTITY;
 		_x = new InputDouble(0.0, -180.0, 180.0, preview_decimals, edit_decimals);
-		_x.get_style_context().add_class("axis");
-		_x.get_style_context().add_class("x");
+		_x.add_css_class("axis");
+		_x.add_css_class("x");
 		_y = new InputDouble(0.0, -180.0, 180.0, preview_decimals, edit_decimals);
-		_y.get_style_context().add_class("axis");
-		_y.get_style_context().add_class("y");
+		_y.add_css_class("axis");
+		_y.add_css_class("y");
 		_z = new InputDouble(0.0, -180.0, 180.0, preview_decimals, edit_decimals);
-		_z.get_style_context().add_class("axis");
-		_z.get_style_context().add_class("z");
+		_z.add_css_class("axis");
+		_z.add_css_class("z");
 
 		_x.value_changed.connect(on_value_changed);
 		_y.value_changed.connect(on_value_changed);

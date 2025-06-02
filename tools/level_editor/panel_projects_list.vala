@@ -44,15 +44,15 @@ public class ProjectRow : Gtk.ListBoxRow
 		_hbox.prepend(_vbox);
 
 		_remove_button = new Gtk.Button.from_icon_name("list-remove-symbolic");
-		_remove_button.get_style_context().add_class("flat");
-		_remove_button.get_style_context().add_class("destructive-action");
+		_remove_button.add_css_class("flat");
+		_remove_button.add_css_class("destructive-action");
 		_remove_button.set_halign(Gtk.Align.CENTER);
 		_remove_button.set_valign(Gtk.Align.CENTER);
 		_remove_button.set_margin_end(12);
 		_hbox.append(_remove_button);
 
 		_open_button = new Gtk.Button.with_label("Open");
-		_open_button.get_style_context().add_class("flat");
+		_open_button.add_css_class("flat");
 		_open_button.set_halign(Gtk.Align.CENTER);
 		_open_button.set_valign(Gtk.Align.CENTER);
 		// _open_button.set_margin_end(12);
@@ -130,7 +130,7 @@ public class PanelProjectsList : Gtk.ScrolledWindow
 				GLib.Application.get_default().activate_action("add-project", null);
 			});
 		_button_new_project = new Gtk.Button.with_label("Create New");
-		_button_new_project.get_style_context().add_class("suggested-action");
+		_button_new_project.add_css_class("suggested-action");
 		_button_new_project.clicked.connect(() => {
 				var app = (LevelEditorApplication)GLib.Application.get_default();
 				app.show_panel("panel_new_project", Gtk.StackTransitionType.SLIDE_DOWN);

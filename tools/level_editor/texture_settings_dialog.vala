@@ -146,7 +146,7 @@ public class TextureSettingsDialog : Gtk.Window
 				close();
 			});
 		_save = new Gtk.Button.with_label("Save & Reload");
-		_save.get_style_context().add_class("suggested-action");
+		_save.add_css_class("suggested-action");
 		_save.clicked.connect(() => {
 				save();
 			});
