@@ -46,8 +46,9 @@ public class PixbufView : Gtk.DrawingArea
 		_zoom = 1.0;
 		_zoom_speed = 0.2;
 
-		_controller_scroll = new Gtk.EventControllerScroll(this, Gtk.EventControllerScrollFlags.VERTICAL);
+		_controller_scroll = new Gtk.EventControllerScroll(Gtk.EventControllerScrollFlags.VERTICAL);
 		_controller_scroll.scroll.connect(on_scroll);
+		this.add_controller(_controller_scroll);
 
 		_filter = Cairo.Filter.NEAREST;
 		_extend = Cairo.Extend.NONE;
@@ -64,10 +65,11 @@ public class PixbufView : Gtk.DrawingArea
 		_pixbuf_pattern.set_extend(_extend);
 	}
 
-	public void on_scroll(double dx, double dy)
+	public bool on_scroll(double dx, double dy)
 	{
 		_zoom = double.min(10.0, double.max(0.25, _zoom - dy * _zoom_speed));
 		this.queue_draw();
+		return Gdk.EVENT_PROPAGATE;
 	}
 
 	public bool on_draw(Cairo.Context cr)

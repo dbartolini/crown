@@ -66,7 +66,7 @@ public class LevelTreeView : Gtk.Box
 	private Gtk.Box _sort_items_box;
 	private Gtk.Popover _sort_items_popover;
 	private Gtk.MenuButton _sort_items;
-	private Gtk.GestureMultiPress _gesture_click;
+	private Gtk.GestureClick _gesture_click;
 	private Gtk.TreeRowReference _units_root;
 	private Gtk.TreeRowReference _sounds_root;
 
@@ -159,41 +159,43 @@ public class LevelTreeView : Gtk.Box
 		_tree_view.headers_visible = false;
 		_tree_view.model = _tree_sort;
 
-		_gesture_click = new Gtk.GestureMultiPress(_tree_view);
+		_gesture_click = new Gtk.GestureClick();
 		_gesture_click.set_propagation_phase(Gtk.PropagationPhase.CAPTURE);
 		_gesture_click.set_button(0);
 		_gesture_click.pressed.connect(on_button_pressed);
+		_tree_view.add_controller(_gesture_click);
 
 		_tree_selection = _tree_view.get_selection();
 		_tree_selection.set_mode(Gtk.SelectionMode.MULTIPLE);
 		_tree_selection.changed.connect(on_tree_selection_changed);
 
-		_scrolled_window = new Gtk.ScrolledWindow(null, null);
-		_scrolled_window.add(_tree_view);
+		_scrolled_window = new Gtk.ScrolledWindow();
+		_scrolled_window.set_child(_tree_view);
 
 		// Setup sort menu button popover.
 		_sort_items_box = new Gtk.Box(Gtk.Orientation.VERTICAL, 0);
 
+		/*
 		Gtk.RadioButton? button = null;
 		for (int i = 0; i < SortMode.COUNT; ++i)
 			button = add_sort_item(button, (SortMode)i);
+		*/
 
-		_sort_items_box.show_all();
-		_sort_items_popover = new Gtk.Popover(null);
-		_sort_items_popover.add(_sort_items_box);
+		_sort_items_popover = new Gtk.Popover();
+		_sort_items_popover.set_child(_sort_items_box);
 		_sort_items = new Gtk.MenuButton();
-		_sort_items.add(new Gtk.Image.from_icon_name("list-sort", Gtk.IconSize.SMALL_TOOLBAR));
+		_sort_items.set_child(new Gtk.Image.from_icon_name("list-sort"));
 		_sort_items.get_style_context().add_class("flat");
 		_sort_items.get_style_context().add_class("image-button");
 		_sort_items.can_focus = false;
 		_sort_items.set_popover(_sort_items_popover);
 
 		var tree_control = new Gtk.Box(Gtk.Orientation.HORIZONTAL, 0);
-		tree_control.pack_start(_filter_entry, true, true);
-		tree_control.pack_end(_sort_items, false, false);
+		tree_control.prepend(_filter_entry);
+		tree_control.append(_sort_items);
 
-		this.pack_start(tree_control, false, true, 0);
-		this.pack_start(_scrolled_window, true, true, 0);
+		this.prepend(tree_control);
+		this.prepend(_scrolled_window);
 	}
 
 	private void on_button_pressed(int n_press, double x, double y)
@@ -261,8 +263,7 @@ public class LevelTreeView : Gtk.Box
 				}
 			}
 
-			Gtk.Popover menu = new Gtk.Popover.from_model(null, menu_model);
-			menu.set_relative_to(_tree_view);
+			Gtk.PopoverMenu menu = new Gtk.PopoverMenu.from_model(menu_model);
 			menu.set_pointing_to({ (int)x, (int)y, 1, 1 });
 			menu.set_position(Gtk.PositionType.BOTTOM);
 			menu.popup();
@@ -566,6 +567,7 @@ public class LevelTreeView : Gtk.Box
 		_tree_selection.changed.connect(on_tree_selection_changed);
 	}
 
+	/*
 	private Gtk.RadioButton add_sort_item(Gtk.RadioButton? group, SortMode mode)
 	{
 		var button = new Gtk.RadioButton.with_label_from_widget(group, mode.to_label());
@@ -582,9 +584,10 @@ public class LevelTreeView : Gtk.Box
 				_tree_filter.refilter();
 				_sort_items_popover.popdown();
 			});
-		_sort_items_box.pack_start(button, false, false);
+		_sort_items_box.prepend(button, false, false);
 		return button;
 	}
+	*/
 }
 
 } /* namespace Crown */

@@ -36,7 +36,7 @@ public class InputColor3 : InputField, Gtk.ColorButton
 		set
 		{
 			Vector3 rgb = (Vector3)value;
-			this.set_rgba({ rgb.x, rgb.y, rgb.z, 1.0 });
+			this.set_rgba({ (float)rgb.x, (float)rgb.y, (float)rgb.z, 1.0f });
 		}
 	}
 

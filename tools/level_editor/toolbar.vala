@@ -23,41 +23,40 @@ public class Toolbar : Gtk.Box
 
 	private void add_tool_buttons()
 	{
-		this.pack_start(make_toggle_button("app.tool", new GLib.Variant.int32(ToolType.PLACE), "tool-place"));
-		this.pack_start(make_toggle_button("app.tool", new GLib.Variant.int32(ToolType.MOVE), "tool-move"));
-		this.pack_start(make_toggle_button("app.tool", new GLib.Variant.int32(ToolType.ROTATE), "tool-rotate"));
+		this.prepend(make_toggle_button("app.tool", new GLib.Variant.int32(ToolType.PLACE), "tool-place"));
+		this.prepend(make_toggle_button("app.tool", new GLib.Variant.int32(ToolType.MOVE), "tool-move"));
+		this.prepend(make_toggle_button("app.tool", new GLib.Variant.int32(ToolType.ROTATE), "tool-rotate"));
 		var last = make_toggle_button("app.tool", new GLib.Variant.int32(ToolType.SCALE), "tool-scale");
 		last.margin_bottom = last.margin_bottom + 8;
-		this.pack_start(last);
+		this.prepend(last);
 	}
 
 	private void add_snap_buttons()
 	{
-		this.pack_start(make_toggle_button("app.snap", new GLib.Variant.int32(SnapMode.RELATIVE), "reference-local"));
+		this.prepend(make_toggle_button("app.snap", new GLib.Variant.int32(SnapMode.RELATIVE), "reference-local"));
 		var last = make_toggle_button("app.snap", new GLib.Variant.int32(SnapMode.ABSOLUTE), "reference-world");
 		last.margin_bottom = last.margin_bottom + 8;
-		this.pack_start(last);
+		this.prepend(last);
 	}
 
 	private void add_reference_system_buttons()
 	{
-		this.pack_start(make_toggle_button("app.reference-system", new GLib.Variant.int32(ReferenceSystem.LOCAL), "axis-local"));
+		this.prepend(make_toggle_button("app.reference-system", new GLib.Variant.int32(ReferenceSystem.LOCAL), "axis-local"));
 		var last = make_toggle_button("app.reference-system", new GLib.Variant.int32(ReferenceSystem.WORLD), "axis-world");
 		last.margin_bottom = last.margin_bottom + 8;
-		this.pack_start(last);
+		this.prepend(last);
 	}
 
 	private void add_snap_to_grid_buttons()
 	{
 		var last = make_toggle_button("app.snap-to-grid", null, "snap-to-grid");
 		last.margin_bottom = last.margin_bottom + 8;
-		this.pack_start(last);
+		this.prepend(last);
 	}
 
 	private Gtk.ToggleButton make_toggle_button(string action_name
 		, GLib.Variant? action_target
 		, string icon_name
-		, Gtk.IconSize icon_size = Gtk.IconSize.LARGE_TOOLBAR
 		)
 	{
 		var btn = new Gtk.ToggleButton();
@@ -68,14 +67,14 @@ public class Toolbar : Gtk.Box
 		btn.get_style_context().add_class("flat");
 		btn.get_style_context().add_class("image-button");
 
-		var img = new Gtk.Image.from_icon_name(icon_name, icon_size);
+		var img = new Gtk.Image.from_icon_name(icon_name);
 		img.margin_bottom
 			= img.margin_end
 			= img.margin_start
 			= img.margin_top
 			= 8
 			;
-		btn.add(img);
+		btn.set_child(img);
 
 		return btn;
 	}

@@ -276,7 +276,7 @@ public class FBXImportDialog : Gtk.Window
 		_general_set.add_property_grid_optional(cv, "Animation", _options.import_animation);
 
 		_box = new Gtk.Box(Gtk.Orientation.VERTICAL, 0);
-		_box.pack_start(_general_set, false, false);
+		_box.prepend(_general_set);
 
 		_cancel = new Gtk.Button.with_label("Cancel");
 		_cancel.clicked.connect(() => {
@@ -287,18 +287,17 @@ public class FBXImportDialog : Gtk.Window
 		_import.clicked.connect(import);
 
 		_header_bar = new Gtk.HeaderBar();
-		_header_bar.title = "Import FBX...";
-		_header_bar.show_close_button = true;
+		_header_bar.show_title_buttons = true;
 		_header_bar.pack_start(_cancel);
 		_header_bar.pack_end(_import);
+		this.title = "Import FBX...";
+		this.set_titlebar(_header_bar);
+		this.set_child(_box);
 
 		_options.import_units.value_changed.connect(on_import_options_changed);
 		_options.import_animation.value_changed.connect(on_import_options_changed);
 		_options.new_skeleton.value_changed.connect(on_import_options_changed);
 		_options.target_skeleton.value_changed.connect(on_import_options_changed);
-
-		this.set_titlebar(_header_bar);
-		this.add(_box);
 	}
 
 	void import()
@@ -905,7 +904,7 @@ public class FBXImporter
 		FBXImportDialog dialog = new FBXImportDialog(database, destination_dir, filenames, import_result);
 		dialog.set_transient_for(parent_window);
 		dialog.set_modal(true);
-		dialog.show_all();
+		dialog.show();
 		dialog.present();
 	}
 }

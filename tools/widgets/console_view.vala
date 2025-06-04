@@ -13,13 +13,15 @@ public class CounterLabel : Gtk.Label
 		this.set_visible(true);
 	}
 
-	protected override void get_preferred_height(out int minimum_height, out int natural_height)
+/*
+	protected override void get_preferred_size(out Gtk.Requisition minimum_size, out Gtk.Requisition natural_size)
 	{
 		// FIXME: Find a proper way to position/size labels inside Gtk.TextView.
 		// Make Gtk.Label think it only needs 16px vertical to show its text.
-		minimum_height = 1;
-		natural_height = 16;
+		minimum_size.height = 1;
+		natural_size.height = 16;
 	}
+*/
 }
 public class EntryHistory
 {
@@ -111,7 +113,7 @@ public class ConsoleView : Gtk.Box
 	public Gdk.Cursor _pointer_cursor;
 	public bool _cursor_is_hovering_link;
 	public Gtk.TextView _text_view;
-	public Gtk.GestureMultiPress _text_view_gesture_click;
+	public Gtk.GestureClick _text_view_gesture_click;
 	public Gtk.EventControllerMotion _text_view_controller_motion;
 	public Gtk.Overlay _text_view_overlay;
 	public Gtk.ScrolledWindow _scrolled_window;
@@ -133,8 +135,8 @@ public class ConsoleView : Gtk.Box
 		_preferences_dialog = preferences_dialog;
 
 		// Widgets
-		_text_cursor = new Gdk.Cursor.from_name(this.get_display(), "text");
-		_pointer_cursor = new Gdk.Cursor.from_name(this.get_display(), "pointer");
+		_text_cursor = new Gdk.Cursor.from_name("text", null);
+		_pointer_cursor = new Gdk.Cursor.from_name("pointer", null);
 		_cursor_is_hovering_link = false;
 
 		_text_view = new Gtk.TextView();
@@ -157,48 +159,48 @@ public class ConsoleView : Gtk.Box
 		tb.tag_table.add(new Gtk.TextTag("error"));
 		tb.tag_table.add(new Gtk.TextTag("time"));
 
-		this.style_updated.connect(update_style);
-		update_style();
-
 		Gtk.TextIter end_iter;
 		tb.get_end_iter(out end_iter);
 		_scroll_mark = tb.create_mark("scroll", end_iter, true);
 		_time_mark = tb.create_mark("time", end_iter, true);
 
-		_scrolled_window = new Gtk.ScrolledWindow(null, null);
+		_scrolled_window = new Gtk.ScrolledWindow();
 		_scrolled_window.vscrollbar_policy = Gtk.PolicyType.ALWAYS;
-		_scrolled_window.add(_text_view);
+		_scrolled_window.set_child(_text_view);
 
 		_text_view_overlay = new Gtk.Overlay();
-		_text_view_overlay.add(_scrolled_window);
+		_text_view_overlay.set_child(_scrolled_window);
 		_text_view_overlay.add_overlay(clear_button);
 
 		_entry = new InputString();
 		_entry.activate.connect(on_entry_activated);
 
-		_entry_controller_key = new Gtk.EventControllerKey(_entry);
+		_entry_controller_key = new Gtk.EventControllerKey();
 		_entry_controller_key.key_pressed.connect(on_entry_key_pressed);
+		_entry.add_controller(_entry_controller_key);
 
 		_entry_hbox = new Gtk.Box(Gtk.Orientation.HORIZONTAL, 0);
-		_entry_hbox.pack_start(combo, false, false);
-		_entry_hbox.pack_start(_entry, true, true);
+		_entry_hbox.prepend(combo);
+		_entry_hbox.prepend(_entry);
 
 		Gtk.Box hbox = new Gtk.Box(Gtk.Orientation.HORIZONTAL, 0);
-		hbox.pack_start(_entry_hbox, true, true, 0);
+		hbox.prepend(_entry_hbox);
 
-		this.pack_start(_text_view_overlay, true, true, 0);
-		this.pack_start(hbox, false, true, 0);
+		this.prepend(_text_view_overlay);
+		this.prepend(hbox);
 
 		this.destroy.connect(on_destroy);
 
-		_text_view_gesture_click = new Gtk.GestureMultiPress(_text_view);
+		_text_view_gesture_click = new Gtk.GestureClick();
 		_text_view_gesture_click.set_button(0);
 		_text_view_gesture_click.set_propagation_phase(Gtk.PropagationPhase.CAPTURE);
 		_text_view_gesture_click.pressed.connect(on_button_pressed);
 		_text_view_gesture_click.released.connect(on_button_released);
+		_text_view.add_controller(_text_view_gesture_click);
 
-		_text_view_controller_motion = new Gtk.EventControllerMotion(_text_view);
+		_text_view_controller_motion = new Gtk.EventControllerMotion();
 		_text_view_controller_motion.motion.connect(on_motion_notify);
+		_text_view.add_controller(_text_view_controller_motion);
 
 		this.get_style_context().add_class("console-view");
 
@@ -325,8 +327,7 @@ public class ConsoleView : Gtk.Box
 						mi.set_action_and_target_value("app.open-containing", new GLib.Variant.string(resource_path));
 						menu_model.append_item(mi);
 
-						Gtk.Popover menu = new Gtk.Popover.from_model(null, menu_model);
-						menu.set_relative_to(_text_view);
+						Gtk.PopoverMenu menu = new Gtk.PopoverMenu.from_model(menu_model);
 						menu.set_pointing_to({ (int)x, (int)y, 1, 1 });
 						menu.set_position(Gtk.PositionType.BOTTOM);
 						menu.popup();
@@ -409,9 +410,9 @@ public class ConsoleView : Gtk.Box
 			_cursor_is_hovering_link = hovering;
 
 			if (_cursor_is_hovering_link)
-				_text_view.get_window(Gtk.TextWindowType.TEXT).set_cursor(_pointer_cursor);
+				_text_view.set_cursor(_pointer_cursor);
 			else
-				_text_view.get_window(Gtk.TextWindowType.TEXT).set_cursor(_text_cursor);
+				_text_view.set_cursor(_text_cursor);
 		}
 	}
 
@@ -464,9 +465,8 @@ public class ConsoleView : Gtk.Box
 
 			const int MAX_REPETITIONS = 1000;
 			if (_last_message.num_repetitions < MAX_REPETITIONS) {
-				List<unowned Gtk.Widget> widgets = _last_message.anchor.get_widgets();
-				unowned var label_widget = widgets.first();
-				var cl = (CounterLabel)label_widget.data;
+				(unowned Gtk.Widget)[] widgets = _last_message.anchor.get_widgets();
+				var cl = (CounterLabel)widgets[0];
 
 				if (_last_message.num_repetitions == MAX_REPETITIONS - 1)
 					cl.set_markup("%d+".printf(_last_message.num_repetitions));
@@ -612,8 +612,10 @@ public class ConsoleView : Gtk.Box
 			});
 	}
 
-	private void update_style()
+	protected override void css_changed(Gtk.CssStyleChange c)
 	{
+		base.css_changed(c);
+
 		Gtk.TextBuffer tb = _text_view.buffer;
 		Gtk.TextTag tag_warning = tb.tag_table.lookup("warning");
 		Gtk.TextTag tag_error = tb.tag_table.lookup("error");

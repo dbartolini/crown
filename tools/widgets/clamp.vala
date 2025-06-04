@@ -6,41 +6,29 @@
 namespace Crown
 {
 // Drop-in replacement (sort-of) for HdyClamp from libhandy1.
-public class Clamp : Gtk.Container
+public class Clamp : Gtk.Widget
 {
 	private Gtk.Widget _child;
 
 	public Clamp()
 	{
-		base.set_has_window(false);
 		base.set_can_focus(false);
 		base.set_redraw_on_allocate(false);
 
 		this._child = null;
 	}
 
-	public void set_child(Gtk.Widget widget)
+	public void set_child(Gtk.Widget? widget)
 	{
-		if (this._child == null) {
-			widget.set_parent(this);
-			this._child = widget;
-		}
-	}
-
-	public override void remove(Gtk.Widget widget)
-	{
-		if (this._child == widget) {
+		if (widget == null && this._child == widget) {
 			widget.unparent();
 			this._child = null;
 			if (this.get_visible() && widget.get_visible())
 				this.queue_resize_no_redraw();
+		} else if (this._child == null) {
+			widget.set_parent(this);
+			this._child = widget;
 		}
-	}
-
-	public override void forall_internal(bool include_internals, Gtk.Callback callback)
-	{
-		if (this._child != null)
-			callback(this._child);
 	}
 
 	public override Gtk.SizeRequestMode get_request_mode()
@@ -56,7 +44,7 @@ public class Clamp : Gtk.Container
 		return this._child;
 	}
 
-	public override void size_allocate(Gtk.Allocation alloc)
+	public override void size_allocate(int width, int height, int baseline)
 	{
 		if (this._child == null || !this._child.is_visible())
 			return;
@@ -70,7 +58,7 @@ public class Clamp : Gtk.Container
 		child_alloc.x = alloc.x + (alloc.width - child_alloc.width) / 2;
 		child_alloc.y = alloc.y;
 
-		this._child.size_allocate_with_baseline(child_alloc, this.get_allocated_baseline());
+		this._child.size_allocate(width, height, this.get_baseline());
 	}
 
 	public new void get_preferred_size(out Gtk.Requisition minimum_size

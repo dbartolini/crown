@@ -31,8 +31,6 @@ public class PanelNewProject : Gtk.Viewport
 
 	public PanelNewProject(User user, Project project)
 	{
-		this.shadow_type = Gtk.ShadowType.NONE;
-
 		// Data
 		_user = user;
 		_project = project;
@@ -135,8 +133,8 @@ public class PanelNewProject : Gtk.Viewport
 
 		_buttons_box = new Gtk.Box(Gtk.Orientation.HORIZONTAL, 0);
 		_buttons_box.spacing = 6;
-		_buttons_box.pack_end(_button_create, false, true);
-		_buttons_box.pack_end(_button_back, false, true);
+		_buttons_box.append(_button_create);
+		_buttons_box.append(_button_back);
 
 		_grid = new Gtk.Grid();
 		_grid.hexpand = true;
@@ -158,14 +156,13 @@ public class PanelNewProject : Gtk.Viewport
 		_box.margin_top = 32;
 		_box.margin_bottom = 32;
 		_box.spacing = 12;
-		_box.pack_start(_new_project_label, false, true);
-		_box.pack_start(_grid, false, true);
-		_box.pack_start(_label_message, false, true);
-
+		_box.prepend(_new_project_label);
+		_box.prepend(_grid);
+		_box.prepend(_label_message);
 		_clamp = new Clamp();
 		_clamp.set_child(_box);
 
-		this.add(_clamp);
+		this.set_child(_clamp);
 	}
 
 	public void fill_templates_list(string path)

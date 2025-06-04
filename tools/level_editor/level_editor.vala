@@ -308,8 +308,6 @@ public class LevelEditorWindow : Gtk.ApplicationWindow
 		{ "fullscreen", on_fullscreen, null, null }
 	};
 
-	public bool _fullscreen;
-
 	public LevelEditorWindow(Gtk.Application app, Gtk.HeaderBar header_bar)
 	{
 		Object(application: app);
@@ -318,29 +316,20 @@ public class LevelEditorWindow : Gtk.ApplicationWindow
 		this.set_titlebar(header_bar);
 
 		this.title = CROWN_EDITOR_NAME;
-		this.window_state_event.connect(this.on_window_state_event);
-		this.delete_event.connect(this.on_delete_event);
-
-		_fullscreen = false;
+		this.close_request.connect(this.on_close_request);
 
 		this.set_default_size(WINDOW_DEFAULT_WIDTH, WINDOW_DEFAULT_HEIGHT);
 	}
 
 	private void on_fullscreen(GLib.SimpleAction action, GLib.Variant? param)
 	{
-		if (_fullscreen)
+		if (is_fullscreen())
 			unfullscreen();
 		else
 			fullscreen();
 	}
 
-	private bool on_window_state_event(Gdk.EventWindowState ev)
-	{
-		_fullscreen = (ev.new_window_state & Gdk.WindowState.FULLSCREEN) != 0;
-		return Gdk.EVENT_PROPAGATE;
-	}
-
-	private bool on_delete_event()
+	private bool on_close_request()
 	{
 		GLib.Application.get_default().activate_action("quit", null);
 		return Gdk.EVENT_STOP; // Keep window alive.
@@ -351,15 +340,15 @@ public class LevelEditorWindow : Gtk.ApplicationWindow
 		Hashtable json_obj = new Hashtable();
 
 		// This is the appropriate size to save, see:
-		// https://valadoc.org/gtk+-3.0/Gtk.Window.set_default_size.html
+		// https://valadoc.org/gtk4/Gtk.Window.get_default_size.html
 		int width;
 		int height;
-		this.get_size(out width, out height);
+		this.get_default_size(out width, out height);
 		json_obj["width"] = width;
 		json_obj["height"] = height;
 
-		json_obj["maximized"] = this.is_maximized;
-		json_obj["fullscreen"] = this._fullscreen;
+		json_obj["maximized"] = this.is_maximized();
+		json_obj["fullscreen"] = this.is_fullscreen();
 		return json_obj;
 	}
 
@@ -601,7 +590,7 @@ public class LevelEditorApplication : Gtk.Application
 	private ResourceChooser _resource_chooser;
 	private Gtk.Popover _resource_popover;
 	private Gtk.EventControllerKey _resource_popover_controller_key;
-	private Gtk.GestureMultiPress _resource_popover_gesture_click;
+	private Gtk.GestureClick _resource_popover_gesture_click;
 	private Gtk.Overlay _editor_view_overlay;
 	private ThumbnailCache _thumbnail_cache;
 
@@ -697,8 +686,7 @@ public class LevelEditorApplication : Gtk.Application
 		Intl.setlocale(LocaleCategory.ALL, "C");
 
 		_css_provider = new Gtk.CssProvider();
-		var default_screen = Gdk.Display.get_default().get_default_screen();
-		Gtk.StyleContext.add_provider_for_screen(default_screen
+		Gtk.StyleContext.add_provider_for_display(Gdk.Display.get_default()
 			, _css_provider
 			, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION
 			);
@@ -773,7 +761,7 @@ public class LevelEditorApplication : Gtk.Application
 		_editor.disconnected_unexpected.connect(on_editor_disconnected_unexpected);
 
 		_preferences_dialog = new PreferencesDialog(_editor);
-		_preferences_dialog.delete_event.connect(_preferences_dialog.hide_on_delete);
+		_preferences_dialog.hide_on_close = true;
 		_preferences_dialog.decode(_settings);
 
 		set_theme_from_name(_preferences_dialog._theme_combo.value);
@@ -851,29 +839,29 @@ public class LevelEditorApplication : Gtk.Application
 		_level.selection_changed.connect(_properties_view.on_selection_changed);
 
 		_project_stack = new Gtk.Stack();
-		_project_stack.add(_project_browser);
+		_project_stack.add_child(_project_browser);
 		_project_stack_compiling_data_label = compiling_data_label();
-		_project_stack.add(_project_stack_compiling_data_label);
+		_project_stack.add_child(_project_stack_compiling_data_label);
 		_project_stack_connecting_to_data_compiler_label = connecting_to_data_compiler_label();
-		_project_stack.add(_project_stack_connecting_to_data_compiler_label);
+		_project_stack.add_child(_project_stack_connecting_to_data_compiler_label);
 		_project_stack_compiler_crashed_label = compiler_crashed_label();
-		_project_stack.add(_project_stack_compiler_crashed_label);
+		_project_stack.add_child(_project_stack_compiler_crashed_label);
 		_project_stack_compiler_failed_compilation_label = compiler_failed_compilation_label();
-		_project_stack.add(_project_stack_compiler_failed_compilation_label);
+		_project_stack.add_child(_project_stack_compiler_failed_compilation_label);
 		_project_stack_stopping_backend_label = stopping_backend_label();
-		_project_stack.add(_project_stack_stopping_backend_label);
+		_project_stack.add_child(_project_stack_stopping_backend_label);
 
 		_editor_stack = new Gtk.Stack();
 		_editor_stack_compiling_data_label = compiling_data_label();
-		_editor_stack.add(_editor_stack_compiling_data_label);
+		_editor_stack.add_child(_editor_stack_compiling_data_label);
 		_editor_stack_connecting_to_data_compiler_label = connecting_to_data_compiler_label();
-		_editor_stack.add(_editor_stack_connecting_to_data_compiler_label);
+		_editor_stack.add_child(_editor_stack_connecting_to_data_compiler_label);
 		_editor_stack_compiler_crashed_label = compiler_crashed_label();
-		_editor_stack.add(_editor_stack_compiler_crashed_label);
+		_editor_stack.add_child(_editor_stack_compiler_crashed_label);
 		_editor_stack_compiler_failed_compilation_label = compiler_failed_compilation_label();
-		_editor_stack.add(_editor_stack_compiler_failed_compilation_label);
+		_editor_stack.add_child(_editor_stack_compiler_failed_compilation_label);
 		_editor_stack_disconnected_label = new Gtk.Label("Disconnected.");
-		_editor_stack.add(_editor_stack_disconnected_label);
+		_editor_stack.add_child(_editor_stack_disconnected_label);
 		_editor_stack_oops_label = new Gtk.Label(null);
 		_editor_stack_oops_label.get_style_context().add_class("colorfast-link");
 		_editor_stack_oops_label.set_markup("Something went wrong.\rTry to <a href=\"restart\">restart this view</a>.");
@@ -881,16 +869,16 @@ public class LevelEditorApplication : Gtk.Application
 				activate_action("restart-editor-view", null);
 				return true;
 			});
-		_editor_stack.add(_editor_stack_oops_label);
+		_editor_stack.add_child(_editor_stack_oops_label);
 		_editor_stack_stopping_backend_label = stopping_backend_label();
-		_editor_stack.add(_editor_stack_stopping_backend_label);
+		_editor_stack.add_child(_editor_stack_stopping_backend_label);
 
 		_resource_preview_stack = new Gtk.Stack();
 		_resource_preview_no_preview_label = new Gtk.Label("No Preview");
 		_resource_preview_no_preview_label.set_size_request(300, 300);
-		_resource_preview_stack.add(_resource_preview_no_preview_label);
+		_resource_preview_stack.add_child(_resource_preview_no_preview_label);
 		_resource_preview_disconnected_label = new Gtk.Label("Disconnected");
-		_resource_preview_stack.add(_resource_preview_disconnected_label);
+		_resource_preview_stack.add_child(_resource_preview_disconnected_label);
 		_resource_preview_oops_label = new Gtk.Label(null);
 		_resource_preview_oops_label.get_style_context().add_class("colorfast-link");
 		_resource_preview_oops_label.set_markup("Something went wrong.\rTry to <a href=\"restart\">restart this view</a>.");
@@ -900,24 +888,24 @@ public class LevelEditorApplication : Gtk.Application
 					});
 				return true;
 			});
-		_resource_preview_stack.add(_resource_preview_oops_label);
+		_resource_preview_stack.add_child(_resource_preview_oops_label);
 
 		_inspector_stack = new Gtk.Stack();
 		_inspector_stack_compiling_data_label = compiling_data_label();
-		_inspector_stack.add(_inspector_stack_compiling_data_label);
+		_inspector_stack.add_child(_inspector_stack_compiling_data_label);
 		_inspector_stack_connecting_to_data_compiler_label = connecting_to_data_compiler_label();
-		_inspector_stack.add(_inspector_stack_connecting_to_data_compiler_label);
+		_inspector_stack.add_child(_inspector_stack_connecting_to_data_compiler_label);
 		_inspector_stack_compiler_crashed_label = compiler_crashed_label();
-		_inspector_stack.add(_inspector_stack_compiler_crashed_label);
+		_inspector_stack.add_child(_inspector_stack_compiler_crashed_label);
 		_inspector_stack_compiler_failed_compilation_label = compiler_failed_compilation_label();
-		_inspector_stack.add(_inspector_stack_compiler_failed_compilation_label);
+		_inspector_stack.add_child(_inspector_stack_compiler_failed_compilation_label);
 		_inspector_stack_stopping_backend_label = stopping_backend_label();
-		_inspector_stack.add(_inspector_stack_stopping_backend_label);
+		_inspector_stack.add_child(_inspector_stack_stopping_backend_label);
 
 		_toolbar = new Toolbar();
 
 		// Game run/stop button.
-		_game_run_stop_image = new Gtk.Image.from_icon_name("game-run", Gtk.IconSize.MENU);
+		_game_run_stop_image = new Gtk.Image.from_icon_name("game-run");
 		_game_run_stop_image.margin_bottom
 			= _game_run_stop_image.margin_end
 			= _game_run_stop_image.margin_start
@@ -925,7 +913,7 @@ public class LevelEditorApplication : Gtk.Application
 			= 8
 			;
 		_game_run = new Gtk.Button();
-		_game_run.add(_game_run_stop_image);
+		_game_run.set_child(_game_run_stop_image);
 		_game_run.get_style_context().add_class("suggested-action");
 		_game_run.get_style_context().add_class("image-button");
 		_game_run.action_name = "app.test-level";
@@ -934,8 +922,8 @@ public class LevelEditorApplication : Gtk.Application
 		_editor_view_overlay = new Gtk.Overlay();
 		_editor_view_overlay.add_overlay(_toolbar);
 
-		_resource_popover = new Gtk.Popover(_toolbar);
-		_resource_popover_controller_key = new Gtk.EventControllerKey(_resource_popover);
+		_resource_popover = new Gtk.Popover();
+		_resource_popover_controller_key = new Gtk.EventControllerKey();
 		_resource_popover_controller_key.set_propagation_phase(Gtk.PropagationPhase.CAPTURE);
 		_resource_popover_controller_key.key_pressed.connect((keyval, keycode, state) => {
 				if (keyval == Gdk.Key.Escape) {
@@ -945,18 +933,20 @@ public class LevelEditorApplication : Gtk.Application
 
 				return Gdk.EVENT_PROPAGATE;
 			});
-		_resource_popover_gesture_click = new Gtk.GestureMultiPress(_resource_popover);
+		((Gtk.Widget)_resource_popover).add_controller(_resource_popover_controller_key);
+		_resource_popover_gesture_click = new Gtk.GestureClick();
 		_resource_popover_gesture_click.pressed.connect(() => {
 				_resource_popover.hide();
 			});
-		_resource_popover.events |= Gdk.EventMask.STRUCTURE_MASK; // unmap_event
+		/*
+		_resource_popover.add_controller(_resource_popover_gesture_click);
 		_resource_popover.unmap_event.connect(() => {
 				// Redraw the editor view when the popover is not on-screen anymore.
 				device_frame_delayed(16, _editor);
 				return Gdk.EVENT_PROPAGATE;
 			});
-		_resource_popover.delete_event.connect(_resource_popover.hide_on_delete);
 		_resource_popover.modal = true;
+		*/
 
 		_resource_chooser = new ResourceChooser(_project, _project_store, _resource_preview_stack, _resource_preview);
 		_resource_chooser.resource_selected.connect(on_resource_browser_resource_selected);
@@ -966,12 +956,12 @@ public class LevelEditorApplication : Gtk.Application
 					});
 			});
 
-		_resource_popover.add(_resource_chooser);
+		_resource_popover.set_child(_resource_chooser);
 
 		_level_tree_view_notebook = new Gtk.Notebook();
 		_level_tree_view_notebook.show_border = false;
-		_level_tree_view_notebook.append_page(_level_treeview, new Gtk.Image.from_icon_name("level-tree", Gtk.IconSize.SMALL_TOOLBAR));
-		_level_tree_view_notebook.append_page(_level_layers_treeview, new Gtk.Image.from_icon_name("level-layers", Gtk.IconSize.SMALL_TOOLBAR));
+		_level_tree_view_notebook.append_page(_level_treeview, new Gtk.Image.from_icon_name("level-tree"));
+		_level_tree_view_notebook.append_page(_level_layers_treeview, new Gtk.Image.from_icon_name("level-layers"));
 
 		_console_notebook = new Gtk.Notebook();
 		_console_notebook.show_border = false;
@@ -986,27 +976,27 @@ public class LevelEditorApplication : Gtk.Application
 		_inspector_notebook.append_page(_properties_view, new Gtk.Label.with_mnemonic("Properties"));
 
 		_editor_pane = new Gtk.Paned(Gtk.Orientation.HORIZONTAL);
-		_editor_pane.pack1(_project_notebook, false, false);
-		_editor_pane.pack2(_editor_stack, true, false);
+		_editor_pane.set_start_child(_project_notebook);
+		_editor_pane.set_end_child(_editor_stack);
 
 		_content_pane = new Gtk.Paned(Gtk.Orientation.VERTICAL);
-		_content_pane.pack1(_editor_pane, true, false);
-		_content_pane.pack2(_console_notebook, false, false);
+		_content_pane.set_start_child(_editor_pane);
+		_content_pane.set_end_child(_console_notebook);
 
 		_inspector_pane = new Gtk.Paned(Gtk.Orientation.VERTICAL);
-		_inspector_pane.pack1(_level_tree_view_notebook, true, false);
-		_inspector_pane.pack2(_inspector_notebook, false, false);
-		_inspector_stack.add(_inspector_pane);
+		_inspector_pane.set_start_child(_level_tree_view_notebook);
+		_inspector_pane.set_end_child(_inspector_notebook);
+		_inspector_stack.add_child(_inspector_pane);
 
 		_main_pane = new Gtk.Paned(Gtk.Orientation.HORIZONTAL);
-		_main_pane.pack1(_content_pane, true, false);
-		_main_pane.pack2(_inspector_stack, false, false);
+		_main_pane.set_start_child(_content_pane);
+		_main_pane.set_end_child(_inspector_stack);
 
 		_statusbar = new Statusbar();
 
 		_main_vbox = new Gtk.Box(Gtk.Orientation.VERTICAL, 0);
-		_main_vbox.pack_start(_main_pane, true, true, 0);
-		_main_vbox.pack_start(_statusbar, false, false, 0);
+		_main_vbox.prepend(_main_pane);
+		_main_vbox.prepend(_statusbar);
 		_main_vbox.set_visible(true);
 
 		_file_filter = new Gtk.FileFilter();
@@ -1019,7 +1009,7 @@ public class LevelEditorApplication : Gtk.Application
 
 		_panel_welcome = new PanelWelcome();
 		_panel_projects_list = new PanelProjectsList(_user);
-		_panel_welcome.pack_start(_panel_projects_list);
+		_panel_welcome.prepend(_panel_projects_list);
 		_panel_welcome.set_visible(true); // To make Gtk.Stack work...
 
 		_main_stack = new Gtk.Stack();
@@ -1029,8 +1019,7 @@ public class LevelEditorApplication : Gtk.Application
 		_main_stack.add_named(_main_vbox, "main_vbox");
 
 		_header_bar = new Gtk.HeaderBar();
-		_header_bar.show_close_button = true;
-		_header_bar.has_subtitle = false;
+		_header_bar.show_title_buttons = true;
 		_header_bar.pack_start(_game_run);
 
 		// Delete expired logs
@@ -1080,16 +1069,16 @@ public class LevelEditorApplication : Gtk.Application
 			LevelEditorWindow win = new LevelEditorWindow(this, _header_bar);
 			if (_window_state.has_key("level_editor_window"))
 				win.decode((Hashtable)_window_state["level_editor_window"]);
-			win.add(_main_stack);
+			win.set_child(_main_stack);
 
 			try {
-				win.icon = Gtk.IconTheme.get_default().load_icon(CROWN_EDITOR_ICON_NAME, 256, 0);
+				win.set_icon_name(CROWN_EDITOR_ICON_NAME);
 			} catch (Error e) {
 				loge(e.message);
 			}
 		}
 
-		this.active_window.show_all();
+		this.active_window.show();
 
 		// Register a callback to be called when SubprocessLauncher service 'appears'.
 		_launcher_watch_id = GLib.Bus.watch_name(GLib.BusType.SESSION
@@ -1250,7 +1239,7 @@ public class LevelEditorApplication : Gtk.Application
 		on_runtime_disconnected(ri);
 
 		_combo.set_active_id("editor");
-		_game_run_stop_image.set_from_icon_name("game-run", Gtk.IconSize.MENU);
+		_game_run_stop_image.set_from_icon_name("game-run");
 	}
 
 	private void on_message_received(RuntimeInstance ri, ConsoleClient client, uint8[] json)
@@ -1763,7 +1752,7 @@ public class LevelEditorApplication : Gtk.Application
 		yield stop_editor();
 
 		if (_editor_view != null) {
-			_editor_view_overlay.remove(_editor_view);
+			_editor_view_overlay.set_child(null);
 			_editor_stack.remove(_editor_view_overlay);
 			_editor_view = null;
 		}
@@ -1771,10 +1760,9 @@ public class LevelEditorApplication : Gtk.Application
 		_editor_view = new EditorView(_editor);
 		_editor_view.native_window_ready.connect(on_editor_view_realized);
 
-		_editor_view_overlay.add(_editor_view);
-		_editor_view_overlay.show_all();
+		_editor_view_overlay.set_child(_editor_view);
 
-		_editor_stack.add(_editor_view_overlay);
+		_editor_stack.add_child(_editor_view_overlay);
 		_editor_stack.set_visible_child(_editor_view_overlay);
 
 		yield restart_resource_preview();
@@ -1793,9 +1781,8 @@ public class LevelEditorApplication : Gtk.Application
 		_resource_preview_view = new EditorView(_resource_preview, false);
 		_resource_preview_view.set_size_request(300, 300);
 		_resource_preview_view.native_window_ready.connect(on_resource_preview_view_realized);
-		_resource_preview_view.show_all();
 
-		_resource_preview_stack.add(_resource_preview_view);
+		_resource_preview_stack.add_child(_resource_preview_view);
 		_resource_preview_stack.set_visible_child(_resource_preview_view);
 	}
 
@@ -1825,7 +1812,7 @@ public class LevelEditorApplication : Gtk.Application
 		_project.delete_garbage();
 
 		if (!success) {
-			_game_run_stop_image.set_from_icon_name("game-run", Gtk.IconSize.MENU);
+			_game_run_stop_image.set_from_icon_name("game-run");
 			return;
 		}
 
@@ -1985,7 +1972,7 @@ public class LevelEditorApplication : Gtk.Application
 
 		InputDouble sb = new InputDouble(_grid_size, 0.1, 1000);
 		sb.activate.connect(() => { dg.response(Gtk.ResponseType.OK); });
-		dg.get_content_area().add(sb);
+		dg.get_content_area().append(sb);
 
 		dg.response.connect((response_id) => {
 			if (response_id == Gtk.ResponseType.OK) {
@@ -1997,7 +1984,7 @@ public class LevelEditorApplication : Gtk.Application
 			dg.destroy();
 		});
 
-		dg.show_all();
+		dg.show();
 	}
 
 	private void update_active_window_title()
@@ -2055,7 +2042,7 @@ public class LevelEditorApplication : Gtk.Application
 			md.add_button("_Ok", Gtk.ResponseType.OK);
 			md.set_default_response(Gtk.ResponseType.OK);
 			md.response.connect(() => { md.destroy(); });
-			md.show_all();
+			md.show();
 			return false;
 		}
 
@@ -2085,7 +2072,7 @@ public class LevelEditorApplication : Gtk.Application
 					}
 					srd.destroy();
 				});
-			srd.show_all();
+			srd.show();
 		}
 	}
 
@@ -2158,7 +2145,7 @@ public class LevelEditorApplication : Gtk.Application
 						save("new-level");
 					dlg.destroy();
 				});
-			dlg.show_all();
+			dlg.show();
 		}
 	}
 
@@ -2183,7 +2170,7 @@ public class LevelEditorApplication : Gtk.Application
 					do_open_level(path);
 				dlg.destroy();
 			});
-		dlg.show_all();
+		dlg.show();
 	}
 
 	private void on_open_level(GLib.SimpleAction action, GLib.Variant? param)
@@ -2210,7 +2197,7 @@ public class LevelEditorApplication : Gtk.Application
 					}
 					dlg.destroy();
 				});
-			dlg.show_all();
+			dlg.show();
 		}
 	}
 
@@ -2231,7 +2218,7 @@ public class LevelEditorApplication : Gtk.Application
 				);
 			md.set_default_response(Gtk.ResponseType.OK);
 			md.response.connect(() => { md.destroy(); });
-			md.show_all();
+			md.show();
 			return;
 		}
 
@@ -2255,7 +2242,7 @@ public class LevelEditorApplication : Gtk.Application
 						do_open_project(dlg.get_file().get_path());
 					dlg.destroy();
 				});
-			dlg.show_all();
+			dlg.show();
 		}
 	}
 
@@ -2274,7 +2261,7 @@ public class LevelEditorApplication : Gtk.Application
 						save("open-project", new GLib.Variant.string(source_dir));
 					dlg.destroy();
 				});
-			dlg.show_all();
+			dlg.show();
 		}
 	}
 
@@ -2299,7 +2286,7 @@ public class LevelEditorApplication : Gtk.Application
 						save("new-project");
 					dlg.destroy();
 				});
-			dlg.show_all();
+			dlg.show();
 		}
 	}
 
@@ -2313,7 +2300,7 @@ public class LevelEditorApplication : Gtk.Application
 				}
 				dlg.destroy();
 			});
-		dlg.show_all();
+		dlg.show();
 	}
 
 	private void on_remove_project(GLib.SimpleAction action, GLib.Variant? param)
@@ -2336,7 +2323,7 @@ public class LevelEditorApplication : Gtk.Application
 
 				md.destroy();
 			});
-		md.show_all();
+		md.show();
 	}
 
 	private void on_save(GLib.SimpleAction action, GLib.Variant? param)
@@ -2385,7 +2372,7 @@ public class LevelEditorApplication : Gtk.Application
 	private void on_preferences(GLib.SimpleAction action, GLib.Variant? param)
 	{
 		_preferences_dialog.set_transient_for(this.active_window);
-		_preferences_dialog.show_all();
+		_preferences_dialog.show();
 		_preferences_dialog.present();
 	}
 
@@ -2394,10 +2381,10 @@ public class LevelEditorApplication : Gtk.Application
 		if (_deploy_dialog == null) {
 			_deploy_dialog = new DeployDialog(_project, _editor);
 			_deploy_dialog.set_transient_for(this.active_window);
-			_deploy_dialog.delete_event.connect(_deploy_dialog.hide_on_delete);
+			_deploy_dialog.hide_on_close = true;
 		}
 
-		_deploy_dialog.show_all();
+		_deploy_dialog.show();
 		_deploy_dialog.present();
 	}
 
@@ -2408,14 +2395,14 @@ public class LevelEditorApplication : Gtk.Application
 		if (_texture_settings_dialog == null) {
 			_texture_settings_dialog = new TextureSettingsDialog(_project, _database);
 			_texture_settings_dialog.set_transient_for(this.active_window);
-			_texture_settings_dialog.delete_event.connect(_texture_settings_dialog.hide_on_delete);
+			_texture_settings_dialog.hide_on_close = true;
 			_texture_settings_dialog.texture_saved.connect(() => {
 						_data_compiler.compile.begin(_project.data_dir(), _project.platform());
 					});
 		}
 
 		_texture_settings_dialog.set_texture(texture_name);
-		_texture_settings_dialog.show_all();
+		_texture_settings_dialog.show();
 		_texture_settings_dialog.present();
 	}
 
@@ -2425,7 +2412,7 @@ public class LevelEditorApplication : Gtk.Application
 		string name = (string)param.get_child_value(1);
 
 		if (!_project_notebook.is_visible())
-			_project_notebook.show_all();
+			_project_notebook.show();
 
 		_project_browser.reveal(type, name);
 	}
@@ -2480,7 +2467,7 @@ public class LevelEditorApplication : Gtk.Application
 						save("close-project");
 					dlg.destroy();
 				});
-			dlg.show_all();
+			dlg.show();
 		}
 	}
 
@@ -2505,7 +2492,7 @@ public class LevelEditorApplication : Gtk.Application
 						save("quit");
 					dlg.destroy();
 				});
-			dlg.show_all();
+			dlg.show();
 		}
 	}
 
@@ -2620,7 +2607,7 @@ public class LevelEditorApplication : Gtk.Application
 
 		InputDouble sb = new InputDouble(_rotation_snap, 1.0, 180.0);
 		sb.activate.connect(() => { dg.response(Gtk.ResponseType.OK); });
-		dg.get_content_area().add(sb);
+		dg.get_content_area().append(sb);
 
 		dg.response.connect((response_id) => {
 				if (response_id == Gtk.ResponseType.OK) {
@@ -2632,7 +2619,7 @@ public class LevelEditorApplication : Gtk.Application
 				dg.destroy();
 			});
 
-		dg.show_all();
+		dg.show();
 	}
 
 	private void on_spawn_primitive(GLib.SimpleAction action, GLib.Variant? param)
@@ -2702,7 +2689,7 @@ public class LevelEditorApplication : Gtk.Application
 
 	private void on_resource_chooser(GLib.SimpleAction action, GLib.Variant? param)
 	{
-		_resource_popover.show_all();
+		_resource_popover.show();
 	}
 
 	private void on_project_browser(GLib.SimpleAction action, GLib.Variant? param)
@@ -2710,7 +2697,7 @@ public class LevelEditorApplication : Gtk.Application
 		if (_project_notebook.is_visible()) {
 			_project_notebook.hide();
 		} else {
-			_project_notebook.show_all();
+			_project_notebook.show();
 		}
 	}
 
@@ -2722,7 +2709,7 @@ public class LevelEditorApplication : Gtk.Application
 			else
 				_console_view._entry.grab_focus_without_selecting();
 		} else {
-			_console_notebook.show_all();
+			_console_notebook.show();
 			_console_view._entry.grab_focus_without_selecting();
 		}
 	}
@@ -2732,7 +2719,7 @@ public class LevelEditorApplication : Gtk.Application
 		if (_statusbar.is_visible()) {
 			_statusbar.hide();
 		} else {
-			_statusbar.show_all();
+			_statusbar.show();
 		}
 	}
 
@@ -2741,7 +2728,7 @@ public class LevelEditorApplication : Gtk.Application
 		if (_inspector_stack.is_visible()) {
 			_inspector_stack.hide();
 		} else {
-			_inspector_stack.show_all();
+			_inspector_stack.show();
 		}
 	}
 
@@ -2822,7 +2809,7 @@ public class LevelEditorApplication : Gtk.Application
 				stop_game.end(res);
 				if (icon_displayed == "game-run") {
 					// Always change icon state regardless of failures.
-					_game_run_stop_image.set_from_icon_name("game-stop", Gtk.IconSize.MENU);
+					_game_run_stop_image.set_from_icon_name("game-stop");
 
 					start_game.begin(action.name == "test-level" ? StartGame.TEST : StartGame.NORMAL);
 				}
@@ -2887,13 +2874,13 @@ public class LevelEditorApplication : Gtk.Application
 			sb.activate.connect(() => { dg.response(Gtk.ResponseType.OK); });
 			sb.value = _level.object_editor_name(object_id);
 
-			dg.get_content_area().add(sb);
+			dg.get_content_area().append(sb);
 			dg.response.connect((response_id) => {
 					if (response_id == Gtk.ResponseType.OK)
 						do_rename(object_id, sb.text.strip());
 					dg.destroy();
 				});
-			dg.show_all();
+			dg.show();
 		}
 	}
 
@@ -2983,7 +2970,7 @@ public class LevelEditorApplication : Gtk.Application
 							}
 							dlg.destroy();
 						});
-					dlg.show_all();
+					dlg.show();
 				}
 			} else {
 				do_delete_file(resource_path);
@@ -3027,7 +3014,7 @@ public class LevelEditorApplication : Gtk.Application
 			md.destroy();
 		});
 
-		md.show_all();
+		md.show();
 	}
 
 	private void do_create_directory(string parent_dir_name, string dir_name)
@@ -3063,7 +3050,7 @@ public class LevelEditorApplication : Gtk.Application
 
 			InputString sb = new InputString();
 			sb.activate.connect(() => { dg.response(Gtk.ResponseType.OK); });
-			dg.get_content_area().add(sb);
+			dg.get_content_area().append(sb);
 
 			dg.response.connect((response_id) => {
 					if (response_id == Gtk.ResponseType.OK)
@@ -3071,7 +3058,7 @@ public class LevelEditorApplication : Gtk.Application
 					dg.destroy();
 				});
 
-			dg.show_all();
+			dg.show();
 		}
 	}
 
@@ -3112,7 +3099,7 @@ public class LevelEditorApplication : Gtk.Application
 
 			InputString sb = new InputString();
 			sb.activate.connect(() => { dg.response(Gtk.ResponseType.OK); });
-			dg.get_content_area().add(sb);
+			dg.get_content_area().append(sb);
 
 			dg.response.connect((response_id) => {
 					if (response_id == Gtk.ResponseType.OK)
@@ -3120,7 +3107,7 @@ public class LevelEditorApplication : Gtk.Application
 					dg.destroy();
 				});
 
-			dg.show_all();
+			dg.show();
 		}
 	}
 
@@ -3160,7 +3147,7 @@ public class LevelEditorApplication : Gtk.Application
 
 			InputString sb = new InputString();
 			sb.activate.connect(() => { dg.response(Gtk.ResponseType.OK); });
-			dg.get_content_area().add(sb);
+			dg.get_content_area().append(sb);
 
 			dg.response.connect((response_id) => {
 					if (response_id == Gtk.ResponseType.OK)
@@ -3168,7 +3155,7 @@ public class LevelEditorApplication : Gtk.Application
 					dg.destroy();
 				});
 
-			dg.show_all();
+			dg.show();
 		}
 	}
 
@@ -3209,7 +3196,7 @@ public class LevelEditorApplication : Gtk.Application
 
 			InputString sb = new InputString();
 			sb.activate.connect(() => { dg.response(Gtk.ResponseType.OK); });
-			dg.get_content_area().add(sb);
+			dg.get_content_area().append(sb);
 
 			dg.response.connect((response_id) => {
 					if (response_id == Gtk.ResponseType.OK)
@@ -3217,7 +3204,7 @@ public class LevelEditorApplication : Gtk.Application
 					dg.destroy();
 				});
 
-			dg.show_all();
+			dg.show();
 		}
 
 	}
@@ -3258,7 +3245,7 @@ public class LevelEditorApplication : Gtk.Application
 
 			InputString sb = new InputString();
 			sb.activate.connect(() => { dg.response(Gtk.ResponseType.OK); });
-			dg.get_content_area().add(sb);
+			dg.get_content_area().append(sb);
 
 			dg.response.connect((response_id) => {
 					if (response_id == Gtk.ResponseType.OK)
@@ -3266,7 +3253,7 @@ public class LevelEditorApplication : Gtk.Application
 					dg.destroy();
 				});
 
-			dg.show_all();
+			dg.show();
 		}
 	}
 
@@ -3867,7 +3854,7 @@ public class LevelEditorApplication : Gtk.Application
 					}
 					dlg.destroy();
 				});
-			dlg.show_all();
+			dlg.show();
 		} else {
 			try {
 				package_dir.make_directory_with_parents();
@@ -4084,7 +4071,7 @@ public class LevelEditorApplication : Gtk.Application
 					}
 					dlg.destroy();
 				});
-			dlg.show_all();
+			dlg.show();
 		} else {
 			try {
 				package_dir.make_directory_with_parents();
@@ -4184,7 +4171,7 @@ public class LevelEditorApplication : Gtk.Application
 					}
 					dlg.destroy();
 				});
-			dlg.show_all();
+			dlg.show();
 		} else {
 			try {
 				package_dir.make_directory_with_parents();
@@ -4294,7 +4281,7 @@ public class LevelEditorApplication : Gtk.Application
 					}
 					dlg.destroy();
 				});
-			dlg.show_all();
+			dlg.show();
 		} else {
 			try {
 				package_dir.make_directory_with_parents();
@@ -4360,7 +4347,7 @@ public class LevelEditorApplication : Gtk.Application
 			md.set_default_response(Gtk.ResponseType.OK);
 
 			md.response.connect(() => { md.destroy(); });
-			md.show_all();
+			md.show();
 			return;
 		} else {
 			unit.remove_component_type(component_type);
@@ -4395,7 +4382,7 @@ public class LevelEditorApplication : Gtk.Application
 
 				srd.destroy();
 			});
-		srd.show_all();
+		srd.show();
 		srd.present();
 	}
 
@@ -4479,7 +4466,7 @@ public class LevelEditorApplication : Gtk.Application
 			// FIXME: save/restore last known window state
 			int win_w;
 			int win_h;
-			this.active_window.get_size(out win_w, out win_h);
+			this.active_window.get_default_size(out win_w, out win_h);
 			_editor_pane.set_position(320);
 			_content_pane.set_position(win_h - 250);
 			_inspector_pane.set_position(win_h - 600);

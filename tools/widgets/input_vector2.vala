@@ -48,8 +48,8 @@ public class InputVector2 : Gtk.Box
 		_x.value_changed.connect(on_value_changed);
 		_y.value_changed.connect(on_value_changed);
 
-		this.pack_start(_x, true);
-		this.pack_start(_y, true);
+		this.prepend(_x);
+		this.prepend(_y);
 	}
 
 	private void on_value_changed()

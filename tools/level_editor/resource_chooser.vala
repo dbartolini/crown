@@ -29,7 +29,7 @@ public class ResourceChooser : Gtk.Box
 	public Gtk.TreeModelFilter _tree_filter;
 	public Gtk.TreeModelSort _tree_sort;
 	public Gtk.TreeView _tree_view;
-	public Gtk.GestureMultiPress _tree_view_gesture_click;
+	public Gtk.GestureClick _tree_view_gesture_click;
 	public Gtk.TreeSelection _tree_selection;
 	public Gtk.ScrolledWindow _scrolled_window;
 
@@ -57,8 +57,9 @@ public class ResourceChooser : Gtk.Box
 		_filter_entry.set_placeholder_text("Search...");
 		_filter_entry.search_changed.connect(on_filter_entry_text_changed);
 
-		_filter_entry_controller_key = new Gtk.EventControllerKey(_filter_entry);
+		_filter_entry_controller_key = new Gtk.EventControllerKey();
 		_filter_entry_controller_key.key_pressed.connect(on_filter_entry_key_pressed);
+		_filter_entry.add_controller(_filter_entry_controller_key);
 
 		_tree_filter = new Gtk.TreeModelFilter(_list_store, null);
 		_tree_filter.set_visible_func((model, iter) => {
@@ -109,22 +110,23 @@ public class ResourceChooser : Gtk.Box
 		_tree_view.can_focus = false;
 		_tree_view.row_activated.connect(on_row_activated);
 
-		_tree_view_gesture_click = new Gtk.GestureMultiPress(_tree_view);
+		_tree_view_gesture_click = new Gtk.GestureClick();
 		_tree_view_gesture_click.set_button(0);
 		_tree_view_gesture_click.released.connect(on_button_released);
+		_tree_view.add_controller(_tree_view_gesture_click);
 
 		_tree_selection = _tree_view.get_selection();
 		_tree_selection.set_mode(Gtk.SelectionMode.BROWSE);
 		_tree_selection.changed.connect(on_tree_selection_changed);
 
-		_scrolled_window = new Gtk.ScrolledWindow(null, null);
-		_scrolled_window.add(_tree_view);
+		_scrolled_window = new Gtk.ScrolledWindow();
+		_scrolled_window.set_child(_tree_view);
 		_scrolled_window.set_size_request(300, 400);
 
-		this.pack_start(_filter_entry, false, true, 0);
+		this.prepend(_filter_entry);
 		if (_editor_stack != null)
-			this.pack_start(_editor_stack, true, true, 0);
-		this.pack_start(_scrolled_window, true, true, 0);
+			this.prepend(_editor_stack);
+		this.prepend(_scrolled_window);
 
 		this.unmap.connect(on_unmap);
 	}

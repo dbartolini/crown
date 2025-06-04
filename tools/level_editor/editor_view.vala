@@ -3,20 +3,24 @@
  * SPDX-License-Identifier: GPL-3.0-or-later
  */
 
+/*
 #if CROWN_PLATFORM_LINUX
 extern uint gdk_x11_window_get_xid(Gdk.Window window);
 #elif CROWN_PLATFORM_WINDOWS
 extern uint gdk_win32_window_get_handle(Gdk.Window window);
 #endif
+*/
 
 namespace Crown
 {
-public class EditorView : Gtk.EventBox
+public class EditorView : Gtk.Widget
 {
+	/*
 	private const Gtk.TargetEntry[] dnd_targets =
 	{
 		{ "RESOURCE_PATH", Gtk.TargetFlags.SAME_APP, 0 },
 	};
+	*/
 
 	// Data
 	private RuntimeInstance _runtime;
@@ -41,9 +45,10 @@ public class EditorView : Gtk.EventBox
 	private GLib.StringBuilder _buffer;
 
 	private Gtk.EventControllerKey _controller_key;
-	private Gtk.GestureMultiPress _gesture_click;
+	private Gtk.GestureClick _gesture_click;
 	private Gtk.EventControllerMotion _controller_motion;
 	private Gtk.EventControllerScroll _controller_scroll;
+	private Gtk.EventControllerFocus _controller_focus;
 
 	// Signals
 	public signal void native_window_ready(uint window_id, int width, int height);
@@ -109,33 +114,42 @@ public class EditorView : Gtk.EventBox
 
 		// Widgets
 		this.can_focus = true;
+		/*
 		this.events |= Gdk.EventMask.POINTER_MOTION_MASK
 			| Gdk.EventMask.KEY_PRESS_MASK
 			| Gdk.EventMask.KEY_RELEASE_MASK
 			| Gdk.EventMask.FOCUS_CHANGE_MASK
 			| Gdk.EventMask.SCROLL_MASK
 			;
-		this.focus_out_event.connect(on_event_box_focus_out_event);
 		this.size_allocate.connect(on_size_allocate);
+		*/
+
+		_controller_focus = new Gtk.EventControllerFocus();
+		_controller_focus.leave.connect(on_event_box_focus_leave);
 
 		if (input_enabled) {
-			_controller_key = new Gtk.EventControllerKey(this);
+			_controller_key = new Gtk.EventControllerKey();
 			_controller_key.key_pressed.connect(on_key_pressed);
 			_controller_key.key_released.connect(on_key_released);
+			this.add_controller(_controller_key);
 
-			_gesture_click = new Gtk.GestureMultiPress(this);
+			_gesture_click = new Gtk.GestureClick();
 			_gesture_click.set_button(0);
 			_gesture_click.pressed.connect(on_button_pressed);
 			_gesture_click.released.connect(on_button_released);
+			this.add_controller(_gesture_click);
 
-			_controller_motion = new Gtk.EventControllerMotion(this);
+			_controller_motion = new Gtk.EventControllerMotion();
 			_controller_motion.enter.connect(on_enter);
 			_controller_motion.motion.connect(on_motion);
+			this.add_controller(_controller_motion);
 
-			_controller_scroll = new Gtk.EventControllerScroll(this, Gtk.EventControllerScrollFlags.BOTH_AXES);
+			_controller_scroll = new Gtk.EventControllerScroll(Gtk.EventControllerScrollFlags.BOTH_AXES);
 			_controller_scroll.scroll.connect(on_scroll);
+			this.add_controller(_controller_scroll);
 		}
 
+		/*
 		this.realize.connect(on_event_box_realized);
 		this.set_visual(Gdk.Screen.get_default().get_system_visual());
 		this.events |= Gdk.EventMask.STRUCTURE_MASK; // map_event
@@ -149,8 +163,10 @@ public class EditorView : Gtk.EventBox
 		this.drag_motion.connect(on_drag_motion);
 		this.drag_drop.connect(on_drag_drop);
 		this.drag_leave.connect(on_drag_leave);
+		*/
 	}
 
+	/*
 	private void on_drag_data_received(Gdk.DragContext context, int x, int y, Gtk.SelectionData data, uint info, uint time_)
 	{
 		// https://valadoc.org/gtk+-3.0/Gtk.Widget.drag_data_received.html
@@ -219,6 +235,7 @@ public class EditorView : Gtk.EventBox
 		// https://valadoc.org/gtk+-3.0/Gtk.Widget.drag_leave.html
 		_drag_enter = false;
 	}
+	*/
 
 	private void on_button_released(int n_press, double x, double y)
 	{
@@ -357,7 +374,7 @@ public class EditorView : Gtk.EventBox
 		}
 	}
 
-	private void on_scroll(double dx, double dy)
+	private bool on_scroll(double dx, double dy)
 	{
 		if (camera_modifier_pressed()) {
 			_runtime.send_script(LevelEditorApi.mouse_wheel(dy));
@@ -367,9 +384,11 @@ public class EditorView : Gtk.EventBox
 			_runtime.send_script("LevelEditor:camera_drag_start('idle')");
 			_runtime.send(DeviceApi.frame());
 		}
+
+		return Gdk.EVENT_PROPAGATE;
 	}
 
-	private bool on_event_box_focus_out_event(Gdk.EventFocus ev)
+	private void on_event_box_focus_leave()
 	{
 		camera_modifier_reset();
 
@@ -377,10 +396,9 @@ public class EditorView : Gtk.EventBox
 		_keys[Gdk.Key.Shift_L] = false;
 		_runtime.send_script(LevelEditorApi.key_up(key_to_string(Gdk.Key.Control_L)));
 		_runtime.send_script(LevelEditorApi.key_up(key_to_string(Gdk.Key.Shift_L)));
-
-		return Gdk.EVENT_PROPAGATE;
 	}
 
+	/*
 	private void on_size_allocate(Gtk.Allocation ev)
 	{
 		int scale = this.get_scale_factor();
@@ -420,6 +438,7 @@ public class EditorView : Gtk.EventBox
 		_window_id = gdk_win32_window_get_handle(this.get_window());
 #endif
 	}
+	*/
 
 	private void on_enter(double x, double y)
 	{

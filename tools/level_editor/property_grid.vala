@@ -305,7 +305,7 @@ public class PropertyGridSet : Gtk.Box
 		e.custom_header = l;
 		e.expanded = true;
 		e.add(cv);
-		this.pack_start(e, false, true, 0);
+		this.prepend(e);
 
 		return e;
 	}
@@ -318,14 +318,14 @@ public class PropertyGridSet : Gtk.Box
 		l.yalign = 0.5f;
 
 		Gtk.Box b = new Gtk.Box(Gtk.Orientation.HORIZONTAL, 6);
-		b.pack_start(InputBool, false, false);
-		b.pack_start(l, false, false);
+		b.prepend(InputBool);
+		b.prepend(l);
 
 		Expander e = new Expander();
 		e.custom_header = b;
 		e.expanded = true;
 		e.add(cv);
-		this.pack_start(e, false, true, 0);
+		this.prepend(e);
 
 		return e;
 	}

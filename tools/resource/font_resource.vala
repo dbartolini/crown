@@ -182,10 +182,10 @@ public class FontImportDialog : Gtk.Window
 		_drawing_area._filter = Cairo.Filter.BILINEAR;
 		_drawing_area._extend = Cairo.Extend.NONE;
 
-		_scrolled_window = new Gtk.ScrolledWindow(null, null);
+		_scrolled_window = new Gtk.ScrolledWindow();
 		_scrolled_window.min_content_width = 640;
 		_scrolled_window.min_content_height = 640;
-		_scrolled_window.add(_drawing_area);
+		_scrolled_window.set_child(_drawing_area);
 
 		_atlas_size = new Gtk.Label("? × ?");
 		_atlas_size.halign = Gtk.Align.START;
@@ -267,18 +267,15 @@ public class FontImportDialog : Gtk.Window
 		sprite_set.add_property_grid(cv, "Font");
 
 		Gtk.Box box = new Gtk.Box(Gtk.Orientation.HORIZONTAL, 0);
-		box.pack_start(_scrolled_window, true, true);
+		box.prepend(_scrolled_window);
 
 		Gtk.Paned pane;
 		pane = new Gtk.Paned(Gtk.Orientation.HORIZONTAL);
-		pane.pack1(box, false, false);
-		pane.pack2(sprite_set, true, false);
-
-		this.destroy.connect(on_destroy);
-		this.map_event.connect(on_map_event);
+		pane.set_start_child(box);
+		pane.set_end_child(sprite_set);
 
 		_box = new Gtk.Box(Gtk.Orientation.VERTICAL, 0);
-		_box.pack_start(pane, false, false);
+		_box.prepend(pane);
 
 		_cancel = new Gtk.Button.with_label("Cancel");
 		_cancel.clicked.connect(() => {
@@ -289,13 +286,12 @@ public class FontImportDialog : Gtk.Window
 		_import.clicked.connect(on_import);
 
 		_header_bar = new Gtk.HeaderBar();
-		_header_bar.title = "Import Font...";
-		_header_bar.show_close_button = true;
+		_header_bar.show_title_buttons = true;
 		_header_bar.pack_start(_cancel);
 		_header_bar.pack_end(_import);
-
+		this.title = "Import Font...";
 		this.set_titlebar(_header_bar);
-		this.add(_box);
+		this.set_child(_box);
 
 		if (File.new_for_path(settings_path).query_exists()) {
 			try {
@@ -308,15 +304,10 @@ public class FontImportDialog : Gtk.Window
 		generate_atlas();
 	}
 
-	private bool on_map_event(Gdk.EventAny ev)
-	{
-		_font_name.grab_focus();
-		return Gdk.EVENT_PROPAGATE;
-	}
-
-	private void on_destroy()
+	protected override void dispose()
 	{
 		font_atlas_free(_font_atlas);
+		base.dispose();
 	}
 
 	public void decode(Hashtable obj)
@@ -423,7 +414,7 @@ public class FontResource
 		FontImportDialog dlg = new FontImportDialog(database, destination_dir, filenames, import_result);
 		dlg.set_transient_for(parent_window);
 		dlg.set_modal(true);
-		dlg.show_all();
+		dlg.show();
 	}
 }
 

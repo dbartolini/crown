@@ -76,10 +76,10 @@ public class InputVector4 : InputField, Gtk.Box
 		_z.value_changed.connect(on_value_changed);
 		_w.value_changed.connect(on_value_changed);
 
-		this.pack_start(_x, true);
-		this.pack_start(_y, true);
-		this.pack_start(_z, true);
-		this.pack_start(_w, true);
+		this.prepend(_x);
+		this.prepend(_y);
+		this.prepend(_z);
+		this.prepend(_w);
 	}
 
 	private void on_value_changed()

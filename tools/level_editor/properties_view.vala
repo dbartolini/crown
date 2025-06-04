@@ -67,7 +67,7 @@ public class UnitView : PropertyGrid
 
 		_components = new Gtk.Box(Gtk.Orientation.HORIZONTAL, 6);
 		_components.homogeneous = true;
-		_components.pack_start(_component_add);
+		_components.prepend(_component_add);
 
 		add_row("Prefab", _prefab);
 		add_row("Components", _components);
@@ -133,14 +133,14 @@ public class PropertiesView : Gtk.Stack
 		_unknown_object_type = new Gtk.Label("Unknown object type");
 
 		_viewport = new Gtk.Viewport(null, null);
-		_viewport.add(_object_view);
+		_viewport.set_child(_object_view);
 
-		_scrolled_window = new Gtk.ScrolledWindow(null, null);
-		_scrolled_window.add(_viewport);
+		_scrolled_window = new Gtk.ScrolledWindow();
+		_scrolled_window.set_child(_viewport);
 
-		this.add(_nothing_to_show);
-		this.add(_scrolled_window);
-		this.add(_unknown_object_type);
+		this.add_child(_nothing_to_show);
+		this.add_child(_scrolled_window);
+		this.add_child(_unknown_object_type);
 
 		this.get_style_context().add_class("properties-view");
 
@@ -168,17 +168,17 @@ public class PropertiesView : Gtk.Stack
 
 		Expander expander = _object_view.add_property_grid(grid, camel_case(object_type));
 		if (context_menu != null) {
-			Gtk.GestureMultiPress _controller_click = new Gtk.GestureMultiPress(expander);
+			Gtk.GestureClick _controller_click = new Gtk.GestureClick();
 			_controller_click.set_button(0);
 			_controller_click.released.connect((n_press, x, y) => {
 					if (_controller_click.get_current_button() == Gdk.BUTTON_SECONDARY) {
-						Gtk.Popover menu = new Gtk.Popover.from_model(null, context_menu(object_type));
-						menu.set_relative_to(expander);
+						Gtk.PopoverMenu menu = new Gtk.PopoverMenu.from_model(context_menu(object_type));
 						menu.set_pointing_to({ (int)x, (int)y, 1, 1 });
 						menu.set_position(Gtk.PositionType.BOTTOM);
 						menu.popup();
 					}
 				});
+			expander.add_controller(_controller_click);
 		}
 
 		_objects[object_type] = grid;

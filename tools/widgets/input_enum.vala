@@ -104,12 +104,14 @@ public class InputEnum : InputField, Gtk.ComboBox
 				return Gdk.EVENT_PROPAGATE;
 			});
 #else
-		_controller_scroll = new Gtk.EventControllerScroll(this, Gtk.EventControllerScrollFlags.BOTH_AXES);
+		_controller_scroll = new Gtk.EventControllerScroll(Gtk.EventControllerScrollFlags.BOTH_AXES);
 		_controller_scroll.set_propagation_phase(Gtk.PropagationPhase.CAPTURE);
 		_controller_scroll.scroll.connect(() => {
 				// Do nothing, just consume the event to stop
 				// the annoying scroll default behavior.
+				return Gdk.EVENT_PROPAGATE;
 			});
+		this.add_controller(_controller_scroll);
 #endif
 	}
 

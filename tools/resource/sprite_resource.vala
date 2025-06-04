@@ -5,7 +5,7 @@
 
 namespace Crown
 {
-public Gdk.RGBA collider_color = { 1.0, 0.5, 0.0, 1.0 };
+public Gdk.RGBA collider_color = { 1.0f, 0.5f, 0.0f, 1.0f };
 
 public enum Pivot
 {
@@ -406,13 +406,13 @@ public class SpriteImportDialog : Gtk.Window
 		cv.add_row("Lock Rotation", lock_rotation_z);
 		sprite_set.add_property_grid(cv, "Actor");
 
-		_previous_frame = new Gtk.Button.from_icon_name("go-previous-symbolic", Gtk.IconSize.LARGE_TOOLBAR);
+		_previous_frame = new Gtk.Button.from_icon_name("go-previous-symbolic");
 		_previous_frame.clicked.connect(() => {
 				_current_frame.value -= 1;
 				set_preview_frame();
 				_preview.queue_draw();
 			});
-		_next_frame = new Gtk.Button.from_icon_name("go-next-symbolic", Gtk.IconSize.LARGE_TOOLBAR);
+		_next_frame = new Gtk.Button.from_icon_name("go-next-symbolic");
 		_next_frame.clicked.connect(() => {
 				_current_frame.value += 1;
 				set_preview_frame();
@@ -428,9 +428,9 @@ public class SpriteImportDialog : Gtk.Window
 		_frame_selector_box.halign = Gtk.Align.CENTER;
 		_frame_selector_box.valign = Gtk.Align.END;
 		_frame_selector_box.margin_bottom = 24;
-		_frame_selector_box.pack_start(_previous_frame);
-		_frame_selector_box.pack_start(_current_frame);
-		_frame_selector_box.pack_end(_next_frame);
+		_frame_selector_box.prepend(_previous_frame);
+		_frame_selector_box.prepend(_current_frame);
+		_frame_selector_box.append(_next_frame);
 
 		_slices = new PixbufView();
 		_slices.set_size_request(_pixbuf.width, _pixbuf.height);
@@ -539,13 +539,13 @@ public class SpriteImportDialog : Gtk.Window
 			});
 
 		_preview_overlay = new Gtk.Overlay();
-		_preview_overlay.add(_preview);
+		_preview_overlay.set_child(_preview);
 		_preview_overlay.add_overlay(_frame_selector_box);
 
-		_scrolled_window = new Gtk.ScrolledWindow(null, null);
+		_scrolled_window = new Gtk.ScrolledWindow();
 		_scrolled_window.min_content_width = 640;
 		_scrolled_window.min_content_height = 640;
-		_scrolled_window.add(_slices);
+		_scrolled_window.set_child(_slices);
 
 		_notebook = new Gtk.Notebook();
 		_notebook.append_page(_preview_overlay, new Gtk.Label("Preview"));
@@ -554,11 +554,11 @@ public class SpriteImportDialog : Gtk.Window
 
 		Gtk.Paned pane;
 		pane = new Gtk.Paned(Gtk.Orientation.HORIZONTAL);
-		pane.pack1(_notebook, false, false);
-		pane.pack2(sprite_set, true, false);
+		pane.set_start_child(_notebook);
+		pane.set_end_child(sprite_set);
 
 		_box = new Gtk.Box(Gtk.Orientation.VERTICAL, 0);
-		_box.pack_start(pane, false, false);
+		_box.prepend(pane);
 
 		_cancel = new Gtk.Button.with_label("Cancel");
 		_cancel.clicked.connect(() => {
@@ -569,14 +569,12 @@ public class SpriteImportDialog : Gtk.Window
 		_import.clicked.connect(on_import);
 
 		_header_bar = new Gtk.HeaderBar();
-		_header_bar.title = "Import Sprite...";
-		_header_bar.show_close_button = true;
+		_header_bar.show_title_buttons = true;
 		_header_bar.pack_start(_cancel);
 		_header_bar.pack_end(_import);
-
+		this.title = "Import Sprite...";
 		this.set_titlebar(_header_bar);
-		this.add(_box);
-		this.map_event.connect(on_map_event);
+		this.set_child(_box);
 
 		if (File.new_for_path(settings_path).query_exists()) {
 			try {
@@ -585,12 +583,6 @@ public class SpriteImportDialog : Gtk.Window
 				// No-op.
 			}
 		}
-	}
-
-	private bool on_map_event(Gdk.EventAny ev)
-	{
-		_unit_name.grab_focus();
-		return Gdk.EVENT_PROPAGATE;
 	}
 
 	public void set_preview_frame()
@@ -1017,7 +1009,7 @@ public class SpriteResource
 		SpriteImportDialog dlg = new SpriteImportDialog(database, destination_dir, filenames, import_result);
 		dlg.set_transient_for(parent_window);
 		dlg.set_modal(true);
-		dlg.show_all();
+		dlg.show();
 	}
 }
 
