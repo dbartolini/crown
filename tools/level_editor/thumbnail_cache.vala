@@ -292,7 +292,7 @@ public class ThumbnailCache
 			_debug_window = new Gtk.Window();
 			_debug_window.set_title("ThumbnailCache Debug");
 			_debug_window.set_size_request(800, 800);
-			_debug_window.add(_debug_pixbuf);
+			_debug_window.set_child(_debug_pixbuf);
 			this.changed.connect(() => {
 					_debug_pixbuf.set_pixbuf(_atlas);
 					_debug_pixbuf.queue_draw();
@@ -300,7 +300,7 @@ public class ThumbnailCache
 		}
 
 		_debug_window.set_transient_for(parent_window);
-		_debug_window.show_all();
+		_debug_window.show();
 		_debug_window.present();
 	}
 }

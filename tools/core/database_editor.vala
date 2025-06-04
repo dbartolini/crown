@@ -89,13 +89,13 @@ public class DatabaseEditor
 			sb.activate.connect(() => { dg.response(Gtk.ResponseType.OK); });
 			sb.value = _database.name(object_id);
 
-			dg.get_content_area().add(sb);
+			dg.get_content_area().append(sb);
 			dg.response.connect((response_id) => {
 					if (response_id == Gtk.ResponseType.OK)
 						do_rename(object_id, sb.text.strip());
 					dg.destroy();
 				});
-			dg.show_all();
+			dg.show();
 		}
 	}
 

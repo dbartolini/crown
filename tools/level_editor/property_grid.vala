@@ -13,7 +13,7 @@ public class PropertyGrid : Gtk.Grid
 	};
 
 	public Expander? _expander;
-	public Gtk.GestureMultiPress _controller_click;
+	public Gtk.GestureClick _controller_click;
 	public GLib.SimpleActionGroup _action_group;
 	public Database? _db;
 	public StringId64 _type;
@@ -63,7 +63,7 @@ public class PropertyGrid : Gtk.Grid
 			md.set_default_response(Gtk.ResponseType.OK);
 
 			md.response.connect(() => { md.destroy(); });
-			md.show_all();
+			md.show();
 			return;
 		} else {
 			unit.remove_component_type(component_type);
@@ -83,8 +83,8 @@ public class PropertyGrid : Gtk.Grid
 			}
 
 			if (menu.get_n_items() > 0) {
-				Gtk.Popover popover = new Gtk.Popover.from_model(null, menu);
-				popover.set_relative_to(this);
+				Gtk.PopoverMenu popover = new Gtk.PopoverMenu.from_model(menu);
+				popover.set_parent(_expander);
 				popover.set_pointing_to({ (int)x, (int)y, 1, 1 });
 				popover.set_position(Gtk.PositionType.BOTTOM);
 				popover.popup();
@@ -136,9 +136,10 @@ public class PropertyGrid : Gtk.Grid
 
 		_expander = e;
 
-		_controller_click = new Gtk.GestureMultiPress(e);
+		_controller_click = new Gtk.GestureClick();
 		_controller_click.set_button(0);
 		_controller_click.released.connect(on_expander_button_released);
+		e.add_controller(_controller_click);
 	}
 
 	public Gtk.Widget add_row(string label, Gtk.Widget w)
@@ -509,7 +510,7 @@ public class PropertyGridSet : Gtk.Box
 		_list_box.set_sort_func(sort_function);
 		_list_box.set_filter_func(filter_function);
 
-		this.pack_start(_list_box);
+		this.append(_list_box);
 	}
 
 	public static int sort_function(Gtk.ListBoxRow row1, Gtk.ListBoxRow row2)
@@ -541,9 +542,9 @@ public class PropertyGridSet : Gtk.Box
 
 		Gtk.ListBoxRow row = new Gtk.ListBoxRow();
 		row.can_focus = false;
-		row.add(e);
+		row.set_child(e);
 
-		_list_box.add(row);
+		this.append(row);
 
 		return e;
 	}
@@ -556,8 +557,8 @@ public class PropertyGridSet : Gtk.Box
 		l.yalign = 0.5f;
 
 		Gtk.Box b = new Gtk.Box(Gtk.Orientation.HORIZONTAL, 6);
-		b.pack_start(InputBool, false, false);
-		b.pack_start(l, false, false);
+		b.append(InputBool);
+		b.append(l);
 
 		Expander e = new Expander();
 		e.custom_header = b;
@@ -567,9 +568,9 @@ public class PropertyGridSet : Gtk.Box
 
 		Gtk.ListBoxRow row = new Gtk.ListBoxRow();
 		row.can_focus = false;
-		row.add(e);
+		row.set_child(e);
 
-		_list_box.add(row);
+		this.append(e);
 
 		return e;
 	}

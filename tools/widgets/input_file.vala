@@ -57,7 +57,7 @@ public class InputFile : InputField, Gtk.Button
 		_label = new Gtk.Label("(None)");
 		_label.xalign = 0.0f;
 
-		this.add(_label);
+		this.set_child(_label);
 		this.clicked.connect(on_selector_clicked);
 	}
 
@@ -65,7 +65,7 @@ public class InputFile : InputField, Gtk.Button
 	{
 		string label = _action == Gtk.FileChooserAction.SELECT_FOLDER ? "Folder" : "File";
 		Gtk.FileChooserDialog dlg = new Gtk.FileChooserDialog("Select %s".printf(label)
-			, (Gtk.Window)this.get_toplevel()
+			, (Gtk.Window)this.get_root()
 			, _action
 			, "Cancel"
 			, Gtk.ResponseType.CANCEL
@@ -78,7 +78,7 @@ public class InputFile : InputField, Gtk.Button
 					this.value = dlg.get_file().get_path();
 				dlg.destroy();
 			});
-		dlg.show_all();
+		dlg.show();
 	}
 }
 

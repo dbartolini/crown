@@ -13,8 +13,8 @@ public class InputDouble : InputField, Gtk.Entry
 	public double _value;
 	public int _preview_decimals;
 	public int _edit_decimals;
-	public Gtk.GestureMultiPress _gesture_click;
-	public Gtk.EventControllerScroll _controller_scroll;
+	public Gtk.GestureClick _gesture_click;
+	public Gtk.EventControllerFocus _controller_focus;
 
 	public void set_inconsistent(bool inconsistent)
 	{
@@ -62,8 +62,6 @@ public class InputDouble : InputField, Gtk.Entry
 		this.set_width_chars(1);
 
 		this.activate.connect(on_activate);
-		this.focus_in_event.connect(on_focus_in);
-		this.focus_out_event.connect(on_focus_out);
 
 		_inconsistent = false;
 		_min = min;
@@ -73,23 +71,15 @@ public class InputDouble : InputField, Gtk.Entry
 
 		set_value_safe(val);
 
-		_gesture_click = new Gtk.GestureMultiPress(this);
+		_gesture_click = new Gtk.GestureClick();
 		_gesture_click.pressed.connect(on_button_pressed);
 		_gesture_click.released.connect(on_button_released);
+		this.add_controller(_gesture_click);
 
-#if CROWN_GTK3
-		this.scroll_event.connect(() => {
-				GLib.Signal.stop_emission_by_name(this, "scroll-event");
-				return Gdk.EVENT_PROPAGATE;
-			});
-#else
-		_controller_scroll = new Gtk.EventControllerScroll(this, Gtk.EventControllerScrollFlags.BOTH_AXES);
-		_controller_scroll.set_propagation_phase(Gtk.PropagationPhase.CAPTURE);
-		_controller_scroll.scroll.connect(() => {
-				// Do nothing, just consume the event to stop
-				// the annoying scroll default behavior.
-			});
-#endif
+		_controller_focus = new Gtk.EventControllerFocus();
+		_controller_focus.enter.connect(on_focus_enter);
+		_controller_focus.leave.connect(on_focus_leave);
+		this.add_controller(_controller_focus);
 	}
 
 	public void on_button_pressed(int n_press, double x, double y)
@@ -126,7 +116,7 @@ public class InputDouble : InputField, Gtk.Entry
 			this.text = print_max_decimals(_value, _preview_decimals);
 	}
 
-	public bool on_focus_in(Gdk.EventFocus ev)
+	public void on_focus_enter()
 	{
 		var app = (LevelEditorApplication)GLib.Application.get_default();
 		app.entry_any_focus_in(this);
@@ -138,11 +128,9 @@ public class InputDouble : InputField, Gtk.Entry
 
 		this.set_position(-1);
 		this.select_region(0, -1);
-
-		return Gdk.EVENT_PROPAGATE;
 	}
 
-	public bool on_focus_out(Gdk.EventFocus ef)
+	public void on_focus_leave()
 	{
 		var app = (LevelEditorApplication)GLib.Application.get_default();
 		app.entry_any_focus_out(this);
@@ -161,8 +149,6 @@ public class InputDouble : InputField, Gtk.Entry
 		}
 
 		this.select_region(0, 0);
-
-		return Gdk.EVENT_PROPAGATE;
 	}
 
 	public void set_value_safe(double val)

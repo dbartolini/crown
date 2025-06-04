@@ -8,20 +8,24 @@ namespace Crown
 public class EntrySearch : Gtk.Box
 {
 	public Gtk.SearchEntry _entry;
+	public Gtk.EventControllerFocus _controller_focus;
 
-	public signal void search_changed();
+	public signal void search_changed(EntrySearch entry);
 
 	public EntrySearch()
 	{
 		Object(orientation: Gtk.Orientation.HORIZONTAL);
 
 		_entry = new Gtk.SearchEntry();
+		_entry.search_changed.connect(() => search_changed(this));
+		_entry.hexpand = true;
 
-		_entry.focus_in_event.connect(on_focus_in);
-		_entry.focus_out_event.connect(on_focus_out);
-		_entry.search_changed.connect(() => search_changed());
+		_controller_focus = new Gtk.EventControllerFocus();
+		_controller_focus.enter.connect(on_focus_enter);
+		_controller_focus.leave.connect(on_focus_leave);
+		_entry.add_controller(_controller_focus);
 
-		this.pack_start(_entry);
+		this.append(_entry);
 	}
 
 	public string text {
@@ -31,23 +35,19 @@ public class EntrySearch : Gtk.Box
 
 	public void set_placeholder_text(string text)
 	{
-		_entry.set_placeholder_text(text);
+		_entry.set_property("placeholder-text", text);
 	}
 
-	public bool on_focus_in(Gdk.EventFocus ev)
+	public void on_focus_enter()
 	{
 		var app = (LevelEditorApplication)GLib.Application.get_default();
 		app.entry_any_focus_in(_entry);
-
-		return Gdk.EVENT_PROPAGATE;
 	}
 
-	public bool on_focus_out(Gdk.EventFocus ef)
+	public void on_focus_leave()
 	{
 		var app = (LevelEditorApplication)GLib.Application.get_default();
 		app.entry_any_focus_out(_entry);
-
-		return Gdk.EVENT_PROPAGATE;
 	}
 }
 

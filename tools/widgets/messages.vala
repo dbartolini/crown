@@ -9,9 +9,9 @@ public Gtk.Box message_widget(Gtk.Label h1, Gtk.Widget? p = null)
 {
 	var box = new Gtk.Box(Gtk.Orientation.VERTICAL, 12);
 	box.valign = Gtk.Align.CENTER;
-	box.pack_start(h1);
+	box.append(h1);
 	if (p != null)
-		box.pack_start(p);
+		box.append(p);
 
 	return box;
 }
@@ -23,7 +23,7 @@ public Gtk.Box long_running_task(string markup)
 	h1.valign = Gtk.Align.CENTER;
 
 	var spinner = new Gtk.Spinner();
-	spinner.active = true;
+	spinner.spinning = true;
 
 	return message_widget(h1, spinner);
 }
