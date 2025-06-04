@@ -29,27 +29,31 @@ public class Statusbar : Gtk.Box
 		// Widgets
 		clear_status();
 		_temporary_message = new Gtk.Label("");
-		_donate = new Gtk.Button.from_icon_name("hearth-symbolic", Gtk.IconSize.SMALL_TOOLBAR);
-		_donate.can_focus = false;
-		_donate.get_style_context().add_class("flat");
+		_temporary_message.hexpand = true;
+
+		_donate = new Gtk.Button.from_icon_name("hearth-symbolic");
+		_donate.focusable = false;
+		_donate.add_css_class("flat");
 		_donate.clicked.connect(() => {
 				GLib.Application.get_default().activate_action("donate", null);
 			});
+		_donate.halign = Gtk.Align.END;
 		_version = new Gtk.Label(null);
-		_version.get_style_context().add_class("colorfast-link");
+		_version.add_css_class("colorfast-link");
 		_version.set_markup("<a href=\"\">" + CROWN_VERSION + "</a>");
-		_version.get_style_context().add_class("version-label");
-		_version.can_focus = false;
+		_version.add_css_class("version-label");
+		_version.focusable = false;
 		_version.activate_link.connect(() => {
 				GLib.Application.get_default().activate_action("changelog", null);
 				return true;
 			});
+		_version.halign = Gtk.Align.END;
 
-		this.pack_start(_status, false, false, 0);
-		this.pack_start(_temporary_message, false, false, 0);
-		this.pack_end(_version, false, false, 0);
-		this.pack_end(_donate, false, false, 6);
-		this.get_style_context().add_class("statusbar");
+		this.append(_status);
+		this.append(_temporary_message);
+		this.append(_donate);
+		this.append(_version);
+		this.add_css_class("statusbar");
 	}
 
 	~Statusbar()
@@ -82,10 +86,12 @@ public class Statusbar : Gtk.Box
 
 	public void clear_status()
 	{
-		if (_status == null)
+		if (_status == null) {
 			_status = new Gtk.Label(IDLE_STATUS);
-		else
+			_status.halign = Gtk.Align.START;
+		} else {
 			_status.set_text(IDLE_STATUS);
+		}
 	}
 }
 

@@ -5,10 +5,16 @@
 
 namespace Crown
 {
-public abstract class InputField : Gtk.Bin
+public abstract class InputField : Gtk.Box
 {
 	public const string INCONSISTENT_ID = "-";
 	public const string INCONSISTENT_LABEL = "—";
+
+	protected InputField()
+	{
+		Object(orientation: Gtk.Orientation.HORIZONTAL, spacing: 0);
+		this.hexpand = true;
+	}
 
 	public abstract void set_inconsistent(bool inconsistent);
 	public abstract bool is_inconsistent();
@@ -17,6 +23,13 @@ public abstract class InputField : Gtk.Bin
 
 	/// undo_redo == 0 means the undo system is disabled.
 	public signal void value_changed(InputField p, int undo_redo = 1);
+
+	public void set_child(Gtk.Widget child)
+	{
+		child.hexpand = true;
+		child.halign = Gtk.Align.FILL;
+		this.append(child);
+	}
 }
 
 } /* namespace Crown */

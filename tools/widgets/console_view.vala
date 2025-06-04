@@ -14,11 +14,9 @@ public class CounterLabel : Gtk.Box
 		Object(orientation: Gtk.Orientation.HORIZONTAL);
 
 		_label = new Gtk.Label("");
-		_label.get_style_context().add_class("counter-label");
-		_label.set_visible(true);
+		_label.add_css_class("counter-label");
 
-		this.pack_start(_label);
-		this.show_all();
+		this.append(_label);
 	}
 
 	public void set_text(string str)
@@ -31,13 +29,15 @@ public class CounterLabel : Gtk.Box
 		_label.set_markup(str);
 	}
 
-	public override void get_preferred_height(out int minimum_height, out int natural_height)
+/*
+	public override void get_preferred_size(out Gtk.Requisition minimum_size, out Gtk.Requisition natural_size)
 	{
 		// FIXME: Find a proper way to position/size labels inside Gtk.TextView.
 		// Make Gtk.Label think it only needs 16px vertical to show its text.
-		minimum_height = 1;
-		natural_height = 16;
+		minimum_size.height = 1;
+		natural_size.height = 16;
 	}
+*/
 }
 public class EntryHistory
 {
@@ -129,7 +129,7 @@ public class ConsoleView : Gtk.Box
 	public Gdk.Cursor _pointer_cursor;
 	public bool _cursor_is_hovering_link;
 	public Gtk.TextView _text_view;
-	public Gtk.GestureMultiPress _text_view_gesture_click;
+	public Gtk.GestureClick _text_view_gesture_click;
 	public Gtk.EventControllerMotion _text_view_controller_motion;
 	public Gtk.Overlay _text_view_overlay;
 	public Gtk.ScrolledWindow _scrolled_window;
@@ -163,13 +163,13 @@ public class ConsoleView : Gtk.Box
 		_history_navigation_active = false;
 
 		// Widgets
-		_text_cursor = new Gdk.Cursor.from_name(this.get_display(), "text");
-		_pointer_cursor = new Gdk.Cursor.from_name(this.get_display(), "pointer");
+		_text_cursor = new Gdk.Cursor.from_name("text", null);
+		_pointer_cursor = new Gdk.Cursor.from_name("pointer", null);
 		_cursor_is_hovering_link = false;
 
 		_text_view = new Gtk.TextView();
 		_text_view.editable = false;
-		_text_view.can_focus = true;
+		_text_view.focusable = true;
 
 		Gtk.Button clear_button = new Gtk.Button.from_icon_name("edit-clear");
 		clear_button.set_tooltip_text("Clear the console.");
@@ -189,28 +189,29 @@ public class ConsoleView : Gtk.Box
 		tb.tag_table.add(new Gtk.TextTag("debug"));
 		tb.tag_table.add(new Gtk.TextTag("time"));
 
-		this.style_updated.connect(update_style);
-		update_style();
-
 		Gtk.TextIter end_iter;
 		tb.get_end_iter(out end_iter);
 		_scroll_mark = tb.create_mark("scroll", end_iter, true);
 		_time_mark = tb.create_mark("time", end_iter, true);
 
-		_scrolled_window = new Gtk.ScrolledWindow(null, null);
+		_scrolled_window = new Gtk.ScrolledWindow();
 		_scrolled_window.vscrollbar_policy = Gtk.PolicyType.ALWAYS;
-		_scrolled_window.add(_text_view);
+		_scrolled_window.set_child(_text_view);
 
 		_text_view_overlay = new Gtk.Overlay();
-		_text_view_overlay.add(_scrolled_window);
+		_text_view_overlay.set_child(_scrolled_window);
 		_text_view_overlay.add_overlay(clear_button);
+		_text_view_overlay.vexpand = true;
 
 		_entry = new Gtk.Entry();
 		_entry.activate.connect(on_entry_activated);
 		_entry.changed.connect(on_entry_changed);
-		_entry.focus_in_event.connect(on_entry_focus_in);
-		_entry.focus_out_event.connect(on_entry_focus_out);
 		_entry.set_placeholder_text("Enter Command or Lua expression");
+		_entry.hexpand = true;
+		var entry_focus = new Gtk.EventControllerFocus();
+		entry_focus.enter.connect(on_entry_focus_in);
+		entry_focus.leave.connect(on_entry_focus_out);
+		_entry.add_controller(entry_focus);
 
 		_entry_suggestions_list = new Gtk.ListBox();
 		_entry_suggestions_list.selection_mode = Gtk.SelectionMode.SINGLE;
@@ -228,57 +229,60 @@ public class ConsoleView : Gtk.Box
 				hide_lua_suggestions();
 			});
 
-		_entry_suggestions_scroller = new Gtk.ScrolledWindow(null, null);
+		_entry_suggestions_scroller = new Gtk.ScrolledWindow();
 		_entry_suggestions_scroller.hscrollbar_policy = Gtk.PolicyType.NEVER;
 		_entry_suggestions_scroller.vscrollbar_policy = Gtk.PolicyType.AUTOMATIC;
 		_entry_suggestions_scroller.set_min_content_height(-1);
 		_entry_suggestions_scroller.set_max_content_height(500);
-		_entry_suggestions_scroller.add(_entry_suggestions_list);
+		_entry_suggestions_scroller.set_child(_entry_suggestions_list);
 
-		_entry_controller_key = new Gtk.EventControllerKey(_entry);
+		_entry_controller_key = new Gtk.EventControllerKey();
 		_entry_controller_key.key_pressed.connect(on_entry_key_pressed);
+		_entry.add_controller(_entry_controller_key);
 
 		_entry_hbox = new Gtk.Box(Gtk.Orientation.HORIZONTAL, 0);
-		_entry_hbox.pack_start(combo, false, false);
-		_entry_hbox.pack_start(_entry, true, true);
+		_entry_hbox.append(combo);
+		_entry_hbox.append(_entry);
 
-		_entry_suggestions_popover = new Gtk.Popover(_entry);
-		_entry_suggestions_popover.set_modal(false);
+		_entry_suggestions_popover = new Gtk.Popover();
 		_entry_suggestions_popover.set_can_focus(false);
 		_entry_suggestions_popover.set_position(Gtk.PositionType.BOTTOM);
-		_entry_suggestions_popover.add(_entry_suggestions_scroller);
-		_entry_suggestions_popover.show_all();
+		_entry_suggestions_popover.set_parent(_entry);
+		_entry_suggestions_popover.set_child(_entry_suggestions_scroller);
 		_entry_suggestions_popover.popdown();
-		_entry_hbox.size_allocate.connect((allocation) => {
-				_entry_suggestions_popover.set_size_request(allocation.width, -1);
-			});
 
 		Gtk.Box hbox = new Gtk.Box(Gtk.Orientation.HORIZONTAL, 0);
-		hbox.pack_start(_entry_hbox, true, true, 0);
+		hbox.append(_entry_hbox);
 
-		this.pack_start(_text_view_overlay, true, true, 0);
-		this.pack_start(hbox, false, true, 0);
+		this.append(_text_view_overlay);
+		this.append(hbox);
 
 		this.destroy.connect(on_destroy);
 
-		_text_view_gesture_click = new Gtk.GestureMultiPress(_text_view);
+		_text_view_gesture_click = new Gtk.GestureClick();
 		_text_view_gesture_click.set_button(0);
 		_text_view_gesture_click.set_propagation_phase(Gtk.PropagationPhase.CAPTURE);
 		_text_view_gesture_click.pressed.connect(on_button_pressed);
 		_text_view_gesture_click.released.connect(on_button_released);
+		_text_view.add_controller(_text_view_gesture_click);
 
-		_text_view_controller_motion = new Gtk.EventControllerMotion(_text_view);
+		_text_view_controller_motion = new Gtk.EventControllerMotion();
 		_text_view_controller_motion.motion.connect(on_motion_notify);
+		_text_view.add_controller(_text_view_controller_motion);
 
-		this.get_style_context().add_class("console-view");
+		this.add_css_class("console-view");
 
 		_console_view_valid = true;
 	}
 
 	public void clear_lua_suggestions()
 	{
-		foreach (var child in _entry_suggestions_list.get_children())
+		Gtk.Widget? child = _entry_suggestions_list.get_first_child();
+		while (child != null) {
+			Gtk.Widget? next = child.get_next_sibling();
 			_entry_suggestions_list.remove(child);
+			child = next;
+		}
 	}
 
 	public void reset_lua_suggestions_state()
@@ -312,8 +316,9 @@ public class ConsoleView : Gtk.Box
 
 	public void navigate_suggestions(int delta)
 	{
-		var children = _entry_suggestions_list.get_children();
-		int count = (int)children.length();
+		int count = 0;
+		for (Gtk.Widget? child = _entry_suggestions_list.get_first_child(); child != null; child = child.get_next_sibling())
+			++count;
 		if (count == 0)
 			return;
 
@@ -410,13 +415,12 @@ public class ConsoleView : Gtk.Box
 			Gtk.ListBoxRow row = new Gtk.ListBoxRow();
 			Gtk.Label label = new Gtk.Label(s);
 			label.set_xalign(0.0f);
-			row.add(label);
+			row.set_child(label);
 			row.set_data("suggestion", s);
-			_entry_suggestions_list.add(row);
+			_entry_suggestions_list.append(row);
 			++suggestions_count;
 		}
 		_entry_suggestions_list.invalidate_sort();
-		_entry_suggestions_list.show_all();
 
 		if (suggestions_count > 0) {
 			Gtk.ListBoxRow? first_row = _entry_suggestions_list.get_row_at_index(0);
@@ -435,7 +439,15 @@ public class ConsoleView : Gtk.Box
 			_entry_hbox.get_allocation(out bar_alloc);
 			int list_min_h = 0;
 			int list_nat_h = 0;
-			_entry_suggestions_list.get_preferred_height(out list_min_h, out list_nat_h);
+			int baseline_min = 0;
+			int baseline_nat = 0;
+			_entry_suggestions_list.measure(Gtk.Orientation.VERTICAL
+				, -1
+				, out list_min_h
+				, out list_nat_h
+				, out baseline_min
+				, out baseline_nat
+				);
 			int desired_h = list_nat_h + 8;
 			const int max_h = 500;
 			if (desired_h > max_h)
@@ -498,19 +510,17 @@ public class ConsoleView : Gtk.Box
 		_entry.text = "";
 	}
 
-	public bool on_entry_focus_in(Gdk.EventFocus ev)
+	public void on_entry_focus_in()
 	{
 		var app = (LevelEditorApplication)GLib.Application.get_default();
 		app.entry_any_focus_in(_entry);
-		return Gdk.EVENT_PROPAGATE;
 	}
 
-	public bool on_entry_focus_out(Gdk.EventFocus ef)
+	public void on_entry_focus_out()
 	{
 		var app = (LevelEditorApplication)GLib.Application.get_default();
 		app.entry_any_focus_out(_entry);
 		hide_lua_suggestions();
-		return Gdk.EVENT_PROPAGATE;
 	}
 
 	public bool on_entry_key_pressed(uint keyval, uint keycode, Gdk.ModifierType state)
@@ -611,8 +621,8 @@ public class ConsoleView : Gtk.Box
 						mi.set_action_and_target_value("app.open-containing", new GLib.Variant.string(resource_path));
 						menu_model.append_item(mi);
 
-						Gtk.Popover menu = new Gtk.Popover.from_model(null, menu_model);
-						menu.set_relative_to(_text_view);
+						Gtk.PopoverMenu menu = new Gtk.PopoverMenu.from_model(menu_model);
+						menu.set_parent(_text_view);
 						menu.set_pointing_to({ (int)x, (int)y, 1, 1 });
 						menu.set_position(Gtk.PositionType.BOTTOM);
 						menu.popup();
@@ -695,9 +705,9 @@ public class ConsoleView : Gtk.Box
 			_cursor_is_hovering_link = hovering;
 
 			if (_cursor_is_hovering_link)
-				_text_view.get_window(Gtk.TextWindowType.TEXT).set_cursor(_pointer_cursor);
+				_text_view.set_cursor(_pointer_cursor);
 			else
-				_text_view.get_window(Gtk.TextWindowType.TEXT).set_cursor(_text_cursor);
+				_text_view.set_cursor(_text_cursor);
 		}
 	}
 
@@ -720,7 +730,7 @@ public class ConsoleView : Gtk.Box
 
 		// Avoid showing duplicated messages. Insert a little counter
 		// at the end of each line occurring twice or more.
-		if (_last_message.text == message) {
+		if (false /* FIXME */ && _last_message.text == message) {
 			// Replace the current time with the latest one.
 			Gtk.TextIter time_start;
 			Gtk.TextIter time_end;
@@ -750,9 +760,8 @@ public class ConsoleView : Gtk.Box
 
 			const int MAX_REPETITIONS = 1000;
 			if (_last_message.num_repetitions < MAX_REPETITIONS) {
-				List<unowned Gtk.Widget> widgets = _last_message.anchor.get_widgets();
-				unowned var label_widget = widgets.first();
-				var cl = (CounterLabel)label_widget.data;
+				(unowned Gtk.Widget)[] widgets = _last_message.anchor.get_widgets();
+				var cl = (CounterLabel)widgets[0];
 
 				if (_last_message.num_repetitions == MAX_REPETITIONS - 1)
 					cl.set_markup("%d+".printf(_last_message.num_repetitions));
@@ -898,8 +907,10 @@ public class ConsoleView : Gtk.Box
 			});
 	}
 
-	public void update_style()
+	public override void css_changed(Gtk.CssStyleChange c)
 	{
+		base.css_changed(c);
+
 		Gtk.TextBuffer tb = _text_view.buffer;
 		Gtk.TextTag tag_warning = tb.tag_table.lookup("warning");
 		Gtk.TextTag tag_error = tb.tag_table.lookup("error");

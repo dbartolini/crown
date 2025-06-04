@@ -24,9 +24,9 @@ public class SelectResourceDialog : Gtk.Window
 			this.set_transient_for(parent);
 			this.set_modal(true);
 		}
-		this.delete_event.connect(on_close);
+		this.close_request.connect(on_close);
 
-		_controller_key = new Gtk.EventControllerKey(this);
+		_controller_key = new Gtk.EventControllerKey();
 		_controller_key.set_propagation_phase(Gtk.PropagationPhase.CAPTURE);
 		_controller_key.key_pressed.connect((keyval) => {
 				if (keyval == Gdk.Key.Escape) {
@@ -37,15 +37,16 @@ public class SelectResourceDialog : Gtk.Window
 				return Gdk.EVENT_PROPAGATE;
 			});
 
+		((Gtk.Widget)this).add_controller(_controller_key);
+
 		_header_bar = new Gtk.HeaderBar();
-		_header_bar.title = "Select a %s".printf(resource_type);
-		_header_bar.show_close_button = true;
+		_header_bar.set_title_widget(new Gtk.Label("Select a %s".printf(resource_type)));
 		this.set_titlebar(_header_bar);
 
 		_chooser = new ResourceChooser(null, project_store);
 		_chooser.set_type_filter(on_resource_chooser_filter);
 		_chooser.resource_selected.connect(on_resource_chooser_resource_selected);
-		this.add(_chooser);
+		this.set_child(_chooser);
 	}
 
 	public bool on_close()

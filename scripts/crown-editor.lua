@@ -39,10 +39,6 @@ project "crown-editor"
 		"FatalWarnings"
 	}
 
-	defines {
-		"CROWN_GTK3"
-	}
-
 	removelinkoptions {
 		"-static"
 	}
@@ -50,11 +46,10 @@ project "crown-editor"
 		"dl"
 	}
 	links {
-		"gdk-3.0",
 		"gee-0.8",
 		"gio-2.0",
 		"glib-2.0",
-		"gtk+-3.0",
+		"gtk4",
 	}
 
 	buildoptions {
@@ -87,6 +82,7 @@ project "crown-editor"
 		"--pkg tinyexpr",
 		"--pkg md5",
 		"--pkg ufbx",
+		"--disable-warnings",
 	}
 
 	vapidirs {

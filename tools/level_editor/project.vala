@@ -664,6 +664,7 @@ public class Project
 		}
 	}
 
+	/*
 	public class FileFilterFuncData
 	{
 		public string extension;
@@ -678,6 +679,7 @@ public class Project
 			return info.filename.down().has_suffix("." + extension);
 		}
 	}
+	*/
 
 	// Returns a Gtk.FileFilter based on file @a extensions list.
 	public Gtk.FileFilter create_gtk_file_filter(string name, Gee.ArrayList<string> extensions)
@@ -687,8 +689,10 @@ public class Project
 		string extensions_comma_separated = "";
 		foreach (var ext in extensions) {
 			extensions_comma_separated += "*.%s, ".printf(ext);
+			/*
 			FileFilterFuncData data = new FileFilterFuncData(ext);
 			filter.add_custom(Gtk.FileFilterFlags.FILENAME, data.handler);
+			*/
 		}
 		filter.set_filter_name(name + " (%s)".printf(extensions_comma_separated[0 : -2]));
 
@@ -805,7 +809,7 @@ public class Project
 				, Gtk.ResponseType.ACCEPT
 				);
 			try {
-				fcd.set_current_folder_file(GLib.File.new_for_path(this.source_dir()));
+				fcd.set_current_folder(GLib.File.new_for_path(this.source_dir()));
 			} catch (GLib.Error e) {
 				loge(e.message);
 			}
@@ -816,7 +820,7 @@ public class Project
 					fcd.destroy();
 				});
 
-			fcd.show_all();
+			fcd.show();
 		}
 	}
 
@@ -846,8 +850,11 @@ public class Project
 
 			fcd.response.connect((response_id) => {
 					if (response_id == Gtk.ResponseType.ACCEPT) {
-						foreach (var f in fcd.get_files())
+						var file_list = fcd.get_files();
+						for (uint i = 0; i < file_list.get_n_items(); i++) {
+							var f = (GLib.File)file_list.get_item(i);
 							filenames.append(f.get_path());
+						}
 
 						// Find importer callback.
 						unowned ImporterDelegate? importer = null;
@@ -867,7 +874,7 @@ public class Project
 					fcd.destroy();
 				});
 
-			fcd.show_all();
+			fcd.show();
 		} else {
 			foreach (var f in files)
 				filenames.append(f);
