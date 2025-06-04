@@ -59,7 +59,7 @@ public class UnitView : PropertyGrid
 			menu_model.append_item(mi);
 		}
 
-		_add_popover = new Gtk.Popover.from_model(null, menu_model);
+		_add_popover = new Gtk.PopoverMenu.from_model(menu_model);
 
 		_component_add = new Gtk.MenuButton();
 		_component_add.label = "Add Component";
@@ -67,7 +67,7 @@ public class UnitView : PropertyGrid
 
 		_components = new Gtk.Box(Gtk.Orientation.HORIZONTAL, 6);
 		_components.homogeneous = true;
-		_components.pack_start(_component_add);
+		_components.append(_component_add);
 
 		add_row("Prefab", _prefab);
 		add_row("Prefab", _open_prefab);
@@ -122,20 +122,21 @@ public class PropertiesView : Gtk.Box
 			= _object_view.margin_top
 			= 6
 			;
+		_object_view.vexpand = true;
 
 		_viewport = new Gtk.Viewport(null, null);
-		_viewport.add(_object_view);
+		_viewport.set_child(_object_view);
 
-		_scrolled_window = new Gtk.ScrolledWindow(null, null);
-		_scrolled_window.add(_viewport);
+		_scrolled_window = new Gtk.ScrolledWindow();
+		_scrolled_window.set_child(_viewport);
 
 		_stack = new Gtk.Stack();
 		_stack.add_named(new Gtk.Label("Select an object to start editing"), NOTHING_TO_SHOW);
 		_stack.add_named(new Gtk.Label("Unknown object type"), UNKNOWN_OBJECT_TYPE);
 		_stack.add_named(_scrolled_window, PROPERTIES);
 
-		this.pack_start(_stack);
-		this.get_style_context().add_class("properties-view");
+		this.append(_stack);
+		this.add_css_class("properties-view");
 
 		_database._project.project_reset.connect(on_project_reset);
 	}
@@ -173,9 +174,9 @@ public class PropertiesView : Gtk.Box
 
 				if (component_id != GUID_ZERO) {
 					if (id == _database.owner(component_id))
-						cv._expander.get_style_context().remove_class("inherited");
+						cv._expander.remove_css_class("inherited");
 					else
-						cv._expander.get_style_context().add_class("inherited");
+						cv._expander.add_css_class("inherited");
 				}
 
 				cv._expander.expanded = was_expanded;

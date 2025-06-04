@@ -9,9 +9,9 @@ extern Gdk.RGBA? gtk_color_picker_pick_finish(GLib.Object picker, GLib.AsyncResu
 
 namespace Crown
 {
-public class ColorButton : Gtk.MenuButton
+public class ColorButton : Gtk.Button
 {
-	public Gdk.RGBA color = { 1.0, 1.0, 1.0, 1.0 };
+	public Gdk.RGBA color = { 1.0f, 1.0f, 1.0f, 1.0f };
 	public const int PADDING = 4;
 
 	public ColorButton()
@@ -25,18 +25,21 @@ public class ColorButton : Gtk.MenuButton
 		this.queue_draw();
 	}
 
-	public override bool draw(Cairo.Context cr)
+	public override void snapshot(Gtk.Snapshot snapshot)
 	{
-		base.draw(cr);
+		int alloc_width = this.get_allocated_width();
+		int alloc_height = this.get_allocated_height();
 
-		Gtk.Allocation alloc;
-		this.get_allocation(out alloc);
+		var cr = snapshot.append_cairo(Graphene.Rect() {
+			origin = { 0, 0 },
+			size = { alloc_width, alloc_height }
+		});
 
 		cr.set_source_rgba(this.color.red, this.color.green, this.color.blue, this.color.alpha);
-		cr.rectangle(PADDING, PADDING, alloc.width - 2 * PADDING, alloc.height - 2 * PADDING);
+		cr.rectangle(PADDING, PADDING, alloc_width - 2 * PADDING, alloc_height - 2 * PADDING);
 		cr.fill();
 
-		return false;
+		base.snapshot(snapshot);
 	}
 }
 
@@ -224,7 +227,7 @@ public class InputColor3 : InputField
 	public double _hs_lens_small_radius_scale;
 	public Gtk.DrawingArea _hs_palette;
 	public Gtk.Scale _hsv_v_scale;
-	public Gtk.GestureMultiPress _hsv_v_scale_gesture_click;
+	public Gtk.GestureClick _hsv_v_scale_gesture_click;
 	public InputDouble _rgb_r;
 	public InputDouble _rgb_g;
 	public InputDouble _rgb_b;
@@ -238,7 +241,7 @@ public class InputColor3 : InputField
 	public InputString _color_string;
 	public Gtk.Button _picker_button;
 	public GLib.Object _picker;
-	public Gtk.GestureMultiPress _gesture_click;
+	public Gtk.GestureClick _gesture_click;
 	public Gtk.EventControllerMotion _controller_motion;
 	public Gtk.Box _visual_box;
 	public Gtk.Box _numeric_box;
@@ -303,31 +306,34 @@ public class InputColor3 : InputField
 
 		_hs_palette = new Gtk.DrawingArea();
 		_hs_palette.halign = Gtk.Align.START;
-		_hs_palette.draw.connect(on_draw_circle);
-		_hs_palette.size_allocate.connect(on_circle_size_allocate);
+		_hs_palette.set_draw_func(on_draw_circle);
+		_hs_palette.resize.connect(on_circle_size_allocate);
 		int sr = palette_size_request();
 		_hs_palette.set_size_request(sr, sr);
 
-		_gesture_click = new Gtk.GestureMultiPress(_hs_palette);
+		_gesture_click = new Gtk.GestureClick();
 		_gesture_click.set_button(0);
 		_gesture_click.pressed.connect(on_hs_circle_button_pressed);
 		_gesture_click.released.connect(on_hs_circle_button_released);
+		_hs_palette.add_controller(_gesture_click);
 
-		_controller_motion = new Gtk.EventControllerMotion(_hs_palette);
+		_controller_motion = new Gtk.EventControllerMotion();
 		_controller_motion.motion.connect(on_hs_circle_motion);
+		_hs_palette.add_controller(_controller_motion);
 
 		Gtk.Adjustment adj = new Gtk.Adjustment(0.0, 0.0, 1.0, 0.01, 0.1, 0.0);
 		_hsv_v_scale = new Gtk.Scale(Gtk.Orientation.VERTICAL, adj);
-		_hsv_v_scale.get_style_context().add_class("hsv-v-scale");
+		_hsv_v_scale.add_css_class("hsv-v-scale");
 		_hsv_v_scale.halign = Gtk.Align.END;
 		_hsv_v_scale.draw_value = false;
 		_hsv_v_scale.set_digits(3);
 		_hsv_v_scale.halign = Gtk.Align.START;
 		_hsv_v_scale.value_changed.connect(on_hsv_v_scale_value_changed);
 
-		_hsv_v_scale_gesture_click = new Gtk.GestureMultiPress(_hsv_v_scale);
+		_hsv_v_scale_gesture_click = new Gtk.GestureClick();
 		_hsv_v_scale_gesture_click.pressed.connect(on_hsv_v_scale_pressed);
 		_hsv_v_scale_gesture_click.released.connect(on_hsv_v_scale_released);
+		_hsv_v_scale.add_controller(_hsv_v_scale_gesture_click);
 
 		_rgb_r = new InputDouble(1.0, 0.0, 1.0);
 		_rgb_g = new InputDouble(1.0, 0.0, 1.0);
@@ -380,36 +386,33 @@ public class InputColor3 : InputField
 		_rgb_hsv_switcher.set_stack(_rgb_hsv_stack);
 
 		_visual_box = new Gtk.Box(Gtk.Orientation.HORIZONTAL, 0);
-		_visual_box.margin = 0;
-		_visual_box.pack_start(_hs_palette, true, true, 0);
-		_visual_box.pack_start(_hsv_v_scale, false, false, 0);
+		_visual_box.append(_hs_palette);
+		_visual_box.append(_hsv_v_scale);
 
 		_numeric_box = new Gtk.Box(Gtk.Orientation.VERTICAL, 8);
-		_numeric_box.pack_start(_rgb_hsv_switcher);
-		_numeric_box.pack_start(_rgb_hsv_stack);
+		_numeric_box.append(_rgb_hsv_switcher);
+		_numeric_box.append(_rgb_hsv_stack);
 
 		_utils_box = new Gtk.Box(Gtk.Orientation.HORIZONTAL, 4);
-		_utils_box.pack_start(_color_string);
-		_utils_box.pack_start(_picker_button, false);
+		_utils_box.append(_color_string);
+		_utils_box.append(_picker_button);
 
 		_input_box = new Gtk.Box(Gtk.Orientation.VERTICAL, 16 /* Avoid slider overlapping buttons. */);
-		_input_box.margin = 12;
-		_input_box.pack_start(_visual_box);
-		_input_box.pack_start(_numeric_box);
-		_input_box.pack_start(_utils_box);
+		_input_box.append(_visual_box);
+		_input_box.append(_numeric_box);
+		_input_box.append(_utils_box);
 
-		_popover = new Gtk.Popover(null);
-		_popover.add(_input_box);
-		// _popover.has_arrow = false;
-		_input_box.show_all();
+		_popover = new Gtk.Popover();
+		_popover.set_child(_input_box);
+		_popover.has_arrow = false;
 
 		_color_button = new ColorButton();
 		_color_button.set_tooltip_text("Choose a color.");
-		_color_button.can_focus = false;
-		_color_button.set_popover(_popover);
+		_color_button.focusable = false;
+		// _color_button.set_popover(_popover);
 
 		this.value_changed.connect(on_value_changed);
-		this.add(_color_button);
+		this.set_child(_color_button);
 
 		on_value_changed();
 	}
@@ -423,11 +426,9 @@ public class InputColor3 : InputField
 		radius = full_radius - full_radius * _hs_lens_radius_scale;
 	}
 
-	public bool on_draw_circle(Cairo.Context cr)
-	{
-		double w = (double)this._hs_palette.get_allocated_width();
-		double h = (double)this._hs_palette.get_allocated_height();
 
+	public void on_draw_circle(Gtk.DrawingArea hs_palette, Cairo.Context cr, int w, int h)
+	{
 		double cx = w / 2.0;
 		double cy = h / 2.0;
 		double full_radius;
@@ -453,8 +454,6 @@ public class InputColor3 : InputField
 
 		double scale = _dragging ? _hs_lens_radius_scale : _hs_lens_small_radius_scale;
 		draw_lens(cr, full_radius * scale);
-
-		return false;
 	}
 
 	public bool draw_lens(Cairo.Context cr, double radius)
@@ -479,9 +478,9 @@ public class InputColor3 : InputField
 		return false;
 	}
 
-	public void on_circle_size_allocate(Gtk.Allocation allocation)
+	public void on_circle_size_allocate(int width, int height)
 	{
-		int dia = (int)Math.fmax(1.0, Math.fmin ((double)allocation.width, (double)allocation.height));
+		int dia = (int)Math.fmax(1.0, Math.fmin ((double)width, (double)height));
 		_hsv_v_scale.set_size_request(-1, dia);
 	}
 
@@ -577,7 +576,7 @@ public class InputColor3 : InputField
 	public void on_value_changed()
 	{
 		Vector3 c = this.value;
-		_color_button.set_color({ c.x, c.y, c.z, 1.0 });
+		_color_button.set_color({ (float)c.x, (float)c.y, (float)c.z, 1.0f });
 		_color_string.value_changed.disconnect(on_color_string_value_changed);
 		_color_string.value = "Color4(%d, %d, %d, %d)".printf((int)(_rgb_r.value * 255.0)
 			, (int)(_rgb_g.value * 255.0)
@@ -631,7 +630,7 @@ public class InputColor3 : InputField
 		_hsv_h.value = hs.x;
 		_hsv_s.value = hs.y;
 
-		_hs_palette.get_window().set_cursor(new Gdk.Cursor.from_name(Gdk.Display.get_default(), "none"));
+		_hs_palette.set_cursor_from_name("none");
 		_hs_palette.queue_draw();
 	}
 
@@ -664,7 +663,7 @@ public class InputColor3 : InputField
 
 		value_changed(this, (int)!_dragging);
 
-		_hs_palette.get_window().set_cursor(new Gdk.Cursor.from_name(Gdk.Display.get_default(), "default"));
+		_hs_palette.set_cursor_from_name("default");
 		_hs_palette.queue_draw();
 	}
 

@@ -35,7 +35,8 @@ public Gtk.Button make_deploy_button(TargetPlatform platform)
 	btn.margin_start = 12;
 	btn.margin_end = 12;
 	btn.margin_top = 12;
-	btn.get_style_context().add_class("suggested-action");
+	btn.halign = Gtk.Align.FILL;
+	btn.add_css_class("suggested-action");
 	return btn;
 }
 
@@ -68,7 +69,7 @@ public class DeployerPage : Gtk.Box
 		p1l.valign = Gtk.Align.CENTER;
 
 		var p2l = new Gtk.Label(null);
-		p2l.get_style_context().add_class("colorfast-link");
+		p2l.add_css_class("colorfast-link");
 		p2l.set_markup(p2);
 		p2l.valign = Gtk.Align.CENTER;
 		p2l.activate_link.connect(() => {
@@ -83,14 +84,14 @@ public class DeployerPage : Gtk.Box
 			});
 		_check_config_box = new Gtk.Box(Gtk.Orientation.VERTICAL, 12);
 		_check_config_box.valign = Gtk.Align.CENTER;
-		_check_config_box.pack_start(h1l);
-		_check_config_box.pack_start(p1l);
-		_check_config_box.pack_start(p2l);
+		_check_config_box.append(h1l);
+		_check_config_box.append(p1l);
+		_check_config_box.append(p2l);
 
-		_stack.add(_check_config_box);
-		_stack.add(_deployer_options);
+		_stack.add_child(_check_config_box);
+		_stack.add_child(_deployer_options);
 
-		this.pack_start(_stack);
+		this.append(_stack);
 
 		this.map.connect(on_map);
 	}
@@ -345,8 +346,8 @@ public class DeployDialog : Gtk.Window
 
 		// Android box.
 		_android_box = new Gtk.Box(Gtk.Orientation.VERTICAL, 0);
-		_android_box.pack_start(_android_deploy_button, false, true, 0);
-		_android_box.pack_start(_android_set, false, true, 0);
+		_android_box.append(_android_deploy_button);
+		_android_box.append(_android_set);
 		_android = new AndroidDeployer();
 		_android_page = new DeployerPage(TargetPlatform.ANDROID, _android_box, _android.check_config);
 
@@ -388,8 +389,8 @@ public class DeployDialog : Gtk.Window
 
 		// HTML5 box.
 		_html5_box = new Gtk.Box(Gtk.Orientation.VERTICAL, 0);
-		_html5_box.pack_start(_html5_deploy_button, false, true, 0);
-		_html5_box.pack_start(_html5_set, false, true, 0);
+		_html5_box.append(_html5_deploy_button);
+		_html5_box.append(_html5_set);
 		_html5 = new HTML5Deployer();
 		_html5_page = new DeployerPage(TargetPlatform.HTML5, _html5_box, _html5.check_config);
 
@@ -444,8 +445,8 @@ public class DeployDialog : Gtk.Window
 
 		// Linux box.
 		_linux_box = new Gtk.Box(Gtk.Orientation.VERTICAL, 0);
-		_linux_box.pack_start(_linux_deploy_button, false, true, 0);
-		_linux_box.pack_start(_linux_set, false, true, 0);
+		_linux_box.append(_linux_deploy_button);
+		_linux_box.append(_linux_set);
 		_linux_page = new DeployerPage(TargetPlatform.LINUX, _linux_box);
 
 		// Linux General page.
@@ -499,8 +500,8 @@ public class DeployDialog : Gtk.Window
 
 		// Windows box.
 		_windows_box = new Gtk.Box(Gtk.Orientation.VERTICAL, 0);
-		_windows_box.pack_start(_windows_deploy_button, false, true, 0);
-		_windows_box.pack_start(_windows_set, false, true, 0);
+		_windows_box.append(_windows_deploy_button);
+		_windows_box.append(_windows_set);
 		_windows_page = new DeployerPage(TargetPlatform.LINUX, _windows_box);
 
 		// Windows General page.
@@ -528,10 +529,11 @@ public class DeployDialog : Gtk.Window
 		_notebook.vexpand = true;
 		_notebook.show_border = false;
 
-		_controller_key = new Gtk.EventControllerKey(this);
+		_controller_key = new Gtk.EventControllerKey();
 		_controller_key.key_pressed.connect(on_key_pressed);
+		((Gtk.Widget)this).add_controller(_controller_key);
 
-		this.add(_notebook);
+		this.set_child(_notebook);
 	}
 
 	public bool on_key_pressed(uint keyval, uint keycode, Gdk.ModifierType state)

@@ -52,7 +52,7 @@ public class InputAngle : InputField
 		_degrees = new InputDouble(val, min, max);
 		_degrees.value_changed.connect(on_value_changed);
 
-		this.add(_degrees);
+		this.set_child(_degrees);
 	}
 
 	public void on_value_changed(InputField p)

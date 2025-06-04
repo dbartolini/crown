@@ -104,3 +104,11 @@ button.compact {
 	background-color: transparent;
 	border: 0px;
 }
+
+.folderview {
+	-gtk-icon-size: 48px;
+}
+
+.toolbar {
+	-gtk-icon-size: 24px;
+}

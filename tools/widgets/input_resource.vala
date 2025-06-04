@@ -66,17 +66,17 @@ public class InputResource : InputField
 		_name._entry.set_editable(false);
 		_name.hexpand = true;
 		_name.value_changed.connect(on_name_value_changed);
-		_box.pack_start(_name, true, true);
+		_box.append(_name);
 
 		_revealer = new Gtk.Button.from_icon_name("go-jump-symbolic");
 		_revealer.clicked.connect(on_revealer_clicked);
 		_revealer.set_tooltip_text("Reveal in the project browser.");
-		_box.pack_end(_revealer, false);
+		_box.append(_revealer);
 
 		_selector = new Gtk.Button.from_icon_name("document-open-symbolic");
 		_selector.set_tooltip_text("Select a resource.");
 		_selector.clicked.connect(on_selector_clicked);
-		_box.pack_end(_selector, false);
+		_box.append(_selector);
 
 		this.value = null;
 
@@ -84,7 +84,7 @@ public class InputResource : InputField
 		db._project.file_changed.connect(on_file_added_or_changed);
 		db._project.file_removed.connect(on_file_removed);
 
-		this.add(_box);
+		this.set_child(_box);
 	}
 
 	public void on_selector_clicked()
@@ -94,7 +94,7 @@ public class InputResource : InputField
 			_dialog.resource_selected.connect(on_select_resource_dialog_resource_selected);
 		}
 
-		_dialog.show_all();
+		_dialog.show();
 		_dialog.present();
 	}
 

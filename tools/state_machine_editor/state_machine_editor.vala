@@ -81,29 +81,30 @@ public class StateMachineEditor : Gtk.ApplicationWindow
 				close();
 			});
 		_save = new Gtk.Button.with_label("Save & Reload");
-		_save.get_style_context().add_class("suggested-action");
+		_save.add_css_class("suggested-action");
 		_save.clicked.connect(save);
 
 		_header_bar = new Gtk.HeaderBar();
-		_header_bar.title = "State Machine Editor";
-		_header_bar.show_close_button = true;
 		_header_bar.pack_start(_cancel);
 		_header_bar.pack_end(_save);
+		_header_bar.show_title_buttons = true;
+		this.title = "State Machine Editor";
+		this.set_titlebar(_header_bar);
 
 		_inspector_paned = new Gtk.Paned(Gtk.Orientation.VERTICAL);
-		_inspector_paned.pack1(_objects_tree, true, false);
-		_inspector_paned.pack2(_objects_properties, true, false);
+		_inspector_paned.set_start_child(_objects_tree);
+		_inspector_paned.set_end_child(_objects_properties);
 
 		_paned = new Gtk.Paned(Gtk.Orientation.HORIZONTAL);
-		_paned.pack1(_editor_viewport, true, false);
-		_paned.pack2(_inspector_paned, false, false);
+		_paned.set_start_child(_editor_viewport);
+		_paned.set_end_child(_inspector_paned);
 
 		this.set_titlebar(_header_bar);
 		this.set_size_request(1280, 720);
 
 		int win_w;
 		int win_h;
-		this.get_size(out win_w, out win_h);
+		this.get_default_size(out win_w, out win_h);
 		_paned.set_position(win_w - 360);
 
 		GLib.Menu menu = new GLib.Menu();
@@ -118,15 +119,15 @@ public class StateMachineEditor : Gtk.ApplicationWindow
 		menu.append_item(mi);
 
 		this.show_menubar = false;
-		Gtk.MenuBar menubar = new Gtk.MenuBar.from_model(menu);
+		Gtk.PopoverMenuBar menubar = new Gtk.PopoverMenuBar.from_model(menu);
 
 		_box = new Gtk.Box(Gtk.Orientation.VERTICAL, 0);
-		_box.pack_start(menubar, false);
-		_box.pack_start(_paned);
-		_box.pack_start(_statusbar, false);
+		_box.append(menubar);
+		_box.append(_paned);
+		_box.append(_statusbar);
 
-		this.delete_event.connect(on_close_request);
-		this.add(_box);
+		this.close_request.connect(on_close_request);
+		this.set_child(_box);
 
 		_events_box = new Gtk.Box(Gtk.Orientation.VERTICAL, 0);
 		_events_box.halign = Gtk.Align.END;
@@ -285,7 +286,7 @@ public class StateMachineEditor : Gtk.ApplicationWindow
 					}
 					dlg.destroy();
 				});
-			dlg.show_all();
+			dlg.show();
 		}
 	}
 
@@ -299,7 +300,7 @@ public class StateMachineEditor : Gtk.ApplicationWindow
 		_statusbar.set_temporary_message("Redo: " + ActionNames[action_id]);
 	}
 
-	public bool on_close_request(Gdk.EventAny event)
+	public bool on_close_request()
 	{
 		this.hide();
 		return Gdk.EVENT_STOP;
@@ -334,8 +335,8 @@ public class StateMachineEditor : Gtk.ApplicationWindow
 		}
 
 		foreach (var button in _event_buttons)
-			_events_box.pack_start(button.value);
-		_events_box.show_all();
+			_events_box.append(button.value);
+		_events_box.show();
 	}
 
 	public Gtk.Button create_trigger_event_button(Guid object_id, string event_name)
@@ -375,8 +376,8 @@ public class StateMachineEditor : Gtk.ApplicationWindow
 		}
 
 		foreach (var slider in _variable_sliders)
-			_variables_box.pack_start(slider.value);
-		_variables_box.show_all();
+			_variables_box.append(slider.value);
+		_variables_box.show();
 	}
 
 	public Gtk.Box create_variable_slider(Guid object_id, string variable_name, double min_value, double max_value, double current_value)
@@ -401,8 +402,8 @@ public class StateMachineEditor : Gtk.ApplicationWindow
 			});
 
 		Gtk.Box slider_box = new Gtk.Box(Gtk.Orientation.HORIZONTAL, 6);
-		slider_box.pack_start(label, false, false, 0);
-		slider_box.pack_start(scale, true, true, 0);
+		slider_box.append(label);
+		slider_box.append(scale);
 		slider_box.margin_bottom = 4;
 		slider_box.set_size_request(180, -1);
 

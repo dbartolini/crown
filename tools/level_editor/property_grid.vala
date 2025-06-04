@@ -14,7 +14,7 @@ public class PropertyGrid : Gtk.Grid
 	};
 
 	public Expander? _expander;
-	public Gtk.GestureMultiPress _controller_click;
+	public Gtk.GestureClick _controller_click;
 	public GLib.SimpleActionGroup _action_group;
 	public Database? _db;
 	public StringId64 _type;
@@ -25,7 +25,7 @@ public class PropertyGrid : Gtk.Grid
 	public bool _visible;
 	public int label_width_chars;
 
-	public Gee.HashMap<string, Gtk.GestureMultiPress> _gestures;
+	public Gee.HashMap<string, Gtk.GestureClick> _gestures;
 	public Gee.HashMap<string, InputField> _widgets;
 	public Gee.HashMap<InputField, PropertyDefinition?> _definitions;
 
@@ -66,7 +66,7 @@ public class PropertyGrid : Gtk.Grid
 			md.set_default_response(Gtk.ResponseType.OK);
 
 			md.response.connect(() => { md.destroy(); });
-			md.show_all();
+			md.show();
 			return;
 		} else {
 			unit.remove_component_type(component_type);
@@ -95,8 +95,8 @@ public class PropertyGrid : Gtk.Grid
 			}
 
 			if (menu.get_n_items() > 0) {
-				Gtk.Popover popover = new Gtk.Popover.from_model(null, menu);
-				popover.set_relative_to(this);
+				Gtk.PopoverMenu popover = new Gtk.PopoverMenu.from_model(menu);
+				popover.set_parent(_expander);
 				popover.set_pointing_to({ (int)x, (int)y, 1, 1 });
 				popover.set_position(Gtk.PositionType.BOTTOM);
 				popover.popup();
@@ -120,7 +120,7 @@ public class PropertyGrid : Gtk.Grid
 		_order = 0.0;
 		_visible = true;
 
-		_gestures = new Gee.HashMap<string, Gtk.GestureMultiPress>();
+		_gestures = new Gee.HashMap<string, Gtk.GestureClick>();
 		_widgets = new Gee.HashMap<string, InputField>();
 		_definitions = new Gee.HashMap<InputField, PropertyDefinition?>();
 
@@ -150,9 +150,10 @@ public class PropertyGrid : Gtk.Grid
 
 		_expander = e;
 
-		_controller_click = new Gtk.GestureMultiPress(e);
+		_controller_click = new Gtk.GestureClick();
 		_controller_click.set_button(0);
 		_controller_click.released.connect(on_expander_button_released);
+		e.add_controller(_controller_click);
 	}
 
 	public Gtk.Widget add_row(string label, Gtk.Widget w, string? tooltip = null)
@@ -218,7 +219,7 @@ public class PropertyGrid : Gtk.Grid
 
 			p.value_changed.connect(on_property_value_changed);
 
-			Gtk.GestureMultiPress click = new Gtk.GestureMultiPress(p);
+			Gtk.GestureClick click = new Gtk.GestureClick();
 			click.set_propagation_phase(Gtk.PropagationPhase.CAPTURE);
 			click.set_button(Gdk.BUTTON_SECONDARY);
 			click.pressed.connect((n_press, x, y) => {
@@ -235,12 +236,12 @@ public class PropertyGrid : Gtk.Grid
 					}
 
 					if (menu.get_n_items() > 0) {
-						Gtk.Popover popover = new Gtk.Popover.from_model(null, menu);
-						popover.set_relative_to(p);
+						Gtk.PopoverMenu popover = new Gtk.PopoverMenu.from_model(menu);
 						popover.set_position(Gtk.PositionType.BOTTOM);
 						popover.popup();
 					}
 				});
+			p.add_controller(click);
 
 			_gestures[def.name] = click;
 			_widgets[def.name] = p;
@@ -577,7 +578,7 @@ public class PropertyGridSet : Gtk.Box
 		_list_box.set_sort_func(sort_function);
 		_list_box.set_filter_func(filter_function);
 
-		this.pack_start(_list_box);
+		this.append(_list_box);
 	}
 
 	public static int sort_function(Gtk.ListBoxRow row1, Gtk.ListBoxRow row2)
@@ -609,10 +610,10 @@ public class PropertyGridSet : Gtk.Box
 		cv.set_expander(e);
 
 		Gtk.ListBoxRow row = new Gtk.ListBoxRow();
-		row.can_focus = false;
-		row.add(e);
+		row.focusable = false;
+		row.set_child(e);
 
-		_list_box.add(row);
+		this.append(row);
 
 		return e;
 	}
@@ -626,8 +627,8 @@ public class PropertyGridSet : Gtk.Box
 		l.set_tooltip_text(tooltip);
 
 		Gtk.Box b = new Gtk.Box(Gtk.Orientation.HORIZONTAL, 6);
-		b.pack_start(InputBool, false, false);
-		b.pack_start(l, false, false);
+		b.append(InputBool);
+		b.append(l);
 
 		Expander e = new Expander();
 		e.custom_header = b;
@@ -636,10 +637,10 @@ public class PropertyGridSet : Gtk.Box
 		cv.set_expander(e);
 
 		Gtk.ListBoxRow row = new Gtk.ListBoxRow();
-		row.can_focus = false;
-		row.add(e);
+		row.focusable = false;
+		row.set_child(e);
 
-		_list_box.add(row);
+		this.append(e);
 
 		return e;
 	}

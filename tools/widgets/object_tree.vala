@@ -68,7 +68,7 @@ public class ObjectTree : Gtk.Box
 	public Gtk.Box _sort_items_box;
 	public Gtk.Popover _sort_items_popover;
 	public Gtk.MenuButton _sort_items;
-	public Gtk.GestureMultiPress _gesture_click;
+	public Gtk.GestureClick _gesture_click;
 
 	public ObjectTree(DatabaseEditor database_editor)
 	{
@@ -139,41 +139,44 @@ public class ObjectTree : Gtk.Box
 		_tree_view.headers_visible = false;
 		_tree_view.model = _tree_sort;
 
-		_gesture_click = new Gtk.GestureMultiPress(_tree_view);
+		_gesture_click = new Gtk.GestureClick();
 		_gesture_click.set_propagation_phase(Gtk.PropagationPhase.CAPTURE);
 		_gesture_click.set_button(0);
 		_gesture_click.pressed.connect(on_button_pressed);
+		_tree_view.add_controller(_gesture_click);
 
 		_tree_selection = _tree_view.get_selection();
 		_tree_selection.set_mode(Gtk.SelectionMode.SINGLE);
 		_tree_selection.changed.connect(on_tree_selection_changed);
 
-		_scrolled_window = new Gtk.ScrolledWindow(null, null);
-		_scrolled_window.add(_tree_view);
+		_scrolled_window = new Gtk.ScrolledWindow();
+		_scrolled_window.set_child(_tree_view);
 
 		// Setup sort menu button popover.
 		_sort_items_box = new Gtk.Box(Gtk.Orientation.VERTICAL, 0);
-		_sort_items_popover = new Gtk.Popover(null);
-		_sort_items_popover.add(_sort_items_box);
+		_sort_items_popover = new Gtk.Popover();
+		_sort_items_popover.set_child(_sort_items_box);
 		_sort_items = new Gtk.MenuButton();
 		_sort_items.set_tooltip_text("Sort items.");
-		_sort_items.add(new Gtk.Image.from_icon_name("list-sort", Gtk.IconSize.SMALL_TOOLBAR));
-		_sort_items.get_style_context().add_class("flat");
-		_sort_items.get_style_context().add_class("image-button");
-		_sort_items.can_focus = false;
+		_sort_items.set_child(new Gtk.Image.from_icon_name("list-sort"));
+		_sort_items.add_css_class("flat");
+		_sort_items.add_css_class("image-button");
+		_sort_items.focusable = false;
 		_sort_items.set_popover(_sort_items_popover);
 
-		Gtk.RadioButton? button = null;
-		for (int i = 0; i < SortMode.COUNT; ++i)
+		Gtk.CheckButton? button = null;
+		for (int i = 0; i < SortMode.COUNT; ++i) {
 			button = add_sort_item(button, (SortMode)i);
-		_sort_items_box.show_all();
+			if (i == SortMode.NAME_AZ)
+				button.set_active(true);
+		}
 
 		var tree_control = new Gtk.Box(Gtk.Orientation.HORIZONTAL, 0);
-		tree_control.pack_start(_filter_entry, true, true);
-		tree_control.pack_end(_sort_items, false, false);
+		tree_control.append(_filter_entry);
+		tree_control.append(_sort_items);
 
-		this.pack_start(tree_control, false, true, 0);
-		this.pack_start(_scrolled_window, true, true, 0);
+		this.append(tree_control);
+		this.append(_scrolled_window);
 	}
 
 	public void on_button_pressed(int n_press, double x, double y)
@@ -232,8 +235,8 @@ public class ObjectTree : Gtk.Box
 				}
 			}
 
-			Gtk.Popover menu = new Gtk.Popover.from_model(null, menu_model);
-			menu.set_relative_to(_tree_view);
+			Gtk.PopoverMenu menu = new Gtk.PopoverMenu.from_model(menu_model);
+			menu.set_parent(_tree_view);
 			menu.set_pointing_to({ (int)x, (int)y, 1, 1 });
 			menu.set_position(Gtk.PositionType.BOTTOM);
 			menu.popup();
@@ -267,9 +270,10 @@ public class ObjectTree : Gtk.Box
 		_database_editor.selection_changed.connect(on_tree_selection_changed);
 	}
 
-	public Gtk.RadioButton add_sort_item(Gtk.RadioButton? group, SortMode mode)
+	public Gtk.CheckButton add_sort_item(Gtk.CheckButton? group, SortMode mode)
 	{
-		var button = new Gtk.RadioButton.with_label_from_widget(group, mode.to_label());
+		var button = new Gtk.CheckButton.with_label(mode.to_label());
+		button.set_group(group);
 		button.toggled.connect(() => {
 				if (mode == SortMode.NAME_AZ)
 					_tree_sort.set_sort_column_id(Column.OBJECT_NAME, Gtk.SortType.ASCENDING);
@@ -283,7 +287,7 @@ public class ObjectTree : Gtk.Box
 				_tree_filter.refilter();
 				_sort_items_popover.popdown();
 			});
-		_sort_items_box.pack_start(button, false, false);
+		_sort_items_box.append(button);
 		return button;
 	}
 
