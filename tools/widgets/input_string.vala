@@ -10,7 +10,8 @@ public class InputString : InputField
 	public bool _inconsistent;
 	public string _value;
 	public Gtk.Entry _entry;
-	public Gtk.GestureMultiPress _gesture_click;
+	public Gtk.GestureClick _gesture_click;
+	public Gtk.EventControllerFocus _controller_focus;
 
 	public override void set_inconsistent(bool inconsistent)
 	{
@@ -58,16 +59,19 @@ public class InputString : InputField
 		_value = "";
 
 		_entry = new Gtk.Entry();
+		_entry.activate.connect(on_activate);
 
-		_gesture_click = new Gtk.GestureMultiPress(_entry);
+		_gesture_click = new Gtk.GestureClick();
 		_gesture_click.pressed.connect(on_button_pressed);
 		_gesture_click.released.connect(on_button_released);
+		_entry.add_controller(_gesture_click);
 
-		_entry.activate.connect(on_activate);
-		_entry.focus_in_event.connect(on_focus_in);
-		_entry.focus_out_event.connect(on_focus_out);
+		_controller_focus = new Gtk.EventControllerFocus();
+		_controller_focus.enter.connect(on_focus_enter);
+		_controller_focus.leave.connect(on_focus_leave);
+		_entry.add_controller(_controller_focus);
 
-		this.add(_entry);
+		this.set_child(_entry);
 	}
 
 	public void on_button_pressed(int n_press, double x, double y)
@@ -100,7 +104,7 @@ public class InputString : InputField
 		set_value_safe(_entry.text);
 	}
 
-	public bool on_focus_in(Gdk.EventFocus ev)
+	public void on_focus_enter()
 	{
 		var app = (LevelEditorApplication)GLib.Application.get_default();
 		app.entry_any_focus_in(_entry);
@@ -112,11 +116,9 @@ public class InputString : InputField
 
 		_entry.set_position(-1);
 		_entry.select_region(0, -1);
-
-		return Gdk.EVENT_PROPAGATE;
 	}
 
-	public bool on_focus_out(Gdk.EventFocus ef)
+	public void on_focus_leave()
 	{
 		var app = (LevelEditorApplication)GLib.Application.get_default();
 		app.entry_any_focus_out(_entry);
@@ -132,8 +134,6 @@ public class InputString : InputField
 		}
 
 		_entry.select_region(0, 0);
-
-		return Gdk.EVENT_PROPAGATE;
 	}
 
 	public virtual void set_value_safe(string text)

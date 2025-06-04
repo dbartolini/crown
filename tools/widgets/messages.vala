@@ -9,9 +9,9 @@ public Gtk.Box message_widget(Gtk.Label h1, Gtk.Widget? p = null)
 {
 	var box = new Gtk.Box(Gtk.Orientation.VERTICAL, 12);
 	box.valign = Gtk.Align.CENTER;
-	box.pack_start(h1);
+	box.append(h1);
 	if (p != null)
-		box.pack_start(p);
+		box.append(p);
 
 	return box;
 }
@@ -23,7 +23,7 @@ public Gtk.Box long_running_task(string markup)
 	h1.valign = Gtk.Align.CENTER;
 
 	var spinner = new Gtk.Spinner();
-	spinner.active = true;
+	spinner.spinning = true;
 
 	return message_widget(h1, spinner);
 }
@@ -44,7 +44,7 @@ public Gtk.Box restart_compiler(string markup)
 	h1.set_markup(markup);
 
 	Gtk.Label p = new Gtk.Label(null);
-	p.get_style_context().add_class("colorfast-link");
+	p.add_css_class("colorfast-link");
 	p.set_markup("Fix errors and <a href=\"restart\">restart the compiler</a> to continue.");
 	p.activate_link.connect(() => {
 			GLib.Application.get_default().activate_action("restart-backend", null);
@@ -72,7 +72,7 @@ public Gtk.Box editor_oops(RestartVieport restart_viewport)
 	h1.set_markup("<span font_weight=\"bold\">Something went wrong.</span>");
 
 	var p = new Gtk.Label(null);
-	p.get_style_context().add_class("colorfast-link");
+	p.add_css_class("colorfast-link");
 	p.set_markup("Try to <a href=\"restart\">restart this view</a>.");
 	p.activate_link.connect(() => {
 			restart_viewport();
@@ -105,7 +105,7 @@ public Gtk.Dialog new_resource_changed_dialog(Gtk.Window? parent, string resourc
 		);
 	Gtk.Widget btn;
 	btn = md.add_button("Close _without Saving", Gtk.ResponseType.NO);
-	btn.get_style_context().add_class("destructive-action");
+	btn.add_css_class("destructive-action");
 	md.add_button("_Cancel", Gtk.ResponseType.CANCEL);
 	md.add_button("_Save", Gtk.ResponseType.YES);
 	md.set_default_response(Gtk.ResponseType.YES);

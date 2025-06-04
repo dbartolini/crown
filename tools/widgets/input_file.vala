@@ -59,17 +59,17 @@ public class InputFile : InputField
 		_label.xalign = 0.0f;
 
 		_button = new Gtk.Button();
-		_button.add(_label);
+		_button.set_child(_label);
 		_button.clicked.connect(on_selector_clicked);
 
-		this.add(_button);
+		this.set_child(_button);
 	}
 
 	public void on_selector_clicked()
 	{
 		string label = _action == Gtk.FileChooserAction.SELECT_FOLDER ? "Folder" : "File";
 		Gtk.FileChooserDialog dlg = new Gtk.FileChooserDialog("Select %s".printf(label)
-			, (Gtk.Window)this.get_toplevel()
+			, (Gtk.Window)this.get_root()
 			, _action
 			, "Cancel"
 			, Gtk.ResponseType.CANCEL
@@ -82,7 +82,7 @@ public class InputFile : InputField
 					this.value = dlg.get_file().get_path();
 				dlg.destroy();
 			});
-		dlg.show_all();
+		dlg.show();
 	}
 }
 

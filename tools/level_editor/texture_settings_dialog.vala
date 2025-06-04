@@ -138,13 +138,13 @@ public class TextureSettingsDialog : Gtk.Window
 		_stack.add_named(_texture_set, "some-selected");
 
 		_box = new Gtk.Box(Gtk.Orientation.HORIZONTAL, 0);
-		_box.pack_start(_platforms, false, true, 0);
-		_box.pack_start(_stack, false, true, 0);
+		_box.append(_platforms);
+		_box.append(_stack);
 		_box.vexpand = true;
 
-		this.add(_box);
+		this.set_child(_box);
 
-		_controller_key = new Gtk.EventControllerKey(this);
+		_controller_key = new Gtk.EventControllerKey();
 		_controller_key.key_pressed.connect((keyval, keycode, state) => {
 				if (keyval == Gdk.Key.Escape) {
 					close();
@@ -153,27 +153,28 @@ public class TextureSettingsDialog : Gtk.Window
 
 				return Gdk.EVENT_PROPAGATE;
 			});
+		((Gtk.Widget)this).add_controller(_controller_key);
 
 		_cancel = new Gtk.Button.with_label("Cancel");
 		_cancel.clicked.connect(() => {
 				close();
 			});
 		_save = new Gtk.Button.with_label("Save & Reload");
-		_save.get_style_context().add_class("suggested-action");
+		_save.add_css_class("suggested-action");
 		_save.clicked.connect(() => {
 				save();
 			});
 		_header_bar = new Gtk.HeaderBar();
-		_header_bar.title = "Texture Settings";
-		_header_bar.show_close_button = true;
+		_header_bar.show_title_buttons = true;
 		_header_bar.pack_start(_cancel);
 		_header_bar.pack_end(_save);
+		this.title = "Texture Settings";
 		this.set_titlebar(_header_bar);
 
 		_never_opened_before = true;
 		_stack.map.connect(on_stack_map);
 
-		this.delete_event.connect(on_delete_event);
+		this.close_request.connect(on_close_request);
 	}
 
 	public void on_stack_map()
@@ -390,7 +391,7 @@ public class TextureSettingsDialog : Gtk.Window
 			;
 	}
 
-	public bool on_delete_event(Gdk.EventAny event)
+	public bool on_close_request()
 	{
 		_texture_id = GUID_ZERO;
 		return Gdk.EVENT_PROPAGATE;

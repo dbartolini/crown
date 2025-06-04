@@ -40,18 +40,18 @@ public class ObjectProperties : Gtk.Box
 			;
 
 		_viewport = new Gtk.Viewport(null, null);
-		_viewport.add(_object_view);
+		_viewport.set_child(_object_view);
 
-		_scrolled_window = new Gtk.ScrolledWindow(null, null);
-		_scrolled_window.add(_viewport);
+		_scrolled_window = new Gtk.ScrolledWindow();
+		_scrolled_window.set_child(_viewport);
 
 		_stack = new Gtk.Stack();
 		_stack.add_named(new Gtk.Label("Select an object to start editing"), NOTHING_TO_SHOW);
 		_stack.add_named(new Gtk.Label("Unknown object type"), UNKNOWN_OBJECT_TYPE);
 		_stack.add_named(_scrolled_window, PROPERTIES);
 
-		this.pack_start(_stack);
-		this.get_style_context().add_class("properties-view");
+		this.append(_stack);
+		this.add_css_class("properties-view");
 	}
 
 	public void set_object(Guid id)
@@ -92,7 +92,7 @@ public class ObjectProperties : Gtk.Box
 
 		_object_view._list_box.invalidate_filter();
 		_object_view._list_box.invalidate_sort();
-		_object_view.show_all();
+		_object_view.show();
 	}
 
 	public void on_database_selection_changed()

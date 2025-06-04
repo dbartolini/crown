@@ -77,29 +77,30 @@ public class UnitEditor : Gtk.ApplicationWindow
 				close();
 			});
 		_save = new Gtk.Button.with_label("Save & Reload");
-		_save.get_style_context().add_class("suggested-action");
+		_save.add_css_class("suggested-action");
 		_save.clicked.connect(save);
 
 		_header_bar = new Gtk.HeaderBar();
-		_header_bar.title = "Unit Editor";
-		_header_bar.show_close_button = true;
+		_header_bar.show_title_buttons = true;
 		_header_bar.pack_start(_cancel);
 		_header_bar.pack_end(_save);
+		this.title = "Unit Editor";
+		this.set_titlebar(_header_bar);
 
 		_paned_inspector = new Gtk.Paned(Gtk.Orientation.HORIZONTAL);
-		_paned_inspector.pack1(_editor_viewport, false, false);
-		_paned_inspector.pack2(_properties_view, false, false);
+		_paned_inspector.set_start_child(_editor_viewport);
+		_paned_inspector.set_end_child(_properties_view);
 
 		_paned_object = new Gtk.Paned(Gtk.Orientation.HORIZONTAL);
-		_paned_object.pack1(_objects_tree, false, false);
-		_paned_object.pack2(_paned_inspector, true, false);
+		_paned_object.set_start_child(_objects_tree);
+		_paned_object.set_end_child(_paned_inspector);
 
 		this.set_titlebar(_header_bar);
 		this.set_size_request(1280, 720);
 
 		int win_w;
 		int win_h;
-		this.get_size(out win_w, out win_h);
+		this.get_default_size(out win_w, out win_h);
 		_paned_inspector.set_position(530);
 		_paned_object.set_position(340);
 
@@ -115,15 +116,15 @@ public class UnitEditor : Gtk.ApplicationWindow
 		menu.append_item(mi);
 
 		this.show_menubar = false;
-		Gtk.MenuBar menubar = new Gtk.MenuBar.from_model(menu);
+		Gtk.PopoverMenuBar menubar = new Gtk.PopoverMenuBar.from_model(menu);
 
 		_box = new Gtk.Box(Gtk.Orientation.VERTICAL, 0);
-		_box.pack_start(menubar, false);
-		_box.pack_start(_paned_object);
-		_box.pack_start(_statusbar, false);
+		_box.append(menubar);
+		_box.append(_paned_object);
+		_box.append(_statusbar);
 
-		this.delete_event.connect(on_close_request);
-		this.add(_box);
+		this.close_request.connect(on_close_request);
+		this.set_child(_box);
 
 		reset();
 
@@ -324,7 +325,7 @@ public class UnitEditor : Gtk.ApplicationWindow
 					}
 					dlg.destroy();
 				});
-			dlg.show_all();
+			dlg.show();
 		}
 	}
 
@@ -338,7 +339,7 @@ public class UnitEditor : Gtk.ApplicationWindow
 		_statusbar.set_temporary_message("Redo: " + ActionNames[action_id]);
 	}
 
-	public bool on_close_request(Gdk.EventAny event)
+	public bool on_close_request()
 	{
 		this.hide();
 		return Gdk.EVENT_STOP;

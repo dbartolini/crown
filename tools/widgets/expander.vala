@@ -10,8 +10,7 @@ namespace Crown
 public class Expander : Gtk.Box
 {
 	public bool _expanded = false;
-	public Gtk.EventBox _header_event_box;
-	public Gtk.GestureMultiPress _gesture_click;
+	public Gtk.GestureClick _gesture_click;
 	public Gtk.Box _header_box;
 	public Gtk.Image _arrow_image;
 	public Gtk.Widget _header_widget;
@@ -22,23 +21,21 @@ public class Expander : Gtk.Box
 		Object(orientation: Gtk.Orientation.VERTICAL, spacing: 0);
 		this.name = "expander2";
 
-		_header_event_box = new Gtk.EventBox();
-
-		_gesture_click = new Gtk.GestureMultiPress(_header_event_box);
+		_gesture_click = new Gtk.GestureClick();
 		_gesture_click.pressed.connect(on_header_button_pressed);
 
 		_header_box = new Gtk.Box(Gtk.Orientation.HORIZONTAL, 6);
 		_header_box.homogeneous = false;
+		_header_box.add_controller(_gesture_click);
 
-		_arrow_image = new Gtk.Image.from_icon_name("pan-end-symbolic", Gtk.IconSize.BUTTON);
-		_header_box.pack_start(_arrow_image, false, false, 0);
+		_arrow_image = new Gtk.Image.from_icon_name("pan-end-symbolic");
+		_header_box.append(_arrow_image);
 
 		_header_widget = new Gtk.Label(label);
-		_header_box.pack_start(_header_widget, true, true, 0);
-		_header_box.get_style_context().add_class("header");
-		_header_event_box.add(_header_box);
+		_header_box.prepend(_header_widget);
+		_header_box.add_css_class("header");
 
-		this.pack_start(_header_event_box, false, false, 0);
+		this.append(_header_box);
 	}
 
 	public bool expanded
@@ -55,9 +52,9 @@ public class Expander : Gtk.Box
 			_expanded = value;
 
 			if (_expanded)
-				_arrow_image.set_from_icon_name("pan-down-symbolic", Gtk.IconSize.BUTTON);
+				_arrow_image.set_from_icon_name("pan-down-symbolic");
 			else
-				_arrow_image.set_from_icon_name("pan-end-symbolic", Gtk.IconSize.BUTTON);
+				_arrow_image.set_from_icon_name("pan-end-symbolic");
 
 			if (_child != null) {
 				if (_expanded)
@@ -92,8 +89,7 @@ public class Expander : Gtk.Box
 			} else {
 				_header_box.remove(_header_widget);
 				_header_widget = new Gtk.Label(value);
-				_header_box.pack_start(_header_widget, true, true, 0);
-				_header_box.show_all();
+				_header_box.append(_header_widget);
 			}
 		}
 	}
@@ -110,25 +106,22 @@ public class Expander : Gtk.Box
 				_header_box.remove(_header_widget);
 
 			_header_widget = value;
-			_header_box.pack_start(_header_widget, true, true, 0);
-			_header_box.show_all();
+			_header_box.append(_header_widget);
 		}
 	}
 
-	public override void add(Gtk.Widget widget)
+	public void add(Gtk.Widget widget)
 	{
 		assert(_child == null);
 
 		_child = widget;
-		base.add(_child);
+		base.append(_child);
 
 		if (!_expanded)
 			_child.hide();
-
-		show_all();
 	}
 
-	public override void remove(Gtk.Widget widget)
+	public void remove(Gtk.Widget widget)
 	{
 		if (widget == _child)
 			_child = null;

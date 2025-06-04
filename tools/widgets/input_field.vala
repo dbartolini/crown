@@ -5,7 +5,7 @@
 
 namespace Crown
 {
-public abstract class InputField : Gtk.Bin
+public abstract class InputField : Gtk.Box
 {
 	public const string INCONSISTENT_ID = "-";
 	public const string INCONSISTENT_LABEL = "—";
@@ -17,6 +17,11 @@ public abstract class InputField : Gtk.Bin
 
 	/// undo_redo == 0 means the undo system is disabled.
 	public signal void value_changed(InputField p, int undo_redo = 1);
+
+	public void set_child(Gtk.Widget child)
+	{
+		this.append(child);
+	}
 }
 
 } /* namespace Crown */

@@ -39,17 +39,17 @@ public class InputVector2 : Gtk.Box
 
 		// Widgets
 		_x = new InputDouble(xyz.x, min.x, max.x, preview_decimals);
-		_x.get_style_context().add_class("axis");
-		_x.get_style_context().add_class("x");
+		_x.add_css_class("axis");
+		_x.add_css_class("x");
 		_y = new InputDouble(xyz.y, min.y, max.y, preview_decimals);
-		_y.get_style_context().add_class("axis");
-		_y.get_style_context().add_class("y");
+		_y.add_css_class("axis");
+		_y.add_css_class("y");
 
 		_x.value_changed.connect(on_value_changed);
 		_y.value_changed.connect(on_value_changed);
 
-		this.pack_start(_x, true);
-		this.pack_start(_y, true);
+		this.append(_x);
+		this.append(_y);
 	}
 
 	public void on_value_changed()

@@ -46,7 +46,7 @@ public class InputBool : InputField
 		_check = new Gtk.CheckButton();
 		_check.toggled.connect(on_value_changed);
 
-		this.add(_check);
+		this.append(_check);
 	}
 
 	public void on_value_changed()

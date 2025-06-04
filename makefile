@@ -246,7 +246,7 @@ windows-release64:        \
 	devenv.com build/projects/vs2022/crown.sln $(ARG_PREFIX)Build "release|x64" $(ARG_PREFIX)Project crown
 
 crown-editor-theme:
-	cd tools/level_editor/resources/theme/Adwaita && ./parse-sass.sh
+	cd tools/level_editor/resources/theme/Default && ./parse-sass.sh
 	cd tools/level_editor/resources && ./generate-resources.sh > org.crownengine.Crown.gresource.xml
 
 crown-editor-linux-debug64: \
@@ -359,7 +359,7 @@ clean-samples:
 codespell:
 	@codespell docs src tools \
 		--ignore-words=scripts/codespell-dictionary.txt \
-		--skip "*.ttf.h,*.png,*.css,docs/_themes,tools/level_editor/resources/theme/Adwaita" \
+		--skip "*.ttf.h,*.png,*.css,docs/_themes,tools/level_editor/resources/theme/Default" \
 		-q4 # 4: omit warnings about automatic fixes that were disabled in the dictionary.
 
 .PHONY: cppcheck

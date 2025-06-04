@@ -13,7 +13,7 @@ public enum ViewportRenderMode
 	COUNT
 }
 
-public class EditorViewport : Gtk.Bin
+public class EditorViewport : Gtk.Box
 {
 	public const string EDITOR_DISCONNECTED = "editor-disconnected";
 	public const string EDITOR_OOPS = "editor-oops";
@@ -61,6 +61,8 @@ public class EditorViewport : Gtk.Bin
 		_overlay = new Gtk.Overlay();
 
 		_stack = new Gtk.Stack();
+		_stack.halign = Gtk.Align.FILL;
+		_stack.valign = Gtk.Align.FILL;
 		_stack.add_named(editor_disconnected(), EDITOR_DISCONNECTED);
 		_stack.add_named(editor_oops(() => { restart_runtime.begin(); }), EDITOR_OOPS);
 
@@ -70,8 +72,8 @@ public class EditorViewport : Gtk.Bin
 		_action_group.add_action_entries(actions, this);
 		this.insert_action_group("viewport", _action_group);
 
-		this.can_focus = true;
-		this.add(_stack);
+		this.focusable = true;
+		this.append(_stack);
 	}
 
 	public void on_editor_disconnected_unexpected(RuntimeInstance ri)
@@ -130,7 +132,7 @@ public class EditorViewport : Gtk.Bin
 		yield stop_runtime();
 
 		if (_editor_view != null) {
-			_overlay.remove(_editor_view);
+			_overlay.set_child(null);
 			_stack.remove(_overlay);
 			_editor_view = null;
 		}
@@ -138,10 +140,9 @@ public class EditorViewport : Gtk.Bin
 		_editor_view = new EditorView(_runtime, _input_enabled);
 		_editor_view.native_window_ready.connect(on_editor_view_realized);
 
-		_overlay.add(_editor_view);
-		_overlay.show_all();
+		_overlay.set_child(_editor_view);
 
-		_stack.add(_overlay);
+		_stack.add_child(_overlay);
 		_stack.set_visible_child(_overlay);
 	}
 

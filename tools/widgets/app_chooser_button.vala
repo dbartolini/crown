@@ -26,28 +26,23 @@ public class AppChooserButton : Gtk.Box
 		Object(orientation: Gtk.Orientation.HORIZONTAL);
 
 		_app_chooser_button = new Gtk.AppChooserButton(mime_type);
+		_app_chooser_button.hexpand = true;
 		_app_chooser_button.append_custom_item(APP_DEFAULT, "Open by extension", null);
 		_app_chooser_button.set_active_custom_item(APP_DEFAULT);
 #if CROWN_PLATFORM_LINUX
 		_app_chooser_button.show_dialog_item = true;
 #endif
 
-#if CROWN_GTK3
-		_app_chooser_button.scroll_event.connect(() => {
-				GLib.Signal.stop_emission_by_name(_app_chooser_button, "scroll-event");
-				return Gdk.EVENT_PROPAGATE;
-			});
-#else
 		_controller_scroll = new Gtk.EventControllerScroll(Gtk.EventControllerScrollFlags.BOTH_AXES);
 		_controller_scroll.set_propagation_phase(Gtk.PropagationPhase.CAPTURE);
 		_controller_scroll.scroll.connect(() => {
 				// Do nothing, just consume the event to stop
 				// the annoying scroll default behavior.
+				return Gdk.EVENT_STOP;
 			});
 		_app_chooser_button.add_controller(_controller_scroll);
-#endif
 
-		this.pack_start(_app_chooser_button);
+		this.append(_app_chooser_button);
 	}
 
 	public GLib.AppInfo? get_app_info()
@@ -69,6 +64,7 @@ public class AppChooserButton : Gtk.Box
 			return;
 		}
 
+		/*
 		_app_chooser_button.model.foreach((model, path, iter) => {
 				Value val;
 				model.get_value(iter, ModelColumn.APP_INFO, out val);
@@ -81,6 +77,7 @@ public class AppChooserButton : Gtk.Box
 
 				return false;
 			});
+		*/
 	}
 
 	/// Returns the item name of the selected application. If the application is predefined,
@@ -89,6 +86,7 @@ public class AppChooserButton : Gtk.Box
 	{
 		app_id = null;
 
+		/*
 		Gtk.TreeIter iter;
 		if (_app_chooser_button.get_active_iter(out iter)) {
 			Value val;
@@ -103,6 +101,7 @@ public class AppChooserButton : Gtk.Box
 				return AppChooserButton.APP_PREDEFINED;
 			}
 		}
+		*/
 
 		return APP_DEFAULT;
 	}

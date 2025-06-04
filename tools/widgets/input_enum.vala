@@ -100,21 +100,31 @@ public class InputEnum : InputField
 
 		_combo.changed.connect(on_changed);
 
-#if CROWN_GTK3
-		_combo.scroll_event.connect(() => {
-				GLib.Signal.stop_emission_by_name(_combo, "scroll-event");
-				return Gdk.EVENT_PROPAGATE;
-			});
-#else
-		_controller_scroll = new Gtk.EventControllerScroll(_combo, Gtk.EventControllerScrollFlags.BOTH_AXES);
+		_controller_scroll = new Gtk.EventControllerScroll(Gtk.EventControllerScrollFlags.BOTH_AXES);
 		_controller_scroll.set_propagation_phase(Gtk.PropagationPhase.CAPTURE);
-		_controller_scroll.scroll.connect(() => {
-				// Do nothing, just consume the event to stop
-				// the annoying scroll default behavior.
-			});
-#endif
+		_controller_scroll.scroll.connect((_, dx, dy) => {
+				Gtk.Scrollable scrollable = (Gtk.Scrollable)this.get_ancestor(typeof(Gtk.Scrollable));
 
-		this.add(_combo);
+				if (scrollable != null) {
+					Gtk.Adjustment vadj = scrollable.vadjustment;
+					double vmin = vadj.lower;
+					double vmax = vadj.upper - vadj.page_size;
+					double v = vadj.value + dy * vadj.step_increment;
+					vadj.value = v.clamp(vmin, vmax);
+
+					Gtk.Adjustment hadj = scrollable.hadjustment;
+					double hmin = hadj.lower;
+					double hmax = hadj.upper - hadj.page_size;
+					double h = hadj.value - dx * hadj.step_increment;
+					hadj.value = h.clamp(hmin, hmax);
+				}
+
+				return Gdk.EVENT_STOP;
+			});
+
+		_combo.add_controller(_controller_scroll);
+
+		this.set_child(_combo);
 	}
 
 	public void append(string? id, string label)

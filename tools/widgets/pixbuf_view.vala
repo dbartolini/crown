@@ -46,37 +46,50 @@ public class PixbufView : Gtk.DrawingArea
 		_zoom = 1.0;
 		_zoom_speed = 0.2;
 
-		_controller_scroll = new Gtk.EventControllerScroll(this, Gtk.EventControllerScrollFlags.VERTICAL);
+		_controller_scroll = new Gtk.EventControllerScroll(Gtk.EventControllerScrollFlags.VERTICAL);
 		_controller_scroll.scroll.connect(on_scroll);
+		this.add_controller(_controller_scroll);
 
 		_filter = Cairo.Filter.NEAREST;
 		_extend = Cairo.Extend.NONE;
-
-		this.draw.connect(on_draw);
 	}
 
 	public void set_pixbuf(Gdk.Pixbuf pixbuf)
 	{
 		_pixbuf = pixbuf;
-		_pixbuf_pattern = new Cairo.Pattern.for_surface(Gdk.cairo_surface_create_from_pixbuf(_pixbuf, 1, null));
+		int width = _pixbuf.get_width();
+		int height = _pixbuf.get_height();
+		var surface = new Cairo.ImageSurface(Cairo.Format.ARGB32, width, height);
+		var cr = new Cairo.Context(surface);
+		Gdk.cairo_set_source_pixbuf(cr, _pixbuf, 0, 0);
+		cr.paint();
+		_pixbuf_pattern = new Cairo.Pattern.for_surface(surface);
 		_pixbuf_pattern.set_filter(Cairo.Filter.NEAREST);
 		_pixbuf_pattern.set_filter(_filter);
 		_pixbuf_pattern.set_extend(_extend);
 	}
 
-	public void on_scroll(double dx, double dy)
+	public bool on_scroll(double dx, double dy)
 	{
 		_zoom = double.min(10.0, double.max(0.25, _zoom - dy * _zoom_speed));
 		this.queue_draw();
+		return Gdk.EVENT_PROPAGATE;
 	}
 
-	public bool on_draw(Cairo.Context cr)
+	public override void snapshot(Gtk.Snapshot snapshot)
 	{
-		if (_pixbuf == null)
-			return Gdk.EVENT_PROPAGATE;
+		if (_pixbuf == null) {
+			base.snapshot(snapshot);
+			return;
+		}
 
 		int allocated_width = this.get_allocated_width();
 		int allocated_height = this.get_allocated_height();
+
+		var cr = snapshot.append_cairo(Graphene.Rect() {
+			origin = { 0, 0 },
+			size = { allocated_width, allocated_height }
+		});
 
 		cr.set_source_rgb(0.1, 0.1, 0.1);
 		cr.paint();
@@ -97,7 +110,7 @@ public class PixbufView : Gtk.DrawingArea
 		cr.set_source(_pixbuf_pattern);
 		cr.paint();
 
-		return Gdk.EVENT_PROPAGATE;
+		base.snapshot(snapshot);
 	}
 }
 

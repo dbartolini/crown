@@ -160,10 +160,11 @@ public class PreferencesDialog : Gtk.Window
 		_notebook.vexpand = true;
 		_notebook.show_border = false;
 
-		_controller_key = new Gtk.EventControllerKey(this);
+		_controller_key = new Gtk.EventControllerKey();
 		_controller_key.key_pressed.connect(on_key_pressed);
+		// this.add_controller(_controller_key);
 
-		this.add(_notebook);
+		this.set_child(_notebook);
 	}
 
 	public void set_runtime(RuntimeInstance editor)

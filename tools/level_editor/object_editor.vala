@@ -55,25 +55,25 @@ public class ObjectEditor : Gtk.ApplicationWindow
 				close();
 			});
 		_save = new Gtk.Button.with_label("Save & Reload");
-		_save.get_style_context().add_class("suggested-action");
+		_save.add_css_class("suggested-action");
 		_save.clicked.connect(save);
 
 		_header_bar = new Gtk.HeaderBar();
-		_header_bar.title = "Object Editor";
-		_header_bar.show_close_button = true;
+		_header_bar.show_title_buttons = true;
 		_header_bar.pack_start(_cancel);
 		_header_bar.pack_end(_save);
 
 		_paned = new Gtk.Paned(Gtk.Orientation.HORIZONTAL);
-		_paned.pack1(_objects_tree, true, false);
-		_paned.pack2(_objects_properties, true, false);
+		_paned.set_start_child(_objects_tree);
+		_paned.set_end_child(_objects_properties);
 
+		this.title = "Object Editor";
 		this.set_titlebar(_header_bar);
 		this.set_size_request(1000, 600);
 
 		int win_w;
 		int win_h;
-		this.get_size(out win_w, out win_h);
+		this.get_default_size(out win_w, out win_h);
 		_paned.set_position(win_w/2);
 
 		GLib.Menu menu = new GLib.Menu();
@@ -84,15 +84,15 @@ public class ObjectEditor : Gtk.ApplicationWindow
 		menu.append_item(mi);
 
 		this.show_menubar = false;
-		Gtk.MenuBar menubar = new Gtk.MenuBar.from_model(menu);
+		Gtk.PopoverMenuBar menubar = new Gtk.PopoverMenuBar.from_model(menu);
 
 		_box = new Gtk.Box(Gtk.Orientation.VERTICAL, 0);
-		_box.pack_start(menubar, false);
-		_box.pack_start(_paned);
-		_box.pack_start(_statusbar, false);
+		_box.append(menubar);
+		_box.append(_paned);
+		_box.append(_statusbar);
 
-		this.delete_event.connect(on_close_request);
-		this.add(_box);
+		this.close_request.connect(on_close_request);
+		this.set_child(_box);
 
 		reset();
 	}
@@ -187,7 +187,7 @@ public class ObjectEditor : Gtk.ApplicationWindow
 					}
 					dlg.destroy();
 				});
-			dlg.show_all();
+			dlg.show();
 		}
 	}
 
@@ -206,7 +206,7 @@ public class ObjectEditor : Gtk.ApplicationWindow
 		_statusbar.set_temporary_message("Redo: " + ActionNames[action_id]);
 	}
 
-	public bool on_close_request(Gdk.EventAny event)
+	public bool on_close_request()
 	{
 		this.hide();
 		return Gdk.EVENT_STOP;
