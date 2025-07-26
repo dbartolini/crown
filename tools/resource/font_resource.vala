@@ -82,7 +82,7 @@ public class FontImportDialog : Gtk.Window
 	public Gtk.Label _font_path;
 	public InputResourceBasename _font_name;
 	public InputDouble _font_size;
-	public Gtk.ComboBoxText _font_chars;
+	public Gtk.DropDown _font_chars;
 	public InputDouble _font_range_min;
 	public InputDouble _font_range_max;
 
@@ -197,15 +197,16 @@ public class FontImportDialog : Gtk.Window
 		_font_range_min.sensitive = false;
 		_font_range_max = new InputDouble(126.0, 0.0, int32.MAX);
 		_font_range_max.sensitive = false;
-		_font_chars = new Gtk.ComboBoxText();
-		_font_chars.append_text("ASCII Printable"); // FontChars.ASCII_PRINTABLE
-		_font_chars.append_text("ASCII Numbers");   // FontChars.ASCII_NUMBERS
-		_font_chars.append_text("ASCII Letters");   // FontChars.ASCII_LETTERS
-		_font_chars.append_text("Custom Range");    // FontChars.CUSTOM_RANGE
-		_font_chars.active = FontChars.ASCII_PRINTABLE;
-		_font_chars.changed.connect(() => {
+		var font_chars_model = new Gtk.StringList(null);
+		font_chars_model.append("ASCII Printable"); // FontChars.ASCII_PRINTABLE
+		font_chars_model.append("ASCII Numbers");   // FontChars.ASCII_NUMBERS
+		font_chars_model.append("ASCII Letters");   // FontChars.ASCII_LETTERS
+		font_chars_model.append("Custom Range");    // FontChars.CUSTOM_RANGE
+		_font_chars = new Gtk.DropDown(font_chars_model, null);
+		_font_chars.set_selected(FontChars.ASCII_PRINTABLE);
+		_font_chars.notify["selected"].connect(() => {
 				// code-format off
-				switch (_font_chars.active) {
+				switch (_font_chars.get_selected()) {
 				case FontChars.ASCII_PRINTABLE:
 					set_font_range(32, 126);
 					_font_range_min.sensitive = false;
@@ -312,7 +313,7 @@ public class FontImportDialog : Gtk.Window
 
 	public void decode(Hashtable obj)
 	{
-		_font_chars.active = FontChars.CUSTOM_RANGE;
+		_font_chars.set_selected(FontChars.CUSTOM_RANGE);
 		_font_size.value = (double)obj["size"];
 		set_font_range((int)(double)obj["range_min"], (int)(double)obj["range_max"]);
 	}

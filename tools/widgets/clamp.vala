@@ -63,25 +63,16 @@ public class Clamp : Gtk.Widget
 		this._child.size_allocate(width, height, baseline);
 	}
 
-	public new void get_preferred_size(out Gtk.Requisition minimum_size
-		, out Gtk.Requisition natural_size
-		)
+	public override void measure(Gtk.Orientation orientation, int for_size, out int minimum, out int natural, out int minimum_baseline, out int natural_baseline)
 	{
-		Gtk.Requisition title_minimum_size = {0, 0};
-		Gtk.Requisition title_natural_size = {0, 0};
-		Gtk.Requisition child_minimum_size = {0, 0};
-		Gtk.Requisition child_natural_size = {0, 0};
+		minimum = 0;
+		natural = 0;
+		minimum_baseline = -1;
+		natural_baseline = -1;
 
-		if (this._child != null && this._child.get_visible())
-			this._child.get_preferred_size(out child_minimum_size, out child_natural_size);
-
-		minimum_size = {0, 0};
-		natural_size = {0, 0};
-
-		minimum_size.width = int.max(title_minimum_size.width, child_minimum_size.width);
-		minimum_size.height = title_minimum_size.height + child_minimum_size.height;
-		natural_size.width = int.max(title_natural_size.width, child_natural_size.width);
-		natural_size.height = title_natural_size.height + child_natural_size.height;
+		if (this._child != null && this._child.get_visible()) {
+			this._child.measure(orientation, for_size, out minimum, out natural, out minimum_baseline, out natural_baseline);
+		}
 	}
 }
 

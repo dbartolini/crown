@@ -110,7 +110,7 @@ public class SpriteImportDialog : Gtk.Window
 	public InputVector2 cell;
 	public InputVector2 offset;
 	public InputVector2 spacing;
-	public Gtk.ComboBoxText pivot;
+	public Gtk.DropDown pivot;
 	public InputDouble layer;
 	public InputDouble depth;
 
@@ -312,19 +312,20 @@ public class SpriteImportDialog : Gtk.Window
 				_preview.queue_draw();
 			});
 
-		pivot = new Gtk.ComboBoxText();
-		pivot.append_text("Top left");      // TOP_LEFT
-		pivot.append_text("Top center");    // TOP_CENTER
-		pivot.append_text("Top right");     // TOP_RIGHT
-		pivot.append_text("Left");          // LEFT
-		pivot.append_text("Center");        // CENTER
-		pivot.append_text("Right");         // RIGHT
-		pivot.append_text("Bottom left");   // BOTTOM_LEFT
-		pivot.append_text("Bottom center"); // BOTTOM_CENTER
-		pivot.append_text("Bottom right");  // BOTTOM_RIGHT
-		pivot.active = Pivot.CENTER;
+		var pivot_model = new Gtk.StringList(null);
+		pivot_model.append("Top left");      // TOP_LEFT
+		pivot_model.append("Top center");    // TOP_CENTER
+		pivot_model.append("Top right");     // TOP_RIGHT
+		pivot_model.append("Left");          // LEFT
+		pivot_model.append("Center");        // CENTER
+		pivot_model.append("Right");         // RIGHT
+		pivot_model.append("Bottom left");   // BOTTOM_LEFT
+		pivot_model.append("Bottom center"); // BOTTOM_CENTER
+		pivot_model.append("Bottom right");  // BOTTOM_RIGHT
+		pivot = new Gtk.DropDown(pivot_model, null);
+		pivot.set_selected(Pivot.CENTER);
 
-		pivot.changed.connect(() => {
+		pivot.notify["selected"].connect(() => {
 				_slices.queue_draw();
 				_preview.queue_draw();
 			});
@@ -651,7 +652,7 @@ public class SpriteImportDialog : Gtk.Window
 		spacing.value            = Vector2((double)obj["spacing_x"], (double)obj["spacing_y"]);
 		layer.value              = (double)obj["layer"];
 		depth.value              = (double)obj["depth"];
-		pivot.active             = (int)(double)obj["pivot"];
+		pivot.set_selected((uint)(double)obj["pivot"]);
 		collision_enabled.active = (bool)obj["collision_enabled"];
 		collision_xy.value       = Vector2((double)obj["collision_x"], (double)obj["collision_y"]);
 		collision_wh.value       = Vector2((double)obj["collision_w"], (double)obj["collision_h"]);
@@ -683,7 +684,7 @@ public class SpriteImportDialog : Gtk.Window
 		obj["spacing_y"]                  = spacing.value.y;
 		obj["layer"]                      = layer.value;
 		obj["depth"]                      = depth.value;
-		obj["pivot"]                      = pivot.active;
+		obj["pivot"]                      = (double)pivot.get_selected();
 		obj["collision_enabled"]          = collision_enabled.active;
 		obj["collision_x"]                = collision_xy.value.x;
 		obj["collision_y"]                = collision_xy.value.y;
@@ -728,7 +729,7 @@ public class SpriteResource
 		double layer  = dlg.layer.value;
 		double depth  = dlg.depth.value;
 
-		Vector2 pivot_xy = sprite_cell_pivot_xy(cell_w, cell_h, dlg.pivot.active);
+		Vector2 pivot_xy = sprite_cell_pivot_xy(cell_w, cell_h, (int)dlg.pivot.get_selected());
 
 		bool collision_enabled         = dlg.collision_enabled.active;
 		string shape_active_name       = (string)dlg.shape.visible_child_name;

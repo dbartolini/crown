@@ -636,7 +636,7 @@ public class LevelEditorApplication : Gtk.Application
 	private Statusbar _statusbar;
 	private Gtk.Box _main_vbox;
 	private Gtk.FileFilter _file_filter;
-	private Gtk.ComboBoxText _combo;
+	private Gtk.DropDown _combo;
 	private PanelNewProject _panel_new_project;
 	private PanelProjectsList _panel_projects_list;
 	private PanelWelcome _panel_welcome;
@@ -824,10 +824,11 @@ public class LevelEditorApplication : Gtk.Application
 		Unit.register_component_type(OBJECT_TYPE_FOG,                     "");
 
 		// Widgets
-		_combo = new Gtk.ComboBoxText();
-		_combo.append("editor", "Editor");
-		_combo.append("game", "Game");
-		_combo.set_active_id("editor");
+		var combo_model = new Gtk.StringList(null);
+		combo_model.append("Editor");
+		combo_model.append("Game");
+		_combo = new Gtk.DropDown(combo_model, null);
+		_combo.set_selected(0); // Set to "Editor"
 		_combo.set_size_request(50, -1);
 
 		_console_view = new ConsoleView(_project, _combo, _preferences_dialog);
@@ -1139,9 +1140,10 @@ public class LevelEditorApplication : Gtk.Application
 
 	public RuntimeInstance? current_selected_runtime()
 	{
-		if (_combo.get_active_id() == "editor")
+		uint selected = _combo.get_selected();
+		if (selected == 0) // "Editor" is at index 0
 			return _editor;
-		else if (_combo.get_active_id() == "game")
+		else if (selected == 1) // "Game" is at index 1
 			return _game;
 		else
 			return null;
@@ -1231,14 +1233,14 @@ public class LevelEditorApplication : Gtk.Application
 	{
 		on_runtime_connected(ri, address, port);
 
-		_combo.set_active_id("game");
+		_combo.set_selected(1); // Set to "Game" (index 1)
 	}
 
 	private void on_game_disconnected(RuntimeInstance ri)
 	{
 		on_runtime_disconnected(ri);
 
-		_combo.set_active_id("editor");
+		_combo.set_selected(0); // Set to "Editor" (index 0)
 		_game_run_stop_image.set_from_icon_name("game-run");
 	}
 
@@ -2070,9 +2072,7 @@ public class LevelEditorApplication : Gtk.Application
 						if (do_save(path) && success_action != null)
 							GLib.Application.get_default().activate_action(success_action, variant);
 					}
-					srd.destroy();
 				});
-			srd.show();
 		}
 	}
 
@@ -2168,9 +2168,7 @@ public class LevelEditorApplication : Gtk.Application
 		dlg.safer_response.connect((response_id, path) => {
 				if (response_id == Gtk.ResponseType.ACCEPT && path != null)
 					do_open_level(path);
-				dlg.destroy();
 			});
-		dlg.show();
 	}
 
 	private void on_open_level(GLib.SimpleAction action, GLib.Variant? param)
@@ -2236,13 +2234,9 @@ public class LevelEditorApplication : Gtk.Application
 		if (source_dir != "") {
 			do_open_project(source_dir);
 		} else {
-			Gtk.FileChooserDialog dlg = new_open_project_dialog(this.active_window);
-			dlg.response.connect((response_id) => {
-					if (response_id == Gtk.ResponseType.ACCEPT)
-						do_open_project(dlg.get_file().get_path());
-					dlg.destroy();
-				});
-			dlg.show();
+			open_project_dialog.begin(this.active_window, (source_dir) => {
+				do_open_project(source_dir);
+			});
 		}
 	}
 
@@ -2292,15 +2286,9 @@ public class LevelEditorApplication : Gtk.Application
 
 	private void on_add_project(GLib.SimpleAction action, GLib.Variant? param)
 	{
-		Gtk.FileChooserDialog dlg = new_open_project_dialog(this.active_window);
-		dlg.response.connect((response_id) => {
-				if (response_id == Gtk.ResponseType.ACCEPT) {
-					string source_dir = dlg.get_file().get_path();
-					_user.add_or_touch_recent_project(source_dir, source_dir);
-				}
-				dlg.destroy();
-			});
-		dlg.show();
+		open_project_dialog.begin(this.active_window, (source_dir) => {
+			_user.add_or_touch_recent_project(source_dir, source_dir);
+		});
 	}
 
 	private void on_remove_project(GLib.SimpleAction action, GLib.Variant? param)
@@ -2434,17 +2422,22 @@ public class LevelEditorApplication : Gtk.Application
 		return md;
 	}
 
-	public Gtk.FileChooserDialog new_open_project_dialog(Gtk.Window? parent)
+	private async void open_project_dialog(Gtk.Window? parent, owned ProjectSelectedCallback callback)
 	{
-		return new Gtk.FileChooserDialog("Open Project..."
-			, parent
-			, Gtk.FileChooserAction.SELECT_FOLDER
-			, "Cancel"
-			, Gtk.ResponseType.CANCEL
-			, "Open"
-			, Gtk.ResponseType.ACCEPT
-			);
+		var folder_dialog = new Gtk.FileDialog();
+		folder_dialog.set_title("Open Project...");
+		
+		try {
+			var folder = yield folder_dialog.select_folder(parent, null);
+			if (folder != null) {
+				callback(folder.get_path());
+			}
+		} catch (GLib.Error e) {
+			// User cancelled
+		}
 	}
+
+	public delegate void ProjectSelectedCallback(string source_dir);
 
 	private void do_close_project()
 	{
@@ -4377,11 +4370,7 @@ public class LevelEditorApplication : Gtk.Application
 							});
 					}
 				}
-
-				srd.destroy();
 			});
-		srd.show();
-		srd.present();
 	}
 
 	public void set_autosave_timer(uint minutes)

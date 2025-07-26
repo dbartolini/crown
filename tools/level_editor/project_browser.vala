@@ -212,18 +212,13 @@ public class ProjectFolderView : Gtk.Box
 	public string _selected_name;
 	public ProjectStore _project_store;
 	public ThumbnailCache _thumbnail_cache;
-	public Gtk.ListStore _list_store;
-	public Gtk.IconView _icon_view;
-	public Gtk.TreeView _list_view;
-	public Gtk.CellRendererPixbuf _cell_renderer_pixbuf;
-	public Gtk.CellRendererText _cell_renderer_text;
+	public GLib.ListStore _list_model;     // GTK4 model for ColumnView
+	public Gtk.ColumnView _column_view;
+	public Gtk.SingleSelection _selection_model;
 	public Gdk.Pixbuf _empty_pixbuf;
 	public bool _showing_project_folder;
-	public Gtk.ScrolledWindow _icon_view_window;
-	public Gtk.ScrolledWindow _list_view_window;
-	public Gtk.GestureClick _icon_view_gesture_click;
-	public Gtk.GestureClick _list_view_gesture_click;
-	public Gtk.Stack _stack;
+	public Gtk.ScrolledWindow _column_view_window;
+	public Gtk.GestureClick _column_view_gesture_click;
 
 	public ProjectFolderView(ProjectStore project_store, ThumbnailCache thumbnail_cache)
 	{
@@ -232,134 +227,148 @@ public class ProjectFolderView : Gtk.Box
 		_project_store = project_store;
 		_thumbnail_cache = thumbnail_cache;
 
-		_stack = new Gtk.Stack();
+		// Create GTK4 list model for ColumnView
+		_list_model = new GLib.ListStore(typeof(ProjectFileItem));
+		_selection_model = new Gtk.SingleSelection(_list_model);
+		
+		// Create GTK4 ColumnView 
+		_column_view = new Gtk.ColumnView(_selection_model);
+		
+		// Create column factories
+		create_column_view_columns();
 
-		_list_store = new Gtk.ListStore(Column.COUNT
-			, typeof(string)     // Column.TYPE
-			, typeof(string)     // Column.NAME
-			, typeof(Gdk.Pixbuf) // Column.PIXBUF
-			, typeof(uint64)     // Column.SIZE
-			, typeof(uint64)     // Column.MTIME
-			);
-
-		_icon_view = new Gtk.IconView();
-		_icon_view.set_model(_list_store);
-		_icon_view.set_item_width(80);
-		/*
-		_icon_view.enable_model_drag_source(Gdk.ModifierType.BUTTON1_MASK, dnd_targets, Gdk.DragAction.COPY);
-		_icon_view.drag_data_get.connect(on_drag_data_get);
-		_icon_view.drag_begin.connect_after(on_drag_begin);
-		_icon_view.drag_end.connect(on_drag_end);
-		_icon_view.drag_data_received.connect(on_drag_data_received);
-		*/
-
-		_icon_view.has_tooltip = true;
-		_icon_view.query_tooltip.connect(on_icon_view_query_tooltip);
-
-		_icon_view_gesture_click = new Gtk.GestureClick();
-		_icon_view_gesture_click.set_button(0);
-		_icon_view_gesture_click.pressed.connect(on_button_pressed);
-		_icon_view.add_controller(_icon_view_gesture_click);
-
-		/*
-		// GTK4: TODO - Port drag and drop to new GTK4 API
-		const Gtk.TargetEntry targets[] =
-		{
-			{ "text/uri-list", 0, 0 },
-		};
-		_icon_view.enable_model_drag_dest(targets
-			, Gdk.DragAction.COPY
-			| Gdk.DragAction.MOVE
-			);
-		*/
-
-		// https://gitlab.gnome.org/GNOME/gtk/-/blob/3.24.43/gtk/gtkiconview.c#L5147
-		_cell_renderer_text = new Gtk.CellRendererText();
-		_cell_renderer_text.set("wrap-mode", Pango.WrapMode.WORD_CHAR);
-		_cell_renderer_text.set("alignment", Pango.Alignment.CENTER);
-		_cell_renderer_text.set("xalign", 0.5);
-		_cell_renderer_text.set("yalign", 0.0);
-		int wrap_width = _icon_view.item_width;
-		wrap_width -= 2 * _icon_view.item_padding * 2;
-		_cell_renderer_text.set("wrap-width", wrap_width);
-		_cell_renderer_text.set("width", wrap_width);
-		_icon_view.pack_end(_cell_renderer_text, false);
-		_icon_view.set_cell_data_func(_cell_renderer_text, icon_view_text_func);
-
-		_cell_renderer_pixbuf = new Gtk.CellRendererPixbuf();
-		_cell_renderer_pixbuf.icon_size = Gtk.IconSize.INHERIT;
-		_icon_view.pack_start(_cell_renderer_pixbuf, false);
-		_icon_view.set_cell_data_func(_cell_renderer_pixbuf, icon_view_pixbuf_func);
-
-		_list_view = new Gtk.TreeView();
-		_list_view.set_model(_list_store);
-		/*
-		_list_view.enable_model_drag_source(Gdk.ModifierType.BUTTON1_MASK, dnd_targets, Gdk.DragAction.COPY);
-		_list_view.drag_data_get.connect(on_drag_data_get);
-		_list_view.drag_begin.connect_after(on_drag_begin);
-		_list_view.drag_end.connect(on_drag_end);
-		*/
-
-		_list_view_gesture_click = new Gtk.GestureClick();
-		_list_view_gesture_click.set_button(0);
-		_list_view_gesture_click.pressed.connect(on_button_pressed);
-		_list_view.add_controller(_list_view_gesture_click);
-
-		var cell_pixbuf = new Gtk.CellRendererPixbuf();
-		cell_pixbuf.icon_size = Gtk.IconSize.INHERIT;
-		var cell_text = new Gtk.CellRendererText();
-
-		Gtk.TreeViewColumn column = null;
-		column = new Gtk.TreeViewColumn();
-		// column.title = "Thumbnail";
-		column.pack_start(cell_pixbuf, false);
-		column.set_cell_data_func(cell_pixbuf, list_view_pixbuf_func);
-		_list_view.append_column(column);
-
-		column = new Gtk.TreeViewColumn();
-		column.title = "Basename";
-		column.pack_start(cell_text, true);
-		column.set_cell_data_func(cell_text, list_view_basename_text_func);
-		_list_view.append_column(column);
-
-		column = new Gtk.TreeViewColumn();
-		column.title = "Type";
-		column.pack_start(cell_text, true);
-		column.set_cell_data_func(cell_text, list_view_type_text_func);
-		_list_view.append_column(column);
-
-		column = new Gtk.TreeViewColumn();
-		column.title = "Size";
-		column.pack_start(cell_text, true);
-		column.set_cell_data_func(cell_text, list_view_size_text_func);
-		_list_view.append_column(column);
-
-		column = new Gtk.TreeViewColumn();
-		column.title = "Modified";
-		column.pack_start(cell_text, true);
-		column.set_cell_data_func(cell_text, list_view_mtime_text_func);
-		_list_view.append_column(column);
-
-		column = new Gtk.TreeViewColumn();
-		column.title = "Name";
-		column.pack_start(cell_text, true);
-		column.set_cell_data_func(cell_text, list_view_name_text_func);
-		_list_view.append_column(column);
+		_column_view_gesture_click = new Gtk.GestureClick();
+		_column_view_gesture_click.set_button(0);
+		_column_view_gesture_click.pressed.connect(on_button_pressed);
+		_column_view.add_controller(_column_view_gesture_click);
 
 		_empty_pixbuf = new Gdk.Pixbuf.from_data({ 0x00, 0x00, 0x00, 0x00 }, Gdk.Colorspace.RGB, true, 8, 1, 1, 4);
 
 		_showing_project_folder = true;
 
-		_icon_view_window = new Gtk.ScrolledWindow();
-		_icon_view_window.set_child(_icon_view);
-		_list_view_window = new Gtk.ScrolledWindow();
-		_list_view_window.set_child(_list_view);
-
-		_stack.add_named(_icon_view_window, "icon-view");
-		_stack.add_named(_list_view_window, "list-view");
-		_stack.set_visible_child_full("icon-view", Gtk.StackTransitionType.NONE);
+		_column_view_window = new Gtk.ScrolledWindow();
+		_column_view_window.set_child(_column_view);
 		
-		this.append(_stack);
+		this.append(_column_view_window);
+	}
+
+	private void create_column_view_columns()
+	{
+		// Create column for thumbnail/icon
+		var thumbnail_factory = new Gtk.SignalListItemFactory();
+		thumbnail_factory.setup.connect((listitem) => {
+			var image = new Gtk.Image();
+			((Gtk.ListItem)listitem).set_child(image);
+		});
+		thumbnail_factory.bind.connect((listitem) => {
+			var file_item = (ProjectFileItem)((Gtk.ListItem)listitem).get_item();
+			var image = (Gtk.Image)((Gtk.ListItem)listitem).get_child();
+			if (file_item.pixbuf != null)
+				image.set_from_pixbuf(file_item.pixbuf);
+			else
+				image.set_from_icon_name("text-x-generic-symbolic");
+		});
+		var thumbnail_column = new Gtk.ColumnViewColumn("", thumbnail_factory);
+		thumbnail_column.set_fixed_width(50);
+		_column_view.append_column(thumbnail_column);
+
+		// Create column for basename
+		var basename_factory = new Gtk.SignalListItemFactory();
+		basename_factory.setup.connect((listitem) => {
+			var label = new Gtk.Label("");
+			label.set_halign(Gtk.Align.START);
+			((Gtk.ListItem)listitem).set_child(label);
+		});
+		basename_factory.bind.connect((listitem) => {
+			var file_item = (ProjectFileItem)((Gtk.ListItem)listitem).get_item();
+			var label = (Gtk.Label)((Gtk.ListItem)listitem).get_child();
+			var basename = Path.get_basename(file_item.name);
+			if (basename.has_suffix(".unit") || basename.has_suffix(".level"))
+				basename = basename.substring(0, basename.last_index_of("."));
+			label.set_text(basename);
+		});
+		var basename_column = new Gtk.ColumnViewColumn("Basename", basename_factory);
+		basename_column.set_expand(true);
+		_column_view.append_column(basename_column);
+
+		// Create column for type
+		var type_factory = new Gtk.SignalListItemFactory();
+		type_factory.setup.connect((listitem) => {
+			var label = new Gtk.Label("");
+			label.set_halign(Gtk.Align.START);
+			((Gtk.ListItem)listitem).set_child(label);
+		});
+		type_factory.bind.connect((listitem) => {
+			var file_item = (ProjectFileItem)((Gtk.ListItem)listitem).get_item();
+			var label = (Gtk.Label)((Gtk.ListItem)listitem).get_child();
+			label.set_text(file_item.item_type);
+		});
+		var type_column = new Gtk.ColumnViewColumn("Type", type_factory);
+		_column_view.append_column(type_column);
+
+		// Create column for size
+		var size_factory = new Gtk.SignalListItemFactory();
+		size_factory.setup.connect((listitem) => {
+			var label = new Gtk.Label("");
+			label.set_halign(Gtk.Align.END);
+			((Gtk.ListItem)listitem).set_child(label);
+		});
+		size_factory.bind.connect((listitem) => {
+			var file_item = (ProjectFileItem)((Gtk.ListItem)listitem).get_item();
+			var label = (Gtk.Label)((Gtk.ListItem)listitem).get_child();
+			if (file_item.item_type != "<folder>")
+				label.set_text(format_file_size(file_item.size));
+			else
+				label.set_text("");
+		});
+		var size_column = new Gtk.ColumnViewColumn("Size", size_factory);
+		_column_view.append_column(size_column);
+
+		// Create column for modified time
+		var mtime_factory = new Gtk.SignalListItemFactory();
+		mtime_factory.setup.connect((listitem) => {
+			var label = new Gtk.Label("");
+			label.set_halign(Gtk.Align.START);
+			((Gtk.ListItem)listitem).set_child(label);
+		});
+		mtime_factory.bind.connect((listitem) => {
+			var file_item = (ProjectFileItem)((Gtk.ListItem)listitem).get_item();
+			var label = (Gtk.Label)((Gtk.ListItem)listitem).get_child();
+			var dt = new DateTime.from_unix_local((int64)file_item.mtime);
+			label.set_text(dt.format("%x %X"));
+		});
+		var mtime_column = new Gtk.ColumnViewColumn("Modified", mtime_factory);
+		_column_view.append_column(mtime_column);
+
+		// Create column for full name
+		var name_factory = new Gtk.SignalListItemFactory();
+		name_factory.setup.connect((listitem) => {
+			var label = new Gtk.Label("");
+			label.set_halign(Gtk.Align.START);
+			((Gtk.ListItem)listitem).set_child(label);
+		});
+		name_factory.bind.connect((listitem) => {
+			var file_item = (ProjectFileItem)((Gtk.ListItem)listitem).get_item();
+			var label = (Gtk.Label)((Gtk.ListItem)listitem).get_child();
+			label.set_text(file_item.name);
+		});
+		var name_column = new Gtk.ColumnViewColumn("Name", name_factory);
+		name_column.set_expand(true);
+		_column_view.append_column(name_column);
+	}
+
+	private string format_file_size(uint64 size)
+	{
+		double d_size = (double)size;
+		string[] units = { "B", "KB", "MB", "GB" };
+		int unit = 0;
+		
+		while (d_size >= 1024.0 && unit < units.length - 1) {
+			d_size /= 1024.0;
+			unit++;
+		}
+		
+		return "%.1f %s".printf(d_size, units[unit]);
 	}
 
 	/*
@@ -370,18 +379,12 @@ public class ProjectFolderView : Gtk.Box
 		if (!selected_path(out path))
 			return;
 
-		Gtk.TreeIter iter;
-		_list_store.get_iter(out iter, path);
+		uint position = (uint)path.get_indices()[0];
+		ProjectFileItem? item = (ProjectFileItem?)_list_model.get_item(position);
+		if (item == null)
+			return;
 
-		Value val;
-		string type;
-		string name;
-		_list_store.get_value(iter, Column.TYPE, out val);
-		type = (string)val;
-		_list_store.get_value(iter, Column.NAME, out val);
-		name = (string)val;
-
-		string resource_path = ResourceId.path(type, name);
+		string resource_path = ResourceId.path(item.item_type, item.name);
 		data.set(Gdk.Atom.intern_static_string("RESOURCE_PATH"), 8, resource_path.data);
 	}
 
@@ -427,31 +430,19 @@ public class ProjectFolderView : Gtk.Box
 
 	private void on_button_pressed(int n_press, double x, double y)
 	{
-		uint button;
-
-		Gtk.TreePath? path = path_at_pos((int)x, (int)y);
-		if (_stack.get_visible_child() == _icon_view_window) {
-			button = _icon_view_gesture_click.get_current_button();
-			path = _icon_view.get_path_at_pos((int)x, (int)y);
-		} else if (_stack.get_visible_child() == _list_view_window) {
-			button = _list_view_gesture_click.get_current_button();
-			if (!_list_view.get_path_at_pos((int)x, (int)y, out path, null, null, null))
-				path = null;
-		} else {
-			assert(false);
-			return;
-		}
+		uint button = _column_view_gesture_click.get_current_button();
 
 		if (button == Gdk.BUTTON_SECONDARY) {
-			string type;
-			string name;
-
-			if (path != null) {
-				_icon_view.select_path(path);
-				_icon_view.scroll_to_path(path, false, 0.0f, 0.0f);
+			// Get selected item from selection model
+			var selected_item = _selection_model.get_selected_item();
+			string type = "";
+			string name = "";
+			
+			if (selected_item != null) {
+				var file_item = (ProjectFileItem)selected_item;
+				type = file_item.item_type;
+				name = file_item.name;
 			}
-
-			resource_at_path(out type, out name, path);
 
 			GLib.Menu? menu_model;
 			if (_showing_project_folder)
@@ -461,39 +452,28 @@ public class ProjectFolderView : Gtk.Box
 
 			if (menu_model != null) {
 				Gtk.PopoverMenu menu = new Gtk.PopoverMenu.from_model(menu_model);
-				if (_stack.get_visible_child() == _icon_view_window) {
-					// Adjust for scroll offset since IconView fails to do it itself.
-					var new_x = x - _icon_view_window.get_hadjustment().get_value();
-					var new_y = y - _icon_view_window.get_vadjustment().get_value();
-					menu.set_pointing_to({ (int)new_x, (int)new_y, 1, 1 });
-				} else {
-					menu.set_pointing_to({ (int)x, (int)y, 1, 1 });
-				}
+				menu.set_pointing_to({ (int)x, (int)y, 1, 1 });
 				menu.set_position(Gtk.PositionType.BOTTOM);
 				menu.popup();
 			}
 
-			_icon_view_gesture_click.set_state(Gtk.EventSequenceState.CLAIMED); // Stop the event. Otherwise, popover menu won't show on _icon_view.
+			_column_view_gesture_click.set_state(Gtk.EventSequenceState.CLAIMED);
 		} else if (button == Gdk.BUTTON_PRIMARY && n_press == 2) {
-			if (path != null) {
-				Gtk.TreeIter iter;
-				_list_store.get_iter(out iter, path);
-
-				Value type;
-				Value name;
-				_list_store.get_value(iter, Column.TYPE, out type);
-				_list_store.get_value(iter, Column.NAME, out name);
-
-				if ((string)type == "<folder>") {
+			// Handle double-click
+			var selected_item = _selection_model.get_selected_item();
+			if (selected_item != null) {
+				var file_item = (ProjectFileItem)selected_item;
+				
+				if (file_item.item_type == "<folder>") {
 					string dir_name;
-					if ((string)name == "..")
+					if (file_item.name == "..")
 						dir_name = ResourceId.parent_folder((string)_selected_name);
 					else
-						dir_name = (string)name;
+						dir_name = file_item.name;
 
 					GLib.Application.get_default().activate_action("open-directory", new GLib.Variant.string(dir_name));
 				} else {
-					GLib.Application.get_default().activate_action("open-resource", ResourceId.path((string)type, (string)name));
+					GLib.Application.get_default().activate_action("open-resource", ResourceId.path(file_item.item_type, file_item.name));
 				}
 			}
 		}
@@ -594,78 +574,45 @@ public class ProjectFolderView : Gtk.Box
 
 	public void reveal(string type, string name)
 	{
-		_list_store.foreach((model, path, iter) => {
-				GLib.Value val;
-				string store_type;
-				string store_name;
-				model.get_value(iter, Column.TYPE, out val);
-				store_type = (string)val;
-				model.get_value(iter, Column.NAME, out val);
-				store_name = (string)val;
-
-				if (store_name == name && store_type == type) {
-					_icon_view.select_path(path);
-					_icon_view.scroll_to_path(path, false, 0.0f, 0.0f);
-					_list_view.get_selection().select_path(path);
-					_list_view.scroll_to_cell(path, null, false, 0.0f, 0.0f);
-					return true;
-				}
-
-				return false;
-			});
+		uint n_items = _list_model.get_n_items();
+		for (uint i = 0; i < n_items; i++) {
+			ProjectFileItem? item = (ProjectFileItem?)_list_model.get_item(i);
+			if (item != null && item.name == name && item.item_type == type) {
+				_selection_model.set_selected(i);
+				// GTK4: ColumnView doesn't have scroll_to_cell method
+				// This functionality may need to be implemented differently
+				break;
+			}
+		}
 	}
 
 	public bool selected_path(out Gtk.TreePath? path)
 	{
-		if (_stack.get_visible_child() == _icon_view_window) {
-			GLib.List<Gtk.TreePath> selected_paths = _icon_view.get_selected_items();
-			if (selected_paths.length() == 0u) {
-				path = null;
-				return false;
-			}
-
-			path = selected_paths.nth(0).data;
-			return true;
-		} else if (_stack.get_visible_child() == _list_view_window) {
-			Gtk.TreeModel selected_model;
-			Gtk.TreeIter iter;
-			if (!_list_view.get_selection().get_selected(out selected_model, out iter)) {
-				path = null;
-				return false;
-			}
-
-			path = selected_model.get_path(iter);
-			return true;
-		} else {
+		uint selected = _selection_model.get_selected();
+		if (selected == Gtk.INVALID_LIST_POSITION) {
 			path = null;
 			return false;
 		}
+
+		path = new Gtk.TreePath.from_indices((int)selected, -1);
+		return true;
 	}
 
-	private bool on_icon_view_query_tooltip(int x, int y, bool keyboard_tooltip, Gtk.Tooltip tooltip)
+	private bool on_column_view_query_tooltip(int x, int y, bool keyboard_tooltip, Gtk.Tooltip tooltip)
 	{
-		// GTK4: No need for bin window coordinate conversion
-		Gtk.TreePath? path = _icon_view.get_path_at_pos(x, y);
-		if (path == null)
+		// For ColumnView, we can use the selection model to get tooltip info
+		uint selected = _selection_model.get_selected();
+		if (selected == Gtk.INVALID_LIST_POSITION)
 			return false;
 
-		Gtk.TreeIter iter;
-		_list_store.get_iter(out iter, path);
+		ProjectFileItem? item = (ProjectFileItem?)_list_model.get_item(selected);
+		if (item == null)
+			return false;
 
-		Value val;
-		_list_store.get_value(iter, Column.TYPE, out val);
-		string type = (string)val;
-		_list_store.get_value(iter, Column.NAME, out val);
-		string name = (string)val;
-		_list_store.get_value(iter, Column.SIZE, out val);
-		uint64 size = (uint64)val;
-		_list_store.get_value(iter, Column.MTIME, out val);
-		uint64 mtime = (uint64)val;
-
-		string text = "<b>%s</b>\nType: %s\nSize: %s\nModified: %s".printf(GLib.Markup.escape_text(name)
-			, GLib.Markup.escape_text(prettify_type(type))
-			, size == 0 ? "n/a" : prettify_size(size)
-			, mtime == 0 ? "n/a" : prettify_time(mtime)
+		string text = "<b>%s</b>\nType: %s\nSize: %s\nModified: %s".printf(GLib.Markup.escape_text(item.name)
+			, GLib.Markup.escape_text(prettify_type(item.item_type))
+			, item.size == 0 ? "n/a" : prettify_size(item.size)
+			, item.mtime == 0 ? "n/a" : prettify_time(item.mtime)
 			);
 		tooltip.set_markup(text);
 
@@ -711,34 +658,28 @@ public class ProjectFolderView : Gtk.Box
 
 	private Gtk.TreePath? path_at_pos(int x, int y)
 	{
-		Gtk.TreePath? path = null;
-		if (_stack.get_visible_child() == _icon_view_window) {
-			path = _icon_view.get_path_at_pos(x, y);
-		} else if (_stack.get_visible_child() == _list_view_window) {
-			int bx;
-			int by;
-			_list_view.convert_widget_to_bin_window_coords(x, y, out bx, out by);
-			if (!_list_view.get_path_at_pos(bx, by, out path, null, null, null))
-				path = null;
-		} else {
-			assert(false);
-			return null;
+		// GTK4: ColumnView doesn't have direct coordinate-to-path conversion
+		// This functionality may need to be implemented differently
+		// For now, we'll use the current selection
+		uint selected = _selection_model.get_selected();
+		if (selected != Gtk.INVALID_LIST_POSITION) {
+			return new Gtk.TreePath.from_indices((int)selected, -1);
 		}
-
-		return path;
+		return null;
 	}
 
 	private void resource_at_path(out string type, out string name, Gtk.TreePath? path)
 	{
 		if (path != null) {
-			Gtk.TreeIter iter;
-			_list_store.get_iter(out iter, path);
-
-			Value val;
-			_list_store.get_value(iter, Column.TYPE, out val);
-			type = (string)val;
-			_list_store.get_value(iter, Column.NAME, out val);
-			name = (string)val;
+			uint position = (uint)path.get_indices()[0];
+			ProjectFileItem? item = (ProjectFileItem?)_list_model.get_item(position);
+			if (item != null) {
+				type = item.item_type;
+				name = item.name;
+			} else {
+				type = _selected_type;
+				name = _selected_name;
+			}
 		} else {
 			type = _selected_type;
 			name = _selected_name;
@@ -801,8 +742,6 @@ public class ProjectBrowser : Gtk.Box
 	public Gtk.Image _toggle_folder_view_image;
 	public Gtk.Button _toggle_folder_view;
 	public Gtk.Box _tree_view_content;
-	public Gtk.Image _toggle_icon_view_image;
-	public Gtk.Button _toggle_icon_view;
 	public Gtk.ListStore _folder_list_store;
 	public Gtk.TreeModelSort _folder_list_sort;
 	public SortMode _sort_mode;
@@ -1001,14 +940,12 @@ public class ProjectBrowser : Gtk.Box
 
 					Gtk.TreePath selected_path;
 					if (_folder_view.selected_path(out selected_path)) {
-						Gtk.TreeIter iter;
-						_folder_view._list_store.get_iter(out iter, selected_path);
-
-						GLib.Value val;
-						_folder_view._list_store.get_value(iter, ProjectFolderView.Column.TYPE, out val);
-						selected_type = (string)val;
-						_folder_view._list_store.get_value(iter, ProjectFolderView.Column.NAME, out val);
-						selected_name = (string)val;
+						uint position = (uint)selected_path.get_indices()[0];
+						ProjectFileItem? item = (ProjectFileItem?)_folder_view._list_model.get_item(position);
+						if (item != null) {
+							selected_type = item.item_type;
+							selected_name = item.name;
+						}
 					}
 
 					_tree_filter.refilter();
@@ -1038,11 +975,7 @@ public class ProjectBrowser : Gtk.Box
 		// Setup sort menu button popover.
 		_sort_items_box = new Gtk.Box(Gtk.Orientation.VERTICAL, 0);
 
-		/*
-		Gtk.RadioButton? button = null;
-		for (int i = 0; i < SortMode.COUNT; ++i)
-			button = add_sort_item(button, (SortMode)i);
-		*/
+		// Note: Sort menu implementation removed for simplification
 
 		_sort_items_popover = new Gtk.Popover();
 		_sort_items_popover.set_child(_sort_items_box);
@@ -1053,39 +986,9 @@ public class ProjectBrowser : Gtk.Box
 		_sort_items.can_focus = false;
 		_sort_items.set_popover(_sort_items_popover);
 
-		bool _show_icon_view = true;
-		_toggle_icon_view_image = new Gtk.Image.from_icon_name("browser-list-view");
-		_toggle_icon_view = new Gtk.Button();
-		_toggle_icon_view.set_child(_toggle_icon_view_image);
-		_toggle_icon_view.add_css_class("flat");
-		_toggle_icon_view.add_css_class("image-button");
-		_toggle_icon_view.can_focus = false;
-		_toggle_icon_view.clicked.connect(() => {
-				Gtk.TreePath path;
-				bool any_selected = _folder_view.selected_path(out path);
-
-				if (_show_icon_view) {
-					if (any_selected) {
-						Gtk.TreeIter iter;
-						_folder_view._list_store.get_iter(out iter, path);
-						_folder_view._list_view.get_selection().select_iter(iter);
-					}
-
-					_folder_view._stack.set_visible_child_full("list-view", Gtk.StackTransitionType.NONE);
-					_toggle_icon_view_image.set_from_icon_name("browser-icon-view");
-				} else {
-					if (any_selected)
-						_folder_view._icon_view.select_path(path);
-
-					_folder_view._stack.set_visible_child_full("icon-view", Gtk.StackTransitionType.NONE);
-					_toggle_icon_view_image.set_from_icon_name("browser-list-view");
-				}
-
-				_show_icon_view = !_show_icon_view;
-			});
+		// Note: Removed icon/list view toggle - always using ColumnView now
 
 		var _folder_view_control = new Gtk.Box(Gtk.Orientation.HORIZONTAL, 0);
-		_folder_view_control.append(_toggle_icon_view);
 		_folder_view_control.append(_sort_items);
 
 		_empty_favorites_box = new Gtk.Box(Gtk.Orientation.VERTICAL, 0);
@@ -1370,7 +1273,7 @@ public class ProjectBrowser : Gtk.Box
 	private void update_folder_view()
 	{
 		_folder_list_store.clear();
-		_folder_view._list_store.clear();
+		_folder_view._list_model.remove_all();
 
 		// Get the selected node's type and name.
 		Gtk.TreeModel selected_model;
@@ -1529,20 +1432,11 @@ public class ProjectBrowser : Gtk.Box
 				model.get_value(iter, ProjectStore.Column.MTIME, out val);
 				mtime = (uint64)val;
 
-				// Add the path to the list.
-				Gtk.TreeIter dummy;
-				_folder_view._list_store.insert_with_values(out dummy
-					, -1
-					, ProjectFolderView.Column.TYPE
-					, type
-					, ProjectFolderView.Column.NAME
-					, name
-					, ProjectFolderView.Column.SIZE
-					, size
-					, ProjectFolderView.Column.MTIME
-					, mtime
-					, -1
-					);
+				// Add the path to both models
+				var pixbuf = _thumbnail_cache.get(type, name);
+				var item = new ProjectFileItem(type, name, pixbuf, size, mtime);
+				_folder_view._list_model.append(item);
+				
 				return false;
 			});
 	}
@@ -1593,20 +1487,6 @@ public class ProjectBrowser : Gtk.Box
 			cell.set_property("text", ResourceId.path((string)type, basename));
 		}
 	}
-
-	/*
-	private Gtk.RadioButton add_sort_item(Gtk.RadioButton? group, SortMode mode)
-	{
-		var button = new Gtk.RadioButton.with_label_from_widget(group, mode.to_label());
-		button.toggled.connect(() => {
-				_sort_mode = mode;
-				update_folder_view();
-				_sort_items_popover.popdown();
-			});
-		_sort_items_box.prepend(button);
-		return button;
-	}
-	*/
 }
 
 } /* namespace Crown */

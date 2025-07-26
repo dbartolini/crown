@@ -5,6 +5,17 @@
 
 namespace Crown
 {
+// Data model for texture platform items
+public class TexturePlatformItem : GLib.Object
+{
+	public TargetPlatform platform { get; set; }
+
+	public TexturePlatformItem(TargetPlatform platform)
+	{
+		Object(platform: platform);
+	}
+}
+
 public class TextureSettingsDialog : Gtk.Window
 {
 	public Project _project;
@@ -12,8 +23,14 @@ public class TextureSettingsDialog : Gtk.Window
 	public Database _texture_database;
 	public Guid _texture_id;
 	public PropertyGridSet _texture_set;
-	public Gtk.ListStore _platforms_store;
-	public Gtk.TreeView _platforms;
+	public Gtk.ListStore _platforms_store;            // Keep for compatibility
+	public Gtk.TreeView _platforms;                   // Keep for compatibility
+	public GLib.ListStore _platform_model;           // New GTK4 model
+	public Gtk.ColumnView _platform_column_view;     // New GTK4 view
+	public Gtk.MultiSelection _platform_selection;   // New GTK4 selection
+	public Gtk.ScrolledWindow _platforms_window;     // Keep original
+	public Gtk.ScrolledWindow _platform_column_view_window; // New window
+	public Gtk.Stack _platform_stack;                // Stack to switch views
 	public Gtk.Stack _stack;
 	public bool _never_opened_before;
 	public string _texture_path;
@@ -64,6 +81,31 @@ public class TextureSettingsDialog : Gtk.Window
 		_platforms.append_column(column);
 		_platforms.get_selection().set_mode(Gtk.SelectionMode.MULTIPLE);
 		_platforms.get_selection().changed.connect(on_platforms_selection_changed);
+		
+		// GTK4: Create new platform model and ColumnView
+		_platform_model = new GLib.ListStore(typeof(TexturePlatformItem));
+		for (int p = 0; p < TargetPlatform.COUNT; ++p) {
+			_platform_model.append(new TexturePlatformItem((TargetPlatform)p));
+		}
+		
+		_platform_selection = new Gtk.MultiSelection(_platform_model);
+		_platform_column_view = new Gtk.ColumnView(_platform_selection);
+		
+		// Create column for platform ColumnView
+		create_platform_column_view_columns();
+		
+		// Create scrolled windows
+		_platforms_window = new Gtk.ScrolledWindow();
+		_platforms_window.set_child(_platforms);
+		
+		_platform_column_view_window = new Gtk.ScrolledWindow();
+		_platform_column_view_window.set_child(_platform_column_view);
+		
+		// Create stack to switch between views
+		_platform_stack = new Gtk.Stack();
+		_platform_stack.add_named(_platforms_window, "tree-view");
+		_platform_stack.add_named(_platform_column_view_window, "column-view");
+		_platform_stack.set_visible_child_name("column-view");  // Use GTK4 by default
 
 		this.set_icon_name(CROWN_EDITOR_ICON_NAME);
 
@@ -124,7 +166,7 @@ public class TextureSettingsDialog : Gtk.Window
 		_stack.add_named(_texture_set, "some-selected");
 
 		_box = new Gtk.Box(Gtk.Orientation.HORIZONTAL, 0);
-		_box.prepend(_platforms);
+		_box.prepend(_platform_stack);  // Use stack instead of _platforms
 		_box.prepend(_stack);
 		_box.vexpand = true;
 
@@ -163,6 +205,30 @@ public class TextureSettingsDialog : Gtk.Window
 		this.close_request.connect(on_close_request);
 	}
 
+	// GTK4: Create ColumnView columns for platform selection
+	private void create_platform_column_view_columns()
+	{
+		var factory = new Gtk.SignalListItemFactory();
+		
+		factory.setup.connect((item) => {
+			var list_item = (Gtk.ListItem)item;
+			var label = new Gtk.Label("");
+			label.set_halign(Gtk.Align.START);
+			list_item.set_child(label);
+		});
+		
+		factory.bind.connect((item) => {
+			var list_item = (Gtk.ListItem)item;
+			var platform_item = (TexturePlatformItem)list_item.get_item();
+			var label = (Gtk.Label)list_item.get_child();
+			label.set_text(platform_item.platform.to_label());
+		});
+		
+		var column = new Gtk.ColumnViewColumn("Target Platform", factory);
+		column.set_expand(true);
+		_platform_column_view.append_column(column);
+	}
+
 	public void on_stack_map()
 	{
 		if (_never_opened_before) {
@@ -192,7 +258,7 @@ public class TextureSettingsDialog : Gtk.Window
 			}
 		}
 
-		_platforms.grab_focus();
+		_platforms.grab_focus();  // For now, keep using TreeView focus
 	}
 
 	public int load_texture(string texture_name)

@@ -5,6 +5,23 @@
 
 namespace Crown
 {
+// Data model for a single item in the level tree view
+public class LevelTreeItem : GLib.Object
+{
+	public int item_type { get; set; }
+	public Guid guid { get; set; }
+	public string name { get; set; }
+
+	public LevelTreeItem(int type, Guid guid, string name)
+	{
+		Object(
+			item_type: type,
+			guid: guid,
+			name: name
+		);
+	}
+}
+
 public class LevelTreeView : Gtk.Box
 {
 	private enum ItemType
@@ -57,16 +74,23 @@ public class LevelTreeView : Gtk.Box
 
 	// Widgets
 	private EntrySearch _filter_entry;
-	private Gtk.TreeStore _tree_store;
-	private Gtk.TreeModelFilter _tree_filter;
-	private Gtk.TreeModelSort _tree_sort;
-	private Gtk.TreeView _tree_view;
-	private Gtk.TreeSelection _tree_selection;
+	private Gtk.TreeStore _tree_store;                 // Keep for compatibility
+	private Gtk.TreeModelFilter _tree_filter;         // Keep for compatibility
+	private Gtk.TreeModelSort _tree_sort;             // Keep for compatibility
+	private Gtk.TreeView _tree_view;                  // Keep for now
+	private Gtk.TreeSelection _tree_selection;        // Keep for now
+	private GLib.ListStore _root_model;               // New GTK4 model
+	private Gtk.TreeListModel _tree_list_model;       // New GTK4 hierarchical model
+	private Gtk.MultiSelection _multi_selection;      // New GTK4 selection
+	private Gtk.ColumnView _column_view;              // New GTK4 view
 	private Gtk.ScrolledWindow _scrolled_window;
+	private Gtk.ScrolledWindow _column_view_window;   // New scrolled window for ColumnView
+	private Gtk.Stack _view_stack;                    // Stack to switch between old/new views
 	private Gtk.Box _sort_items_box;
 	private Gtk.Popover _sort_items_popover;
 	private Gtk.MenuButton _sort_items;
 	private Gtk.GestureClick _gesture_click;
+	private Gtk.GestureClick _column_view_gesture_click;
 	private Gtk.TreeRowReference _units_root;
 	private Gtk.TreeRowReference _sounds_root;
 
@@ -169,17 +193,42 @@ public class LevelTreeView : Gtk.Box
 		_tree_selection.set_mode(Gtk.SelectionMode.MULTIPLE);
 		_tree_selection.changed.connect(on_tree_selection_changed);
 
+		// GTK4: Create new hierarchical model and ColumnView
+		_root_model = new GLib.ListStore(typeof(LevelTreeItem));
+		
+		// Create TreeListModel for hierarchical display
+		_tree_list_model = new Gtk.TreeListModel(_root_model, false, true, (item) => {
+			// For now, return null (no children) - we'll implement hierarchy later
+			return null;
+		});
+		
+		_multi_selection = new Gtk.MultiSelection(_tree_list_model);
+		_column_view = new Gtk.ColumnView(_multi_selection);
+		
+		// Create column for ColumnView
+		create_column_view_columns();
+		
+		_column_view_gesture_click = new Gtk.GestureClick();
+		_column_view_gesture_click.set_button(0);
+		_column_view_gesture_click.pressed.connect(on_button_pressed);
+		_column_view.add_controller(_column_view_gesture_click);
+
 		_scrolled_window = new Gtk.ScrolledWindow();
 		_scrolled_window.set_child(_tree_view);
+		
+		_column_view_window = new Gtk.ScrolledWindow();
+		_column_view_window.set_child(_column_view);
+		
+		// Create stack to switch between TreeView and ColumnView
+		_view_stack = new Gtk.Stack();
+		_view_stack.add_named(_scrolled_window, "tree-view");
+		_view_stack.add_named(_column_view_window, "column-view");
+		_view_stack.set_visible_child_name("column-view");  // Use GTK4 by default
 
 		// Setup sort menu button popover.
 		_sort_items_box = new Gtk.Box(Gtk.Orientation.VERTICAL, 0);
 
-		/*
-		Gtk.RadioButton? button = null;
-		for (int i = 0; i < SortMode.COUNT; ++i)
-			button = add_sort_item(button, (SortMode)i);
-		*/
+		// Note: Sort menu implementation removed for simplification
 
 		_sort_items_popover = new Gtk.Popover();
 		_sort_items_popover.set_child(_sort_items_box);
@@ -195,7 +244,55 @@ public class LevelTreeView : Gtk.Box
 		tree_control.append(_sort_items);
 
 		this.prepend(tree_control);
-		this.prepend(_scrolled_window);
+		this.prepend(_view_stack);  // Use stack instead of scrolled_window directly
+	}
+
+	// GTK4: Create ColumnView columns
+	private void create_column_view_columns()
+	{
+		// Create a single column that combines icon and text
+		var factory = new Gtk.SignalListItemFactory();
+		
+		factory.setup.connect((item) => {
+			var list_item = (Gtk.ListItem)item;
+			var box = new Gtk.Box(Gtk.Orientation.HORIZONTAL, 4);
+			var icon = new Gtk.Image();
+			var label = new Gtk.Label("");
+			label.set_halign(Gtk.Align.START);
+			box.append(icon);
+			box.append(label);
+			list_item.set_child(box);
+		});
+		
+		factory.bind.connect((item) => {
+			var list_item = (Gtk.ListItem)item;
+			var tree_row = (Gtk.TreeListRow)list_item.get_item();
+			var level_item = (LevelTreeItem)tree_row.get_item();
+			
+			var box = (Gtk.Box)list_item.get_child();
+			var icon = (Gtk.Image)box.get_first_child();
+			var label = (Gtk.Label)box.get_last_child();
+			
+			// Set icon based on item type
+			if (level_item.item_type == ItemType.FOLDER)
+				icon.set_from_icon_name("browser-folder-symbolic");
+			else if (level_item.item_type == ItemType.UNIT)
+				icon.set_from_icon_name("level-object-unit");
+			else if (level_item.item_type == ItemType.SOUND)
+				icon.set_from_icon_name("level-object-sound");
+			else if (level_item.item_type == ItemType.LIGHT)
+				icon.set_from_icon_name("level-object-light");
+			else if (level_item.item_type == ItemType.CAMERA)
+				icon.set_from_icon_name("level-object-camera");
+			else
+				icon.set_from_icon_name("level-object-unknown");
+			
+			label.set_text(level_item.name);
+		});
+		
+		var column = new Gtk.ColumnViewColumn("Objects", factory);
+		column.set_expand(true);
+		_column_view.append_column(column);
 	}
 
 	private void on_button_pressed(int n_press, double x, double y)
@@ -567,27 +664,6 @@ public class LevelTreeView : Gtk.Box
 		_tree_selection.changed.connect(on_tree_selection_changed);
 	}
 
-	/*
-	private Gtk.RadioButton add_sort_item(Gtk.RadioButton? group, SortMode mode)
-	{
-		var button = new Gtk.RadioButton.with_label_from_widget(group, mode.to_label());
-		button.toggled.connect(() => {
-				if (mode == SortMode.NAME_AZ)
-					_tree_sort.set_sort_column_id(Column.NAME, Gtk.SortType.ASCENDING);
-				else if (mode == SortMode.NAME_ZA)
-					_tree_sort.set_sort_column_id(Column.NAME, Gtk.SortType.DESCENDING);
-				else if (mode == SortMode.TYPE_AZ)
-					_tree_sort.set_sort_column_id(Column.TYPE, Gtk.SortType.ASCENDING);
-				else if (mode == SortMode.TYPE_ZA)
-					_tree_sort.set_sort_column_id(Column.TYPE, Gtk.SortType.DESCENDING);
-
-				_tree_filter.refilter();
-				_sort_items_popover.popdown();
-			});
-		_sort_items_box.prepend(button, false, false);
-		return button;
-	}
-	*/
 }
 
 } /* namespace Crown */

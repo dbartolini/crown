@@ -5,22 +5,25 @@
 
 namespace Crown
 {
-public class InputEnum : InputField, Gtk.ComboBox
+public class InputEnum : InputField, Gtk.Widget
 {
 	public bool _inconsistent;
-	public Gtk.ListStore _store;
-	public Gtk.TreeModelFilter _filter;
+	public Gtk.StringList _store;
+	public Gtk.DropDown _dropdown;
 	public Gtk.EventControllerScroll _controller_scroll;
+	private string[] _ids;
+	private string[] _labels;
 
 	public void set_inconsistent(bool inconsistent)
 	{
 		if (_inconsistent != inconsistent) {
 			_inconsistent = inconsistent;
 
-			_filter.refilter();
+			update_dropdown();
 
 			if (_inconsistent) {
-				this.set_active_id(INCONSISTENT_ID);
+				// Set to inconsistent item (index 0)
+				_dropdown.set_selected(0);
 			}
 		}
 	}
@@ -44,59 +47,84 @@ public class InputEnum : InputField, Gtk.ComboBox
 	{
 		get
 		{
-			return this.get_active_id();
+			uint selected = _dropdown.get_selected();
+			if (selected >= _ids.length)
+				return INCONSISTENT_ID;
+			return _ids[selected];
 		}
 		set
 		{
-			_filter.refilter();
-			bool success = this.set_active_id(value);
-			set_inconsistent(!success);
+			// Find index of value in _ids array
+			for (int i = 0; i < _ids.length; i++) {
+				if (_ids[i] == value) {
+					_dropdown.set_selected(i);
+					set_inconsistent(false);
+					return;
+				}
+			}
+			// Value not found, set inconsistent
+			set_inconsistent(true);
 		}
 	}
 
-	public bool filter_visible_func(Gtk.TreeModel model, Gtk.TreeIter iter)
+	private void update_dropdown()
 	{
-		Value id_val;
-		model.get_value(iter, 0, out id_val);
+		// Rebuild the string list based on inconsistent state
+		_store.splice(0, _store.get_n_items(), null);
+		
+		if (_inconsistent) {
+			_store.append(INCONSISTENT_LABEL);
+		}
+		
+		// Add all other items (skip inconsistent entry at index 0 of _labels)
+		for (int i = 1; i < _labels.length; i++) {
+			_store.append(_labels[i]);
+		}
+	}
 
-		if (!_inconsistent && (string)id_val == INCONSISTENT_ID)
-			return false;
-
-		return true;
+	construct
+	{
+		set_layout_manager(new Gtk.BinLayout());
 	}
 
 	public InputEnum(string default_id = "DEFAULT", string[]? labels = null, string[]? ids = null)
 	{
+		Object();
 		_inconsistent = false;
 
-		_store = new Gtk.ListStore(2
-			, typeof(string) // ID
-			, typeof(string) // Label
-			);
-		_filter = new Gtk.TreeModelFilter(_store, null);
-		_filter.set_visible_func(filter_visible_func);
-
-		this.model = _filter;
-		this.id_column = 0;
-		this.entry_text_column = 1;
-
-		Gtk.CellRendererText renderer = new Gtk.CellRendererText();
-		this.pack_start(renderer, true);
-		this.add_attribute(renderer, "text", 1);
-
-		insert_special_values();
-
-		if (labels != null) {
-			Gtk.TreeIter iter;
-			for (int ii = 0; ii < ids.length; ++ii) {
-				unowned string? id = ids != null ? ids[ii] : null;
-				_store.insert_with_values(out iter, -1, 0, id, 1, labels[ii], -1);
+		// Initialize arrays
+		if (labels != null && ids != null) {
+			_ids = new string[ids.length + 1];
+			_labels = new string[labels.length + 1];
+			
+			// First entry is always inconsistent
+			_ids[0] = INCONSISTENT_ID;
+			_labels[0] = INCONSISTENT_LABEL;
+			
+			// Copy provided data
+			for (int i = 0; i < ids.length; i++) {
+				_ids[i + 1] = ids[i];
+				_labels[i + 1] = labels[i];
 			}
-			// if (ids != null && default_id < ids.length)
+		} else {
+			_ids = { INCONSISTENT_ID };
+			_labels = { INCONSISTENT_LABEL };
+		}
+
+		_store = new Gtk.StringList(null);
+		_dropdown = new Gtk.DropDown(_store, null);
+		
+		// Add dropdown as child
+		_dropdown.set_parent(this);
+		
+		// Setup the dropdown with initial values
+		update_dropdown();
+
+		if (labels != null && ids != null) {
 			this.value = default_id;
 		}
 
-		this.changed.connect(on_changed);
+		_dropdown.notify["selected"].connect(on_changed);
 
 #if CROWN_GTK3
 		this.scroll_event.connect(() => {
@@ -111,70 +139,106 @@ public class InputEnum : InputField, Gtk.ComboBox
 				// the annoying scroll default behavior.
 				return Gdk.EVENT_PROPAGATE;
 			});
-		this.add_controller(_controller_scroll);
+		_dropdown.add_controller(_controller_scroll);
 #endif
+	}
+
+	~InputEnum()
+	{
+		if (_dropdown != null)
+			_dropdown.unparent();
 	}
 
 	public void append(string? id, string label)
 	{
-		this.changed.disconnect(on_changed);
-		Gtk.TreeIter iter;
-		_store.insert_with_values(out iter, -1, 0, id, 1, label, -1);
-		this.changed.connect(on_changed);
+		_dropdown.notify["selected"].disconnect(on_changed);
+		
+		// Expand arrays
+		string[] new_ids = new string[_ids.length + 1];
+		string[] new_labels = new string[_labels.length + 1];
+		
+		for (int i = 0; i < _ids.length; i++) {
+			new_ids[i] = _ids[i];
+			new_labels[i] = _labels[i];
+		}
+		
+		new_ids[_ids.length] = id ?? "";
+		new_labels[_labels.length] = label;
+		
+		_ids = new_ids;
+		_labels = new_labels;
+		
+		update_dropdown();
+		_dropdown.notify["selected"].connect(on_changed);
 	}
 
 	public void clear()
 	{
-		this.changed.disconnect(on_changed);
-		_store.clear();
-		insert_special_values();
+		_dropdown.notify["selected"].disconnect(on_changed);
+		_ids = { INCONSISTENT_ID };
+		_labels = { INCONSISTENT_LABEL };
 		_inconsistent = false;
-		this.changed.connect(on_changed);
+		update_dropdown();
+		_dropdown.notify["selected"].connect(on_changed);
 	}
 
 	public string any_valid_id()
 	{
 		string some_id = INCONSISTENT_ID;
 
-		if (_store.iter_n_children(null) > 1u) {
-			_store.foreach((model, path, iter) => {
-					Value id_val;
-					model.get_value(iter, 0, out id_val);
-					if ((string)id_val != INCONSISTENT_ID) {
-						some_id = (string)id_val;
-						return true;
-					}
-
-					return false;
-				});
+		if (_ids.length > 1) {
+			// Return the first non-inconsistent ID
+			for (int i = 1; i < _ids.length; i++) {
+				if (_ids[i] != INCONSISTENT_ID) {
+					some_id = _ids[i];
+					break;
+				}
+			}
 		}
 
 		return some_id;
 	}
 
+	// Compatibility methods for old ComboBox API
+	public string? get_active_id()
+	{
+		return this.value;
+	}
+
+	public void set_active_id(string id)
+	{
+		this.value = id;
+	}
+
+	public int active
+	{
+		get
+		{
+			return (int)_dropdown.get_selected();
+		}
+		set
+		{
+			_dropdown.set_selected((uint)value);
+		}
+	}
+
 	private void on_changed()
 	{
-		if (this.get_active_id() == null)
+		uint selected = _dropdown.get_selected();
+		if (selected >= _ids.length)
 			return;
 
-		if (_inconsistent && this.get_active_id() == INCONSISTENT_ID)
+		string selected_id = _ids[selected];
+		
+		if (_inconsistent && selected_id == INCONSISTENT_ID)
 			return;
 
 		if (_inconsistent) {
 			_inconsistent = false;
-			_filter.refilter();
+			update_dropdown();
 		}
 
 		value_changed(this);
-	}
-
-	private void insert_special_values()
-	{
-		assert(_store.iter_n_children(null) == 0u);
-
-		// Insert the "inconsistent" ID and label.
-		Gtk.TreeIter iter;
-		_store.insert_with_values(out iter, -1, 0, INCONSISTENT_ID, 1, INCONSISTENT_LABEL, -1);
 	}
 }
 

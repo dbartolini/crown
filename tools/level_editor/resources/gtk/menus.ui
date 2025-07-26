@@ -1,40 +1,41 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <interface>
+  <requires lib="gtk" version="4.0"/>
   <menu id="menubar">
     <submenu>
       <attribute name="label" translatable="yes">_File</attribute>
       <attribute name="action">app.menu-file</attribute>
       <section>
-      <item>
-        <attribute name="label" translatable="yes">New Level</attribute>
-        <attribute name="action">app.new-level</attribute>
-        <attribute name="accel">&lt;Primary&gt;N</attribute>
-      </item>
-      <item>
-        <attribute name="label" translatable="yes">Open Level...</attribute>
-        <attribute name="action">app.open-level</attribute>
-        <attribute name="target"></attribute>
-        <attribute name="accel">&lt;Primary&gt;O</attribute>
-      </item>
-      <item>
-        <attribute name="label" translatable="yes">New Project...</attribute>
-        <attribute name="action">app.new-project</attribute>
-      </item>
-      <item>
-        <attribute name="label" translatable="yes">Open Project...</attribute>
-        <attribute name="action">app.open-project</attribute>
-        <attribute name="target"></attribute>
-      </item>
-      <item>
-        <attribute name="label" translatable="yes">Save</attribute>
-        <attribute name="action">app.save</attribute>
-        <attribute name="accel">&lt;Primary&gt;S</attribute>
-      </item>
-      <item>
-        <attribute name="label" translatable="yes">Save As...</attribute>
-        <attribute name="action">app.save-as</attribute>
-        <attribute name="accel">&lt;Shift&gt;&lt;Primary&gt;S</attribute>
-      </item>
+        <item>
+          <attribute name="label" translatable="yes">New Level</attribute>
+          <attribute name="action">app.new-level</attribute>
+          <attribute name="accel">&lt;Primary&gt;N</attribute>
+        </item>
+        <item>
+          <attribute name="label" translatable="yes">Open Level...</attribute>
+          <attribute name="action">app.open-level</attribute>
+          <attribute name="target"></attribute>
+          <attribute name="accel">&lt;Primary&gt;O</attribute>
+        </item>
+        <item>
+          <attribute name="label" translatable="yes">New Project...</attribute>
+          <attribute name="action">app.new-project</attribute>
+        </item>
+        <item>
+          <attribute name="label" translatable="yes">Open Project...</attribute>
+          <attribute name="action">app.open-project</attribute>
+          <attribute name="target"></attribute>
+        </item>
+        <item>
+          <attribute name="label" translatable="yes">Save</attribute>
+          <attribute name="action">app.save</attribute>
+          <attribute name="accel">&lt;Primary&gt;S</attribute>
+        </item>
+        <item>
+          <attribute name="label" translatable="yes">Save As...</attribute>
+          <attribute name="action">app.save-as</attribute>
+          <attribute name="accel">&lt;Shift&gt;&lt;Primary&gt;S</attribute>
+        </item>
       </section>
       <section>
         <item>
@@ -99,25 +100,25 @@
         <item>
           <attribute name="label" translatable="yes">Place</attribute>
           <attribute name="action">app.tool</attribute>
-          <attribute name="target" type="i">0</attribute> <!-- See: Crown.ToolType -->
+          <attribute name="target" type="i">0</attribute>
           <attribute name="accel">Q</attribute>
         </item>
         <item>
           <attribute name="label" translatable="yes">Move</attribute>
           <attribute name="action">app.tool</attribute>
-          <attribute name="target" type="i">1</attribute> <!-- See: Crown.ToolType -->
+          <attribute name="target" type="i">1</attribute>
           <attribute name="accel">W</attribute>
         </item>
         <item>
           <attribute name="label" translatable="yes">Rotate</attribute>
           <attribute name="action">app.tool</attribute>
-          <attribute name="target" type="i">2</attribute> <!-- See: Crown.ToolType -->
+          <attribute name="target" type="i">2</attribute>
           <attribute name="accel">E</attribute>
         </item>
         <item>
           <attribute name="label" translatable="yes">Scale</attribute>
           <attribute name="action">app.tool</attribute>
-          <attribute name="target" type="i">3</attribute> <!-- See: Crown.ToolType -->
+          <attribute name="target" type="i">3</attribute>
           <attribute name="accel">R</attribute>
         </item>
       </section>
@@ -125,24 +126,24 @@
         <item>
           <attribute name="label" translatable="yes">Relative Snap</attribute>
           <attribute name="action">app.snap</attribute>
-          <attribute name="target" type="i">0</attribute> <!-- See: Crown.SnapMode -->
+          <attribute name="target" type="i">0</attribute>
         </item>
         <item>
           <attribute name="label" translatable="yes">Absolute Snap</attribute>
           <attribute name="action">app.snap</attribute>
-          <attribute name="target" type="i">1</attribute> <!-- See: Crown.SnapMode -->
+          <attribute name="target" type="i">1</attribute>
         </item>
       </section>
       <section>
         <item>
           <attribute name="label" translatable="yes">Local Axis</attribute>
           <attribute name="action">app.reference-system</attribute>
-          <attribute name="target" type="i">0</attribute> <!-- See: Crown.ReferenceSystem -->
+          <attribute name="target" type="i">0</attribute>
         </item>
         <item>
           <attribute name="label" translatable="yes">World Axis</attribute>
           <attribute name="action">app.reference-system</attribute>
-          <attribute name="target" type="i">1</attribute> <!-- See: Crown.ReferenceSystem -->
+          <attribute name="target" type="i">1</attribute>
         </item>
       </section>
       <section>
@@ -309,43 +310,43 @@
         <item>
           <attribute name="label" translatable="yes">Perspective</attribute>
           <attribute name="action">app.camera-view</attribute>
-          <attribute name="target" type="i">0</attribute> <!-- See: Crown.CameraViewType -->
+          <attribute name="target" type="i">0</attribute>
           <attribute name="accel">KP_5</attribute>
         </item>
         <item>
           <attribute name="label" translatable="yes">View Front</attribute>
           <attribute name="action">app.camera-view</attribute>
-          <attribute name="target" type="i">1</attribute> <!-- See: Crown.CameraViewType -->
+          <attribute name="target" type="i">1</attribute>
           <attribute name="accel">KP_1</attribute>
         </item>
         <item>
           <attribute name="label" translatable="yes">View Back</attribute>
           <attribute name="action">app.camera-view</attribute>
-          <attribute name="target" type="i">2</attribute> <!-- See: Crown.CameraViewType -->
+          <attribute name="target" type="i">2</attribute>
           <attribute name="accel">&lt;Primary&gt;KP_1</attribute>
         </item>
         <item>
           <attribute name="label" translatable="yes">View Right</attribute>
           <attribute name="action">app.camera-view</attribute>
-          <attribute name="target" type="i">3</attribute> <!-- See: Crown.CameraViewType -->
+          <attribute name="target" type="i">3</attribute>
           <attribute name="accel">KP_3</attribute>
         </item>
         <item>
           <attribute name="label" translatable="yes">View Left</attribute>
           <attribute name="action">app.camera-view</attribute>
-          <attribute name="target" type="i">4</attribute> <!-- See: Crown.CameraViewType -->
+          <attribute name="target" type="i">4</attribute>
           <attribute name="accel">&lt;Primary&gt;KP_3</attribute>
         </item>
         <item>
           <attribute name="label" translatable="yes">View Top</attribute>
           <attribute name="action">app.camera-view</attribute>
-          <attribute name="target" type="i">5</attribute> <!-- See: Crown.CameraViewType -->
+          <attribute name="target" type="i">5</attribute>
           <attribute name="accel">KP_7</attribute>
         </item>
         <item>
           <attribute name="label" translatable="yes">View Bottom</attribute>
           <attribute name="action">app.camera-view</attribute>
-          <attribute name="target" type="i">6</attribute> <!-- See: Crown.CameraViewType -->
+          <attribute name="target" type="i">6</attribute>
           <attribute name="accel">&lt;Primary&gt;KP_7</attribute>
         </item>
       </section>

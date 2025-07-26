@@ -49,6 +49,40 @@ notebook > header tab {
 	min-width: 22px;
 }
 
+/* GTK4 ColumnView styling */
+columnview {
+	outline: none;
+}
+
+columnview > header {
+	border-bottom: 1px solid #ccc;
+}
+
+columnview > header > button {
+	border: none;
+	border-radius: 0;
+	outline: none;
+}
+
+columnview > listview > row {
+	outline: none;
+	border: none;
+}
+
+columnview > listview > row:hover {
+	background: rgba(0, 0, 255, 0.1);
+}
+
+columnview > listview > row:selected {
+	background: #0078d4;
+	color: white;
+}
+
+/* Remove dotted focus indicators */
+* {
+	outline: none;
+}
+
 .axis.x {
 	background: rgba(180, 0, 0, 0.2);
 }

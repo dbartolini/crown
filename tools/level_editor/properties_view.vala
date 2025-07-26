@@ -216,7 +216,7 @@ public class PropertiesView : Gtk.Box
 				cv.update();
 
 				if (id == owner_id)
-					expander.get_style_context().remove_class("inherited");
+					expander.remove_css_class("inherited");
 				else
 					expander.add_css_class("inherited");
 

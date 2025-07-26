@@ -145,7 +145,7 @@ public class ConsoleView : Gtk.Box
 	public Gtk.TextMark _time_mark;
 	public GLib.Mutex _mutex;
 
-	public ConsoleView(Project project, Gtk.ComboBoxText combo, PreferencesDialog preferences_dialog)
+	public ConsoleView(Project project, Gtk.DropDown combo, PreferencesDialog preferences_dialog)
 	{
 		Object(orientation: Gtk.Orientation.VERTICAL, spacing: 0);
 

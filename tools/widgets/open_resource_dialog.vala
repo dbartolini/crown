@@ -5,78 +5,90 @@
 
 namespace Crown
 {
-public class OpenResourceDialog : Gtk.Dialog
+public class OpenResourceDialog : GLib.Object
 {
-	private Gtk.FileChooserWidget _file_chooser;
 	public Project _project;
 	public string _resource_type;
+	private Gtk.Window? _parent;
 
 	public signal void safer_response(int response_id, string? path);
 
 	public OpenResourceDialog(string? title, Gtk.Window? parent, string resource_type, Project p)
 	{
+		_parent = parent;
+		_project = p;
+		_resource_type = resource_type;
+		
+		// Show the open dialog immediately in GTK4 style
+		show_open_dialog(title);
+	}
+
+	private async void show_open_dialog(string? title)
+	{
+		var file_dialog = new Gtk.FileDialog();
+		
 		if (title != null)
-			this.title = title;
-
-		if (parent != null)
-			this.set_transient_for(parent);
-
-		this.set_modal(true);
-		this.add_button("Cancel", Gtk.ResponseType.CANCEL);
-		this.add_button("Open", Gtk.ResponseType.ACCEPT);
-		this.response.connect(on_response);
-
-		_file_chooser = new Gtk.FileChooserWidget(Gtk.FileChooserAction.OPEN);
+			file_dialog.set_title(title);
+		
+		// Set initial folder
 		try {
-			_file_chooser.set_current_folder(GLib.File.new_for_path(p.source_dir()));
+			var initial_folder = GLib.File.new_for_path(_project.source_dir());
+			file_dialog.set_initial_folder(initial_folder);
 		} catch (GLib.Error e) {
 			loge(e.message);
 		}
-
-		Gtk.FileFilter ff = new Gtk.FileFilter();
-		ff.set_filter_name("%s (*.%s)".printf(resource_type, resource_type));
-		ff.add_pattern("*.%s".printf(resource_type));
-		_file_chooser.add_filter(ff);
-
-		this.get_content_area().append(_file_chooser);
-
-		_project = p;
-		_resource_type = resource_type;
+		
+		// Set up file filter
+		var filter = new Gtk.FileFilter();
+		filter.add_pattern("*.%s".printf(_resource_type));
+		
+		var filter_list = new GLib.ListStore(typeof(Gtk.FileFilter));
+		filter_list.append(filter);
+		file_dialog.set_filters(filter_list);
+		file_dialog.set_default_filter(filter);
+		
+		try {
+			var file = yield file_dialog.open(_parent, null);
+			if (file != null) {
+				string path = file.get_path();
+				handle_file_selected(path);
+			} else {
+				safer_response(Gtk.ResponseType.CANCEL, null);
+			}
+		} catch (GLib.Error e) {
+			// User cancelled or error occurred
+			safer_response(Gtk.ResponseType.CANCEL, null);
+		}
 	}
 
-	public void on_response(int response_id)
+	private void handle_file_selected(string path)
 	{
-		string? path = _file_chooser.get_file().get_path();
+		string final_path = path;
+		
+		// Ensure the path has the correct extension
+		if (!final_path.has_suffix("." + _resource_type))
+			final_path += "." + _resource_type;
 
-		if (response_id == Gtk.ResponseType.ACCEPT && path != null) {
-			if (!path.has_suffix("." + _resource_type))
-				path += "." + _resource_type;
-
-			// If the path is outside the source dir, show a warning
-			// and point the file chooser back to the source dir.
-			if (!_project.path_is_within_source_dir(path)) {
-				Gtk.MessageDialog md = new Gtk.MessageDialog(this
-					, Gtk.DialogFlags.MODAL
-					, Gtk.MessageType.WARNING
-					, Gtk.ButtonsType.OK
-					, "The file must be within the source directory."
-					);
-				md.set_default_response(Gtk.ResponseType.OK);
-				md.response.connect(() => {
-						try {
-							_file_chooser.set_current_folder(GLib.File.new_for_path(_project.source_dir()));
-						} catch (GLib.Error e) {
-							loge(e.message);
-						}
-						md.destroy();
-					});
-				md.show();
-				return;
-			}
+		// If the path is outside the source dir, show a warning
+		if (!_project.path_is_within_source_dir(final_path)) {
+			show_warning_dialog("The file must be within the source directory.", () => {
+				// Retry with dialog
+				show_open_dialog.begin("Open Resource");
+			});
+			return;
 		}
 
-		this.safer_response(response_id, path);
+		safer_response(Gtk.ResponseType.ACCEPT, final_path);
 	}
+
+	private void show_warning_dialog(string message, owned SimpleCallback callback)
+	{
+		var dialog = new Gtk.AlertDialog(message);
+		dialog.show(_parent);
+		callback();
+	}
+	
+	public delegate void SimpleCallback();
 }
 
 } /* namespace Crown */

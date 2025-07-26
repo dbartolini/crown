@@ -61,24 +61,39 @@ public class InputFile : InputField, Gtk.Button
 		this.clicked.connect(on_selector_clicked);
 	}
 
-	private void on_selector_clicked()
+	private async void on_selector_clicked()
 	{
 		string label = _action == Gtk.FileChooserAction.SELECT_FOLDER ? "Folder" : "File";
-		Gtk.FileChooserDialog dlg = new Gtk.FileChooserDialog("Select %s".printf(label)
-			, (Gtk.Window)this.get_root()
-			, _action
-			, "Cancel"
-			, Gtk.ResponseType.CANCEL
-			, "Open"
-			, Gtk.ResponseType.ACCEPT
-			);
-
-		dlg.response.connect((response_id) => {
-				if (response_id == Gtk.ResponseType.ACCEPT)
-					this.value = dlg.get_file().get_path();
-				dlg.destroy();
-			});
-		dlg.show();
+		
+		var parent_window = (Gtk.Window)this.get_root();
+		
+		if (_action == Gtk.FileChooserAction.SELECT_FOLDER) {
+			// Use folder dialog for folder selection
+			var folder_dialog = new Gtk.FileDialog();
+			folder_dialog.set_title("Select %s".printf(label));
+			
+			try {
+				var folder = yield folder_dialog.select_folder(parent_window, null);
+				if (folder != null) {
+					this.value = folder.get_path();
+				}
+			} catch (GLib.Error e) {
+				// User cancelled
+			}
+		} else {
+			// Use file dialog for file selection
+			var file_dialog = new Gtk.FileDialog();
+			file_dialog.set_title("Select %s".printf(label));
+			
+			try {
+				var file = yield file_dialog.open(parent_window, null);
+				if (file != null) {
+					this.value = file.get_path();
+				}
+			} catch (GLib.Error e) {
+				// User cancelled
+			}
+		}
 	}
 }
 
