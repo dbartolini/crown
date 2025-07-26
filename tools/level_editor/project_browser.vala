@@ -195,7 +195,7 @@ private void set_thumbnail(Gtk.CellRenderer cell, string type, string name, int 
 	else
 		cell.set_property("icon-name", "text-x-generic-symbolic");
 }
-public class ProjectFolderView : Gtk.Stack
+public class ProjectFolderView : Gtk.Box
 {
 	public enum Column
 	{
@@ -223,11 +223,16 @@ public class ProjectFolderView : Gtk.Stack
 	public Gtk.ScrolledWindow _list_view_window;
 	public Gtk.GestureClick _icon_view_gesture_click;
 	public Gtk.GestureClick _list_view_gesture_click;
+	public Gtk.Stack _stack;
 
 	public ProjectFolderView(ProjectStore project_store, ThumbnailCache thumbnail_cache)
 	{
+		Object(orientation: Gtk.Orientation.VERTICAL);
+		
 		_project_store = project_store;
 		_thumbnail_cache = thumbnail_cache;
+
+		_stack = new Gtk.Stack();
 
 		_list_store = new Gtk.ListStore(Column.COUNT
 			, typeof(string)     // Column.TYPE
@@ -257,15 +262,16 @@ public class ProjectFolderView : Gtk.Stack
 		_icon_view.add_controller(_icon_view_gesture_click);
 
 		/*
+		// GTK4: TODO - Port drag and drop to new GTK4 API
 		const Gtk.TargetEntry targets[] =
 		{
 			{ "text/uri-list", 0, 0 },
 		};
-		*/
 		_icon_view.enable_model_drag_dest(targets
 			, Gdk.DragAction.COPY
 			| Gdk.DragAction.MOVE
 			);
+		*/
 
 		// https://gitlab.gnome.org/GNOME/gtk/-/blob/3.24.43/gtk/gtkiconview.c#L5147
 		_cell_renderer_text = new Gtk.CellRendererText();
@@ -349,9 +355,11 @@ public class ProjectFolderView : Gtk.Stack
 		_list_view_window = new Gtk.ScrolledWindow();
 		_list_view_window.set_child(_list_view);
 
-		this.add_named(_icon_view_window, "icon-view");
-		this.add_named(_list_view_window, "list-view");
-		this.set_visible_child_full("icon-view", Gtk.StackTransitionType.NONE);
+		_stack.add_named(_icon_view_window, "icon-view");
+		_stack.add_named(_list_view_window, "list-view");
+		_stack.set_visible_child_full("icon-view", Gtk.StackTransitionType.NONE);
+		
+		this.append(_stack);
 	}
 
 	/*
@@ -422,10 +430,10 @@ public class ProjectFolderView : Gtk.Stack
 		uint button;
 
 		Gtk.TreePath? path = path_at_pos((int)x, (int)y);
-		if (this.get_visible_child() == _icon_view_window) {
+		if (_stack.get_visible_child() == _icon_view_window) {
 			button = _icon_view_gesture_click.get_current_button();
 			path = _icon_view.get_path_at_pos((int)x, (int)y);
-		} else if (this.get_visible_child() == _list_view_window) {
+		} else if (_stack.get_visible_child() == _list_view_window) {
 			button = _list_view_gesture_click.get_current_button();
 			if (!_list_view.get_path_at_pos((int)x, (int)y, out path, null, null, null))
 				path = null;
@@ -453,7 +461,7 @@ public class ProjectFolderView : Gtk.Stack
 
 			if (menu_model != null) {
 				Gtk.PopoverMenu menu = new Gtk.PopoverMenu.from_model(menu_model);
-				if (this.get_visible_child() == _icon_view_window) {
+				if (_stack.get_visible_child() == _icon_view_window) {
 					// Adjust for scroll offset since IconView fails to do it itself.
 					var new_x = x - _icon_view_window.get_hadjustment().get_value();
 					var new_y = y - _icon_view_window.get_vadjustment().get_value();
@@ -609,7 +617,7 @@ public class ProjectFolderView : Gtk.Stack
 
 	public bool selected_path(out Gtk.TreePath? path)
 	{
-		if (this.get_visible_child() == _icon_view_window) {
+		if (_stack.get_visible_child() == _icon_view_window) {
 			GLib.List<Gtk.TreePath> selected_paths = _icon_view.get_selected_items();
 			if (selected_paths.length() == 0u) {
 				path = null;
@@ -618,7 +626,7 @@ public class ProjectFolderView : Gtk.Stack
 
 			path = selected_paths.nth(0).data;
 			return true;
-		} else if (this.get_visible_child() == _list_view_window) {
+		} else if (_stack.get_visible_child() == _list_view_window) {
 			Gtk.TreeModel selected_model;
 			Gtk.TreeIter iter;
 			if (!_list_view.get_selection().get_selected(out selected_model, out iter)) {
@@ -636,10 +644,8 @@ public class ProjectFolderView : Gtk.Stack
 
 	private bool on_icon_view_query_tooltip(int x, int y, bool keyboard_tooltip, Gtk.Tooltip tooltip)
 	{
-		int bx;
-		int by;
-		_icon_view.convert_widget_to_bin_window_coords((int)x, (int)y, out bx, out by);
-		Gtk.TreePath? path = _icon_view.get_path_at_pos(bx, by);
+		// GTK4: No need for bin window coordinate conversion
+		Gtk.TreePath? path = _icon_view.get_path_at_pos(x, y);
 		if (path == null)
 			return false;
 
@@ -706,9 +712,9 @@ public class ProjectFolderView : Gtk.Stack
 	private Gtk.TreePath? path_at_pos(int x, int y)
 	{
 		Gtk.TreePath? path = null;
-		if (this.get_visible_child() == _icon_view_window) {
+		if (_stack.get_visible_child() == _icon_view_window) {
 			path = _icon_view.get_path_at_pos(x, y);
-		} else if (this.get_visible_child() == _list_view_window) {
+		} else if (_stack.get_visible_child() == _list_view_window) {
 			int bx;
 			int by;
 			_list_view.convert_widget_to_bin_window_coords(x, y, out bx, out by);
@@ -740,7 +746,7 @@ public class ProjectFolderView : Gtk.Stack
 	}
 }
 
-public class ProjectBrowser : Gtk.Paned
+public class ProjectBrowser : Gtk.Box
 {
 	public enum SortMode
 	{
@@ -1065,13 +1071,13 @@ public class ProjectBrowser : Gtk.Paned
 						_folder_view._list_view.get_selection().select_iter(iter);
 					}
 
-					_folder_view.set_visible_child_full("list-view", Gtk.StackTransitionType.NONE);
+					_folder_view._stack.set_visible_child_full("list-view", Gtk.StackTransitionType.NONE);
 					_toggle_icon_view_image.set_from_icon_name("browser-icon-view");
 				} else {
 					if (any_selected)
 						_folder_view._icon_view.select_path(path);
 
-					_folder_view.set_visible_child_full("icon-view", Gtk.StackTransitionType.NONE);
+					_folder_view._stack.set_visible_child_full("icon-view", Gtk.StackTransitionType.NONE);
 					_toggle_icon_view_image.set_from_icon_name("browser-list-view");
 				}
 
@@ -1096,9 +1102,12 @@ public class ProjectBrowser : Gtk.Paned
 		_folder_view_content.prepend(_folder_view_control);
 		_folder_view_content.prepend(_folder_stack);
 
-		this.set_start_child(_tree_view_content);
-		this.set_end_child(_folder_view_content);
-		this.set_position(400);
+		// Create a paned layout internally since we changed from Gtk.Paned to Gtk.Box
+		_paned = new Gtk.Paned(Gtk.Orientation.HORIZONTAL);
+		_paned.set_start_child(_tree_view_content);
+		_paned.set_end_child(_folder_view_content);
+		_paned.set_position(400);
+		this.append(_paned);
 
 		_hide_core_resources = true;
 

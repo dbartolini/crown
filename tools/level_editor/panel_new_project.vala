@@ -5,7 +5,7 @@
 
 namespace Crown
 {
-public class PanelNewProject : Gtk.Viewport
+public class PanelNewProject : Gtk.Box
 {
 	// Data
 	User _user;
@@ -31,6 +31,7 @@ public class PanelNewProject : Gtk.Viewport
 
 	public PanelNewProject(User user, Project project)
 	{
+		Object(orientation: Gtk.Orientation.VERTICAL);
 		// Data
 		_user = user;
 		_project = project;
@@ -162,7 +163,7 @@ public class PanelNewProject : Gtk.Viewport
 		_clamp = new Clamp();
 		_clamp.set_child(_box);
 
-		this.set_child(_clamp);
+		this.append(_clamp);
 	}
 
 	public void fill_templates_list(string path)

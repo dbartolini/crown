@@ -759,8 +759,12 @@ public class Project
 
 			fcd.response.connect((response_id) => {
 					if (response_id == Gtk.ResponseType.ACCEPT) {
-						foreach (var f in fcd.get_files())
+						// GTK4: get_files() returns GLib.ListModel, iterate differently
+						var file_list = fcd.get_files();
+						for (uint i = 0; i < file_list.get_n_items(); i++) {
+							var f = (GLib.File)file_list.get_item(i);
 							filenames.append(f.get_path());
+						}
 
 						// Find importer callback.
 						unowned ImporterDelegate? importer = null;

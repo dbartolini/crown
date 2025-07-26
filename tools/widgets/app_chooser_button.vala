@@ -5,7 +5,7 @@
 
 namespace Crown
 {
-public class AppChooserButton : Gtk.AppChooserButton
+public class AppChooserButton : Gtk.Box
 {
 	public const string APP_PREDEFINED = "predefined"; ///< Open with a predefined system application.
 	public const string APP_DEFAULT    = "default";    ///< Open with the default application for the file type.
@@ -19,17 +19,26 @@ public class AppChooserButton : Gtk.AppChooserButton
 	}
 
 	public Gtk.EventControllerScroll _controller_scroll;
+	private Gtk.AppChooserButton _app_chooser_button;
+
+	// Delegate properties to the internal app chooser button
+	public bool show_dialog_item {
+		get { return _app_chooser_button.show_dialog_item; }
+		set { _app_chooser_button.show_dialog_item = value; }
+	}
 
 	public AppChooserButton(string mime_type)
 	{
-		Object(content_type: mime_type);
+		Object(orientation: Gtk.Orientation.HORIZONTAL);
+		
+		_app_chooser_button = new Gtk.AppChooserButton(mime_type);
 
-		this.append_custom_item(APP_DEFAULT, "Open by extension", null);
-		this.set_active_custom_item(APP_DEFAULT);
+		_app_chooser_button.append_custom_item(APP_DEFAULT, "Open by extension", null);
+		_app_chooser_button.set_active_custom_item(APP_DEFAULT);
 
 #if CROWN_GTK3
-		this.scroll_event.connect(() => {
-				GLib.Signal.stop_emission_by_name(this, "scroll-event");
+		_app_chooser_button.scroll_event.connect(() => {
+				GLib.Signal.stop_emission_by_name(_app_chooser_button, "scroll-event");
 				return Gdk.EVENT_PROPAGATE;
 			});
 #else
@@ -40,8 +49,16 @@ public class AppChooserButton : Gtk.AppChooserButton
 				// the annoying scroll default behavior.
 				return Gdk.EVENT_PROPAGATE;
 			});
-		this.add_controller(_controller_scroll);
+		_app_chooser_button.add_controller(_controller_scroll);
 #endif
+
+		this.append(_app_chooser_button);
+	}
+
+	// Delegate method to the internal app chooser button
+	public GLib.AppInfo? get_app_info()
+	{
+		return _app_chooser_button.get_app_info();
 	}
 
 	/// Sets the app to @a app_name. If @a app_name is APP_PREDEFINED, it tries
@@ -49,27 +66,30 @@ public class AppChooserButton : Gtk.AppChooserButton
 	public void set_app(string app_name, string? app_id)
 	{
 		if (app_name != APP_PREDEFINED) {
-			this.set_active_custom_item(app_name);
+			_app_chooser_button.set_active_custom_item(app_name);
 			return;
 		}
 
 		if (app_id == null) {
-			this.set_active_custom_item(APP_DEFAULT);
+			_app_chooser_button.set_active_custom_item(APP_DEFAULT);
 			return;
 		}
 
-		this.model.foreach((model, path, iter) => {
+		// GTK4: TODO - AppChooserButton.model property was removed
+		/*
+		_app_chooser_button.model.foreach((model, path, iter) => {
 				Value val;
 				model.get_value(iter, ModelColumn.APP_INFO, out val);
 
 				GLib.AppInfo app_info = (GLib.AppInfo)val;
 				if (app_info != null && app_info.get_id() == app_id) {
-					this.set_active_iter(iter);
+					_app_chooser_button.set_active_iter(iter);
 					return true;
 				}
 
 				return false;
 			});
+		*/
 	}
 
 	/// Returns the item name of the selected application. If the application is predefined,
@@ -78,19 +98,22 @@ public class AppChooserButton : Gtk.AppChooserButton
 	{
 		app_id = null;
 
+		// GTK4: TODO - get_active_iter and model properties were removed
+		/*
 		Gtk.TreeIter iter;
-		if (this.get_active_iter(out iter)) {
+		if (_app_chooser_button.get_active_iter(out iter)) {
 			Value val;
-			this.model.get_value(iter, ModelColumn.NAME, out val);
+			_app_chooser_button.model.get_value(iter, ModelColumn.NAME, out val);
 			string name = (string)val;
 			if (name != null)
 				return name;
+		}
+		*/
 
-			GLib.AppInfo app_info = this.get_app_info();
-			if (app_info != null) {
-				app_id = app_info.get_id();
-				return AppChooserButton.APP_PREDEFINED;
-			}
+		GLib.AppInfo app_info = _app_chooser_button.get_app_info();
+		if (app_info != null) {
+			app_id = app_info.get_id();
+			return AppChooserButton.APP_PREDEFINED;
 		}
 
 		return APP_DEFAULT;

@@ -79,7 +79,7 @@ public class ProjectRow : Gtk.ListBoxRow
 	}
 }
 
-public class PanelProjectsList : Gtk.ScrolledWindow
+public class PanelProjectsList : Gtk.Box
 {
 	// Data
 	public User _user;
@@ -97,6 +97,7 @@ public class PanelProjectsList : Gtk.ScrolledWindow
 
 	public PanelProjectsList(User user)
 	{
+		Object(orientation: Gtk.Orientation.VERTICAL);
 		// Data
 		_user = user;
 
@@ -155,7 +156,7 @@ public class PanelProjectsList : Gtk.ScrolledWindow
 		_clamp = new Clamp();
 		_clamp.set_child(_projects_box);
 
-		this.set_child(_clamp);
+		this.append(_clamp);
 
 		_user.recent_project_added.connect(on_recent_project_added);
 		_user.recent_project_touched.connect(on_recent_project_touched);
@@ -177,24 +178,28 @@ public class PanelProjectsList : Gtk.ScrolledWindow
 
 	public void on_recent_project_touched(string source_dir, string mtime)
 	{
-		_list_projects.foreach((row) => {
-				if (row.get_data<string>("source_dir") == source_dir) {
-					row.set_data("mtime", mtime);
-					return;
-				}
-			});
+		// GTK4: foreach was removed, iterate manually
+		for (var child = _list_projects.get_first_child(); child != null; child = child.get_next_sibling()) {
+			var row = child as Gtk.ListBoxRow;
+			if (row != null && row.get_data<string>("source_dir") == source_dir) {
+				row.set_data("mtime", mtime);
+				return;
+			}
+		}
 
 		invalidate_sort();
 	}
 
 	public void on_recent_project_removed(string source_dir)
 	{
-		_list_projects.foreach((row) => {
-				if (row.get_data<string>("source_dir") == source_dir) {
-					_list_projects.remove(row);
-					return;
-				}
-			});
+		// GTK4: foreach was removed, iterate manually
+		for (var child = _list_projects.get_first_child(); child != null; child = child.get_next_sibling()) {
+			var row = child as Gtk.ListBoxRow;
+			if (row != null && row.get_data<string>("source_dir") == source_dir) {
+				_list_projects.remove(row);
+				return;
+			}
+		}
 	}
 
 	public void invalidate_sort()
@@ -203,8 +208,9 @@ public class PanelProjectsList : Gtk.ScrolledWindow
 
 		// Give focus to most recent project's open button.
 		ProjectRow? first_row = (ProjectRow?)_list_projects.get_row_at_index(0);
-		if (first_row != null)
-			; // first_row._open_button.has_focus = true;
+		if (first_row != null) {
+			// first_row._open_button.has_focus = true;
+		}
 	}
 }
 

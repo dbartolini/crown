@@ -59,7 +59,7 @@ public class UnitView : PropertyGrid
 				);
 			menu_model.append_item(mi);
 		}
-		_add_popover = new Gtk.Popover.from_model(null, menu_model);
+		_add_popover = new Gtk.PopoverMenu.from_model(menu_model);
 
 		_component_add = new Gtk.MenuButton();
 		_component_add.label = "Add Component";
@@ -83,7 +83,7 @@ public class UnitView : PropertyGrid
 	}
 }
 
-public class PropertiesView : Gtk.Stack
+public class PropertiesView : Gtk.Box
 {
 	public struct ComponentEntry
 	{
@@ -105,12 +105,15 @@ public class PropertiesView : Gtk.Stack
 	private Gtk.Viewport _viewport;
 	private Gtk.ScrolledWindow _scrolled_window;
 	private PropertyGridSet _object_view;
+	private Gtk.Stack _stack;
 
 	[CCode (has_target = false)]
 	public delegate GLib.Menu ContextMenu(string object_type);
 
 	public PropertiesView(Database db)
 	{
+		Object(orientation: Gtk.Orientation.VERTICAL);
+		
 		// Data
 		_db = db;
 
@@ -119,6 +122,9 @@ public class PropertiesView : Gtk.Stack
 		_objects = new Gee.HashMap<string, PropertyGrid>();
 		_entries = new Gee.ArrayList<ComponentEntry?>();
 		_selection = null;
+
+		// Create the internal stack
+		_stack = new Gtk.Stack();
 
 		// Widgets
 		_object_view = new PropertyGridSet();
@@ -138,10 +144,12 @@ public class PropertiesView : Gtk.Stack
 		_scrolled_window = new Gtk.ScrolledWindow();
 		_scrolled_window.set_child(_viewport);
 
-		this.add_child(_nothing_to_show);
-		this.add_child(_scrolled_window);
-		this.add_child(_unknown_object_type);
+		_stack.add_child(_nothing_to_show);
+		_stack.add_child(_scrolled_window);
+		_stack.add_child(_unknown_object_type);
 
+		this.append(_stack);
+		
 		this.add_css_class("properties-view");
 
 		db._project.project_reset.connect(on_project_reset);
@@ -192,7 +200,7 @@ public class PropertiesView : Gtk.Stack
 			Expander expander = _expanders[entry.type];
 			_expander_states[entry.type] = expander.expanded;
 		}
-		this.set_visible_child(_scrolled_window);
+		_stack.set_visible_child(_scrolled_window);
 
 		foreach (var entry in _entries) {
 			Expander expander = _expanders[entry.type];
@@ -227,7 +235,7 @@ public class PropertiesView : Gtk.Stack
 			_expander_states[entry.type] = expander.expanded;
 		}
 
-		this.set_visible_child(_scrolled_window);
+		_stack.set_visible_child(_scrolled_window);
 
 		foreach (var entry in _entries) {
 			Expander expander = _expanders[entry.type];
@@ -250,7 +258,7 @@ public class PropertiesView : Gtk.Stack
 	public void show_or_hide_properties()
 	{
 		if (_selection == null || _selection.size != 1) {
-			this.set_visible_child(_nothing_to_show);
+			_stack.set_visible_child(_nothing_to_show);
 			return;
 		}
 
@@ -263,7 +271,7 @@ public class PropertiesView : Gtk.Stack
 		else if (_db.object_type(id) == OBJECT_TYPE_SOUND_SOURCE)
 			show_sound_source(id);
 		else
-			this.set_visible_child(_unknown_object_type);
+			_stack.set_visible_child(_unknown_object_type);
 	}
 
 	public void on_selection_changed(Gee.ArrayList<Guid?> selection)

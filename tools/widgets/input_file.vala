@@ -65,7 +65,7 @@ public class InputFile : InputField, Gtk.Button
 	{
 		string label = _action == Gtk.FileChooserAction.SELECT_FOLDER ? "Folder" : "File";
 		Gtk.FileChooserDialog dlg = new Gtk.FileChooserDialog("Select %s".printf(label)
-			, (Gtk.Window)this.get_toplevel()
+			, (Gtk.Window)this.get_root()
 			, _action
 			, "Cancel"
 			, Gtk.ResponseType.CANCEL

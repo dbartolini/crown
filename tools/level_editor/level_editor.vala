@@ -7,7 +7,7 @@
 extern uint GetCurrentProcessId();
 extern uintptr OpenProcess(uint dwDesiredAccess, bool bInheritHandle, uint dwProcessId);
 #elif CROWN_PLATFORM_LINUX
-extern pid_t getpid();
+extern Posix.pid_t getpid();
 #endif
 
 namespace Crown
@@ -2556,11 +2556,9 @@ public class LevelEditorApplication : Gtk.Application
 
 	private void copy_string(string str)
 	{
-		var clip = Gtk.Clipboard.get_default(Gdk.Display.get_default());
-		clip.set_text(str, str.length);
-#if !CROWN_PLATFORM_WINDOWS
-		clip.store();
-#endif
+		// GTK4: New clipboard API
+		var clip = Gdk.Display.get_default().get_clipboard();
+		clip.set_text(str);
 	}
 
 	private void on_copy_path(GLib.SimpleAction action, GLib.Variant? param)

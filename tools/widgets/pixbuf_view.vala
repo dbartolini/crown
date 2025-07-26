@@ -53,13 +53,20 @@ public class PixbufView : Gtk.DrawingArea
 		_filter = Cairo.Filter.NEAREST;
 		_extend = Cairo.Extend.NONE;
 
-		this.draw.connect(on_draw);
+		// GTK4: drawing is done via snapshot() method override
 	}
 
 	public void set_pixbuf(Gdk.Pixbuf pixbuf)
 	{
 		_pixbuf = pixbuf;
-		_pixbuf_pattern = new Cairo.Pattern.for_surface(Gdk.cairo_surface_create_from_pixbuf(_pixbuf, 1, null));
+		// GTK4: Create cairo pattern from pixbuf directly using cairo surface
+		int width = _pixbuf.get_width();
+		int height = _pixbuf.get_height();
+		var surface = new Cairo.ImageSurface(Cairo.Format.ARGB32, width, height);
+		var cr = new Cairo.Context(surface);
+		Gdk.cairo_set_source_pixbuf(cr, _pixbuf, 0, 0);
+		cr.paint();
+		_pixbuf_pattern = new Cairo.Pattern.for_surface(surface);
 		_pixbuf_pattern.set_filter(Cairo.Filter.NEAREST);
 		_pixbuf_pattern.set_filter(_filter);
 		_pixbuf_pattern.set_extend(_extend);
@@ -72,13 +79,20 @@ public class PixbufView : Gtk.DrawingArea
 		return Gdk.EVENT_PROPAGATE;
 	}
 
-	public bool on_draw(Cairo.Context cr)
+	public override void snapshot(Gtk.Snapshot snapshot)
 	{
-		if (_pixbuf == null)
-			return Gdk.EVENT_PROPAGATE;
+		if (_pixbuf == null) {
+			base.snapshot(snapshot);
+			return;
+		}
 
 		int allocated_width = this.get_allocated_width();
 		int allocated_height = this.get_allocated_height();
+
+		var cr = snapshot.append_cairo(Graphene.Rect() {
+			origin = { 0, 0 },
+			size = { allocated_width, allocated_height }
+		});
 
 		cr.set_source_rgb(0.1, 0.1, 0.1);
 		cr.paint();
@@ -99,7 +113,7 @@ public class PixbufView : Gtk.DrawingArea
 		cr.set_source(_pixbuf_pattern);
 		cr.paint();
 
-		return Gdk.EVENT_PROPAGATE;
+		base.snapshot(snapshot);
 	}
 }
 

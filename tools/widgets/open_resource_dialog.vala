@@ -5,8 +5,9 @@
 
 namespace Crown
 {
-public class OpenResourceDialog : Gtk.FileChooserDialog
+public class OpenResourceDialog : Gtk.Dialog
 {
+	private Gtk.FileChooserWidget _file_chooser;
 	public Project _project;
 	public string _resource_type;
 
@@ -20,21 +21,24 @@ public class OpenResourceDialog : Gtk.FileChooserDialog
 		if (parent != null)
 			this.set_transient_for(parent);
 
-		this.set_action(Gtk.FileChooserAction.OPEN);
+		this.set_modal(true);
 		this.add_button("Cancel", Gtk.ResponseType.CANCEL);
 		this.add_button("Open", Gtk.ResponseType.ACCEPT);
+		this.response.connect(on_response);
+
+		_file_chooser = new Gtk.FileChooserWidget(Gtk.FileChooserAction.OPEN);
 		try {
-			this.set_current_folder(GLib.File.new_for_path(p.source_dir()));
+			_file_chooser.set_current_folder(GLib.File.new_for_path(p.source_dir()));
 		} catch (GLib.Error e) {
 			loge(e.message);
 		}
-		this.set_modal(true);
-		this.response.connect(on_response);
 
 		Gtk.FileFilter ff = new Gtk.FileFilter();
 		ff.set_filter_name("%s (*.%s)".printf(resource_type, resource_type));
 		ff.add_pattern("*.%s".printf(resource_type));
-		this.add_filter(ff);
+		_file_chooser.add_filter(ff);
+
+		this.get_content_area().append(_file_chooser);
 
 		_project = p;
 		_resource_type = resource_type;
@@ -42,7 +46,7 @@ public class OpenResourceDialog : Gtk.FileChooserDialog
 
 	public void on_response(int response_id)
 	{
-		string? path = this.get_file().get_path();
+		string? path = _file_chooser.get_file().get_path();
 
 		if (response_id == Gtk.ResponseType.ACCEPT && path != null) {
 			if (!path.has_suffix("." + _resource_type))
@@ -60,7 +64,7 @@ public class OpenResourceDialog : Gtk.FileChooserDialog
 				md.set_default_response(Gtk.ResponseType.OK);
 				md.response.connect(() => {
 						try {
-							this.set_current_folder(GLib.File.new_for_path(_project.source_dir()));
+							_file_chooser.set_current_folder(GLib.File.new_for_path(_project.source_dir()));
 						} catch (GLib.Error e) {
 							loge(e.message);
 						}

@@ -436,6 +436,9 @@ public class SpriteImportDialog : Gtk.Window
 		_slices.set_size_request(_pixbuf.width, _pixbuf.height);
 		_slices.set_pixbuf(_pixbuf);
 
+		// GTK4: draw signal was removed, need to use drawing area overlay or custom drawing
+		// TODO: Implement slice lines drawing using Cairo integration
+		/*
 		_slices.draw.connect((cr) => {
 				int allocated_width = _preview.get_allocated_width();
 				int allocated_height = _preview.get_allocated_height();
@@ -486,12 +489,16 @@ public class SpriteImportDialog : Gtk.Window
 
 				return Gdk.EVENT_STOP;
 			});
+		*/
 
 		_preview = new PixbufView();
 		_preview._zoom = 4.0;
 		_preview.set_size_request(128, 128);
 		set_preview_frame();
 
+		// GTK4: draw signal was removed, need to use drawing area overlay or custom drawing
+		// TODO: Implement preview frame drawing using Cairo integration
+		/*
 		_preview.draw.connect((cr) => {
 				int allocated_width = _preview.get_allocated_width();
 				int allocated_height = _preview.get_allocated_height();
@@ -537,6 +544,7 @@ public class SpriteImportDialog : Gtk.Window
 
 				return Gdk.EVENT_STOP;
 			});
+		*/
 
 		_preview_overlay = new Gtk.Overlay();
 		_preview_overlay.set_child(_preview);

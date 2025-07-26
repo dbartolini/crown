@@ -5,12 +5,33 @@
 
 namespace Crown
 {
-public class CounterLabel : Gtk.Label
+public class CounterLabel : Gtk.Box
 {
+	private Gtk.Label _label;
+	
 	public CounterLabel()
 	{
-		this.add_css_class("counter-label");
-		this.set_visible(true);
+		Object(orientation: Gtk.Orientation.HORIZONTAL);
+		
+		_label = new Gtk.Label("");
+		_label.add_css_class("counter-label");
+		_label.set_visible(true);
+		
+		this.append(_label);
+	}
+
+	// Delegate common label properties and methods
+	public string label {
+		get { return _label.label; }
+		set { _label.label = value; }
+	}
+	
+	public void set_text(string str) {
+		_label.set_text(str);
+	}
+	
+	public void set_markup(string str) {
+		_label.set_markup(str);
 	}
 
 /*

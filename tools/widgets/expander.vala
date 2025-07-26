@@ -34,7 +34,6 @@ public class Expander : Gtk.Box
 		_header_widget = new Gtk.Label(label);
 		_header_box.prepend(_header_widget);
 		_header_box.add_css_class("header");
-		_header_event_box.add(_header_box);
 
 		this.prepend(_header_box);
 	}

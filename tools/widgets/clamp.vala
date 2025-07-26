@@ -13,7 +13,7 @@ public class Clamp : Gtk.Widget
 	public Clamp()
 	{
 		base.set_can_focus(false);
-		base.set_redraw_on_allocate(false);
+		// GTK4: set_redraw_on_allocate was removed
 
 		this._child = null;
 	}
@@ -24,7 +24,7 @@ public class Clamp : Gtk.Widget
 			widget.unparent();
 			this._child = null;
 			if (this.get_visible() && widget.get_visible())
-				this.queue_resize_no_redraw();
+				this.queue_resize();
 		} else if (this._child == null) {
 			widget.set_parent(this);
 			this._child = widget;
@@ -49,16 +49,18 @@ public class Clamp : Gtk.Widget
 		if (this._child == null || !this._child.is_visible())
 			return;
 
-		int child_min_width;
-		this._child.get_preferred_width(out child_min_width, null);
+		// GTK4: get_preferred_width was removed, use measure instead
+		int child_min_width, child_nat_width, child_min_height, child_nat_height;
+		this._child.measure(Gtk.Orientation.HORIZONTAL, -1, out child_min_width, out child_nat_width, null, null);
+		this._child.measure(Gtk.Orientation.VERTICAL, -1, out child_min_height, out child_nat_height, null, null);
 
 		Gtk.Allocation child_alloc = {};
 		child_alloc.width = 600;
-		child_alloc.height = alloc.height;
-		child_alloc.x = alloc.x + (alloc.width - child_alloc.width) / 2;
-		child_alloc.y = alloc.y;
+		child_alloc.height = height;
+		child_alloc.x = (width - child_alloc.width) / 2;
+		child_alloc.y = 0;
 
-		this._child.size_allocate(width, height, this.get_baseline());
+		this._child.size_allocate(width, height, baseline);
 	}
 
 	public new void get_preferred_size(out Gtk.Requisition minimum_size
