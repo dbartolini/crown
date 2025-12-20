@@ -29,6 +29,7 @@
 #include <algorithm> // std::sort
 #include <bgfx/bgfx.h>
 #include <bx/math.h>
+#include <stdio.h>
 
 namespace crown
 {
