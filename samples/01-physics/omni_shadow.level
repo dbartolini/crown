@@ -1,0 +1,4826 @@
+_guid = "3c069559-33ec-4eb5-a739-c9b2da5d918d"
+_type = "level"
+editor = {
+	camera = {
+		orthographic_size = 30.152082400000001
+		position = [
+			57.287426000000004
+			-52.790222200000002
+			86.591064500000002
+		]
+		rotation = [
+			-0.351600409
+			-0.18467281799999999
+			0.42675826
+			0.81249648299999999
+		]
+		target_distance = 167.14622499999999
+		view_type = 0
+	}
+}
+skydome_unit = "core/units/skydome/skydome"
+sounds = [
+]
+units = [
+	{
+		_guid = "0501d5ab-43b0-467a-9cee-42d43db36a53"
+		_type = "unit"
+		children = [
+		]
+		editor = {
+			name = "sphere"
+		}
+		modified_components = {
+			#8972a214-327e-4396-b01e-45701189e8c9 = {
+				data = {
+					position = [
+						-57.372551000000001
+						15.270149200000001
+						1.20340812
+					]
+					rotation = [
+						0
+						0
+						0
+						1
+					]
+					scale = [
+						1
+						1
+						1
+					]
+				}
+			}
+		}
+		prefab = "core/units/primitives/sphere"
+	}
+	{
+		_guid = "090a8e2d-0e5a-444a-af41-007de1a471a1"
+		_type = "unit"
+		children = [
+		]
+		editor = {
+			name = "light2"
+		}
+		modified_components = {
+			#3f6f6b7c-b4cf-4173-aab0-288a63d7c73a = {
+				data = {
+					position = [
+						-49.953803999999998
+						47.5644226
+						3.2171907399999999
+					]
+					rotation = [
+						0
+						0
+						0
+						1
+					]
+					scale = [
+						1
+						1
+						1
+					]
+				}
+			}
+			#45e54fbe-018c-4ee2-917d-398c13bd3e7e = {
+				data = {
+					cast_shadows = true
+					intensity = 100
+					shadow_bias = 0.00040000000000000002
+				}
+			}
+		}
+		prefab = "core/units/light"
+	}
+	{
+		_guid = "09f7dfed-cc17-42b9-b6dd-43b45c4a7e6e"
+		_type = "unit"
+		children = [
+		]
+		editor = {
+			name = "sphere"
+		}
+		modified_components = {
+			#8972a214-327e-4396-b01e-45701189e8c9 = {
+				data = {
+					position = [
+						26.835155499999999
+						43.573421500000002
+						1.20340812
+					]
+					rotation = [
+						0
+						0
+						0
+						1
+					]
+					scale = [
+						1
+						1
+						1
+					]
+				}
+			}
+		}
+		prefab = "core/units/primitives/sphere"
+	}
+	{
+		_guid = "0a50cdfb-fdd7-41b7-96e6-c633d5ac489a"
+		_type = "unit"
+		children = [
+		]
+		editor = {
+			name = "sphere"
+		}
+		modified_components = {
+			#8972a214-327e-4396-b01e-45701189e8c9 = {
+				data = {
+					position = [
+						15.9710655
+						106.097763
+						1.20340812
+					]
+					rotation = [
+						0
+						0
+						0
+						1
+					]
+					scale = [
+						1
+						1
+						1
+					]
+				}
+			}
+		}
+		prefab = "core/units/primitives/sphere"
+	}
+	{
+		_guid = "0a67a08e-5f03-4d44-9e33-8f45a313093c"
+		_type = "unit"
+		children = [
+		]
+		editor = {
+			name = "sphere"
+		}
+		modified_components = {
+			#8972a214-327e-4396-b01e-45701189e8c9 = {
+				data = {
+					position = [
+						-3.9225654599999999
+						38.115119900000003
+						1.20365751
+					]
+					rotation = [
+						0
+						0
+						0
+						1
+					]
+					scale = [
+						1
+						1
+						1
+					]
+				}
+			}
+		}
+		prefab = "core/units/primitives/sphere"
+	}
+	{
+		_guid = "0c1edb5c-60af-4e84-b0b0-b86bb42649f1"
+		_type = "unit"
+		children = [
+		]
+		editor = {
+			name = "sphere"
+		}
+		modified_components = {
+			#8972a214-327e-4396-b01e-45701189e8c9 = {
+				data = {
+					position = [
+						-51.425270099999999
+						49.5672493
+						1.20340812
+					]
+					rotation = [
+						0
+						0
+						0
+						1
+					]
+					scale = [
+						1
+						1
+						1
+					]
+				}
+			}
+		}
+		prefab = "core/units/primitives/sphere"
+	}
+	{
+		_guid = "13ad5889-cefe-4d4f-9def-74715d3cc0ca"
+		_type = "unit"
+		children = [
+		]
+		editor = {
+			name = "light2"
+		}
+		modified_components = {
+			#3f6f6b7c-b4cf-4173-aab0-288a63d7c73a = {
+				data = {
+					position = [
+						28.202209499999999
+						47.386005400000002
+						3.2171907399999999
+					]
+					rotation = [
+						0
+						0
+						0
+						1
+					]
+					scale = [
+						1
+						1
+						1
+					]
+				}
+			}
+			#45e54fbe-018c-4ee2-917d-398c13bd3e7e = {
+				data = {
+					cast_shadows = true
+					intensity = 100
+					shadow_bias = 0.00040000000000000002
+				}
+			}
+		}
+		prefab = "core/units/light"
+	}
+	{
+		_guid = "14f0c0f5-3f07-4db4-ac3c-dec1acbcdd25"
+		_type = "unit"
+		children = [
+		]
+		editor = {
+			name = "sphere"
+		}
+		modified_components = {
+			#8972a214-327e-4396-b01e-45701189e8c9 = {
+				data = {
+					position = [
+						-57.2534828
+						-43.660812399999998
+						1.20340812
+					]
+					rotation = [
+						0
+						0
+						0
+						1
+					]
+					scale = [
+						1
+						1
+						1
+					]
+				}
+			}
+		}
+		prefab = "core/units/primitives/sphere"
+	}
+	{
+		_guid = "16474fa9-221e-4483-80d8-813ac71bddf2"
+		_type = "unit"
+		children = [
+		]
+		editor = {
+			name = "sphere"
+		}
+		modified_components = {
+			#8972a214-327e-4396-b01e-45701189e8c9 = {
+				data = {
+					position = [
+						-59.831359900000002
+						96.023475599999998
+						1.20340812
+					]
+					rotation = [
+						0
+						0
+						0
+						1
+					]
+					scale = [
+						1
+						1
+						1
+					]
+				}
+			}
+		}
+		prefab = "core/units/primitives/sphere"
+	}
+	{
+		_guid = "19c8e0da-2d1a-439b-8de1-eb86475e42af"
+		_type = "unit"
+		children = [
+		]
+		editor = {
+			name = "sphere"
+		}
+		modified_components = {
+			#8972a214-327e-4396-b01e-45701189e8c9 = {
+				data = {
+					position = [
+						19.515781400000002
+						-55.408344300000003
+						1.20340812
+					]
+					rotation = [
+						0
+						0
+						0
+						1
+					]
+					scale = [
+						1
+						1
+						1
+					]
+				}
+			}
+		}
+		prefab = "core/units/primitives/sphere"
+	}
+	{
+		_guid = "1c68f377-3a3f-4224-972d-d5e7e1d8d817"
+		_type = "unit"
+		children = [
+		]
+		editor = {
+			name = "cube"
+		}
+		modified_components = {
+			#23dbf108-db64-4ca2-9647-8c639ee039ad = {
+				data = {
+					position = [
+						-2.9011077900000002
+						0.58980059600000001
+						2.09425712
+					]
+					rotation = [
+						0
+						0
+						0
+						1
+					]
+					scale = [
+						1
+						1
+						4.3674974400000002
+					]
+				}
+			}
+		}
+		prefab = "core/units/primitives/cube"
+	}
+	{
+		_guid = "1d2bafbe-162c-4380-9256-ec9279d68554"
+		_type = "unit"
+		children = [
+		]
+		editor = {
+			name = "sphere"
+		}
+		modified_components = {
+			#8972a214-327e-4396-b01e-45701189e8c9 = {
+				data = {
+					position = [
+						-54.051895100000003
+						91.907104500000003
+						1.20340812
+					]
+					rotation = [
+						0
+						0
+						0
+						1
+					]
+					scale = [
+						1
+						1
+						1
+					]
+				}
+			}
+		}
+		prefab = "core/units/primitives/sphere"
+	}
+	{
+		_guid = "1e40d0b1-9d72-4dee-8ba9-38ebfddd6f6f"
+		_type = "unit"
+		children = [
+		]
+		editor = {
+			name = "sphere"
+		}
+		modified_components = {
+			#8972a214-327e-4396-b01e-45701189e8c9 = {
+				data = {
+					position = [
+						85.207916299999994
+						107.111069
+						1.20340812
+					]
+					rotation = [
+						0
+						0
+						0
+						1
+					]
+					scale = [
+						1
+						1
+						1
+					]
+				}
+			}
+		}
+		prefab = "core/units/primitives/sphere"
+	}
+	{
+		_guid = "1e6b622c-156f-4121-9e53-dcb9f7ccbfa1"
+		_type = "unit"
+		children = [
+		]
+		editor = {
+			name = "sphere"
+		}
+		modified_components = {
+			#8972a214-327e-4396-b01e-45701189e8c9 = {
+				data = {
+					position = [
+						16.147354100000001
+						-48.876079599999997
+						1.20340812
+					]
+					rotation = [
+						0
+						0
+						0
+						1
+					]
+					scale = [
+						1
+						1
+						1
+					]
+				}
+			}
+		}
+		prefab = "core/units/primitives/sphere"
+	}
+	{
+		_guid = "200b0f09-507c-46a3-80da-2ada9c5bc459"
+		_type = "unit"
+		children = [
+		]
+		editor = {
+			name = "sphere"
+		}
+		modified_components = {
+			#8972a214-327e-4396-b01e-45701189e8c9 = {
+				data = {
+					position = [
+						53.015842399999997
+						-27.2552567
+						1.20340812
+					]
+					rotation = [
+						0
+						0
+						0
+						1
+					]
+					scale = [
+						1
+						1
+						1
+					]
+				}
+			}
+		}
+		prefab = "core/units/primitives/sphere"
+	}
+	{
+		_guid = "2092e673-86a6-44b8-9ffc-5e36212fdf5b"
+		_type = "unit"
+		children = [
+		]
+		editor = {
+			name = "sphere"
+		}
+		modified_components = {
+			#8972a214-327e-4396-b01e-45701189e8c9 = {
+				data = {
+					position = [
+						47.555404699999997
+						111.10103599999999
+						1.20340812
+					]
+					rotation = [
+						0
+						0
+						0
+						1
+					]
+					scale = [
+						1
+						1
+						1
+					]
+				}
+			}
+		}
+		prefab = "core/units/primitives/sphere"
+	}
+	{
+		_guid = "2132c299-828d-4489-9719-85a3efe1b996"
+		_type = "unit"
+		children = [
+		]
+		editor = {
+			name = "sphere"
+		}
+		modified_components = {
+			#8972a214-327e-4396-b01e-45701189e8c9 = {
+				data = {
+					position = [
+						46.212142900000003
+						107.192711
+						1.20340812
+					]
+					rotation = [
+						0
+						0
+						0
+						1
+					]
+					scale = [
+						1
+						1
+						1
+					]
+				}
+			}
+		}
+		prefab = "core/units/primitives/sphere"
+	}
+	{
+		_guid = "216cf7ff-8646-464d-b21c-e2a0c5ea60dc"
+		_type = "unit"
+		children = [
+		]
+		editor = {
+			name = "sphere"
+		}
+		modified_components = {
+			#8972a214-327e-4396-b01e-45701189e8c9 = {
+				data = {
+					position = [
+						51.756080599999997
+						-22.752807600000001
+						1.20340812
+					]
+					rotation = [
+						0
+						0
+						0
+						1
+					]
+					scale = [
+						1
+						1
+						1
+					]
+				}
+			}
+		}
+		prefab = "core/units/primitives/sphere"
+	}
+	{
+		_guid = "24b42d78-b252-445f-bd42-ec7f89435ba0"
+		_type = "unit"
+		children = [
+		]
+		editor = {
+			name = "sphere"
+		}
+		modified_components = {
+			#8972a214-327e-4396-b01e-45701189e8c9 = {
+				data = {
+					position = [
+						-53.040756199999997
+						13.0608673
+						1.20340812
+					]
+					rotation = [
+						0
+						0
+						0
+						1
+					]
+					scale = [
+						1
+						1
+						1
+					]
+				}
+			}
+		}
+		prefab = "core/units/primitives/sphere"
+	}
+	{
+		_guid = "253f4d98-c9cb-4a25-8294-0dfbc37350c4"
+		_type = "unit"
+		children = [
+		]
+		editor = {
+			name = "light2"
+		}
+		modified_components = {
+			#3f6f6b7c-b4cf-4173-aab0-288a63d7c73a = {
+				data = {
+					position = [
+						-55.886428799999997
+						-39.848228499999998
+						3.2171907399999999
+					]
+					rotation = [
+						0
+						0
+						0
+						1
+					]
+					scale = [
+						1
+						1
+						1
+					]
+				}
+			}
+			#45e54fbe-018c-4ee2-917d-398c13bd3e7e = {
+				data = {
+					intensity = 100
+					shadow_bias = 0.00040000000000000002
+				}
+			}
+		}
+		prefab = "core/units/light"
+	}
+	{
+		_guid = "256ed0a9-5d37-48c9-8c73-cd8c9b9aae70"
+		_type = "unit"
+		children = [
+		]
+		editor = {
+			name = "light2"
+		}
+		modified_components = {
+			#3f6f6b7c-b4cf-4173-aab0-288a63d7c73a = {
+				data = {
+					position = [
+						-106.284111
+						77.518295300000005
+						3.2171907399999999
+					]
+					rotation = [
+						0
+						0
+						0
+						1
+					]
+					scale = [
+						1
+						1
+						1
+					]
+				}
+			}
+			#45e54fbe-018c-4ee2-917d-398c13bd3e7e = {
+				data = {
+					intensity = 100
+					shadow_bias = 0.00040000000000000002
+				}
+			}
+		}
+		prefab = "core/units/light"
+	}
+	{
+		_guid = "27239cff-7aa8-4832-b56a-ba8c28151dd1"
+		_type = "unit"
+		children = [
+		]
+		editor = {
+			name = "sphere"
+		}
+		modified_components = {
+			#8972a214-327e-4396-b01e-45701189e8c9 = {
+				data = {
+					position = [
+						17.5950317
+						-50.783164999999997
+						1.20340812
+					]
+					rotation = [
+						0
+						0
+						0
+						1
+					]
+					scale = [
+						1
+						1
+						1
+					]
+				}
+			}
+		}
+		prefab = "core/units/primitives/sphere"
+	}
+	{
+		_guid = "27306bc2-5d18-473f-8a15-2dca0f0a64f6"
+		_type = "unit"
+		children = [
+		]
+		editor = {
+			name = "sphere"
+		}
+		modified_components = {
+			#8972a214-327e-4396-b01e-45701189e8c9 = {
+				data = {
+					position = [
+						-23.9645233
+						-55.265552499999998
+						1.20340812
+					]
+					rotation = [
+						0
+						0
+						0
+						1
+					]
+					scale = [
+						1
+						1
+						1
+					]
+				}
+			}
+		}
+		prefab = "core/units/primitives/sphere"
+	}
+	{
+		_guid = "27d2dc09-e81e-44d1-ae6e-0b8831bff2d4"
+		_type = "unit"
+		children = [
+		]
+		editor = {
+			name = "sphere"
+		}
+		modified_components = {
+			#8972a214-327e-4396-b01e-45701189e8c9 = {
+				data = {
+					position = [
+						-51.320858000000001
+						43.7518387
+						1.20340812
+					]
+					rotation = [
+						0
+						0
+						0
+						1
+					]
+					scale = [
+						1
+						1
+						1
+					]
+				}
+			}
+		}
+		prefab = "core/units/primitives/sphere"
+	}
+	{
+		_guid = "28ed6ad7-b216-43e6-b923-50b8b16c6e2a"
+		_type = "unit"
+		children = [
+		]
+		editor = {
+			name = "sphere"
+		}
+		modified_components = {
+			#8972a214-327e-4396-b01e-45701189e8c9 = {
+				data = {
+					position = [
+						-18.185051000000001
+						-59.3819199
+						1.20340812
+					]
+					rotation = [
+						0
+						0
+						0
+						1
+					]
+					scale = [
+						1
+						1
+						1
+					]
+				}
+			}
+		}
+		prefab = "core/units/primitives/sphere"
+	}
+	{
+		_guid = "29377506-9fb4-4876-830a-9694566d0f63"
+		_type = "unit"
+		children = [
+		]
+		editor = {
+			name = "sphere"
+		}
+		modified_components = {
+			#8972a214-327e-4396-b01e-45701189e8c9 = {
+				data = {
+					position = [
+						-48.056842799999998
+						43.034984600000001
+						1.20340812
+					]
+					rotation = [
+						0
+						0
+						0
+						1
+					]
+					scale = [
+						1
+						1
+						1
+					]
+				}
+			}
+		}
+		prefab = "core/units/primitives/sphere"
+	}
+	{
+		_guid = "2a046361-265f-48f6-9301-9efba9b9f082"
+		_type = "unit"
+		children = [
+		]
+		editor = {
+			name = "sphere"
+		}
+		modified_components = {
+			#8972a214-327e-4396-b01e-45701189e8c9 = {
+				data = {
+					position = [
+						-55.910217299999999
+						-39.752487199999997
+						1.20340812
+					]
+					rotation = [
+						0
+						0
+						0
+						1
+					]
+					scale = [
+						1
+						1
+						1
+					]
+				}
+			}
+		}
+		prefab = "core/units/primitives/sphere"
+	}
+	{
+		_guid = "2a282b93-9b4a-4812-b0ab-1254dc62c97b"
+		_type = "unit"
+		children = [
+		]
+		editor = {
+			name = "sphere"
+		}
+		modified_components = {
+			#8972a214-327e-4396-b01e-45701189e8c9 = {
+				data = {
+					position = [
+						-143.28225699999999
+						51.813526199999998
+						1.20340812
+					]
+					rotation = [
+						0
+						0
+						0
+						1
+					]
+					scale = [
+						1
+						1
+						1
+					]
+				}
+			}
+		}
+		prefab = "core/units/primitives/sphere"
+	}
+	{
+		_guid = "2a8a160d-1a98-4022-86b7-173672c7df91"
+		_type = "unit"
+		children = [
+		]
+		editor = {
+			name = "sphere"
+		}
+		modified_components = {
+			#8972a214-327e-4396-b01e-45701189e8c9 = {
+				data = {
+					position = [
+						-101.976112
+						75.404754600000004
+						1.20340812
+					]
+					rotation = [
+						0
+						0
+						0
+						1
+					]
+					scale = [
+						1
+						1
+						1
+					]
+				}
+			}
+		}
+		prefab = "core/units/primitives/sphere"
+	}
+	{
+		_guid = "2b9103b2-5b58-410e-84fe-9861df55fcee"
+		_type = "unit"
+		children = [
+		]
+		editor = {
+			name = "sphere"
+		}
+		modified_components = {
+			#8972a214-327e-4396-b01e-45701189e8c9 = {
+				data = {
+					position = [
+						49.476165799999997
+						106.475853
+						1.20340812
+					]
+					rotation = [
+						0
+						0
+						0
+						1
+					]
+					scale = [
+						1
+						1
+						1
+					]
+				}
+			}
+		}
+		prefab = "core/units/primitives/sphere"
+	}
+	{
+		_guid = "31c39b0f-8ef8-402d-9888-65283db43d1b"
+		_type = "unit"
+		children = [
+		]
+		editor = {
+			name = "sphere"
+		}
+		modified_components = {
+			#8972a214-327e-4396-b01e-45701189e8c9 = {
+				data = {
+					position = [
+						-21.556964900000001
+						96.157638500000004
+						1.20340812
+					]
+					rotation = [
+						0
+						0
+						0
+						1
+					]
+					scale = [
+						1
+						1
+						1
+					]
+				}
+			}
+		}
+		prefab = "core/units/primitives/sphere"
+	}
+	{
+		_guid = "32347293-4534-443b-aa35-9bb88c7dbb8c"
+		_type = "unit"
+		children = [
+		]
+		editor = {
+			name = "sphere"
+		}
+		modified_components = {
+			#8972a214-327e-4396-b01e-45701189e8c9 = {
+				data = {
+					position = [
+						-61.971386000000003
+						13.547905
+						1.20340812
+					]
+					rotation = [
+						0
+						0
+						0
+						1
+					]
+					scale = [
+						1
+						1
+						1
+					]
+				}
+			}
+		}
+		prefab = "core/units/primitives/sphere"
+	}
+	{
+		_guid = "32af674b-1bb1-4344-a604-2448b4f980ba"
+		_type = "unit"
+		children = [
+		]
+		editor = {
+			name = "sphere"
+		}
+		modified_components = {
+			#8972a214-327e-4396-b01e-45701189e8c9 = {
+				data = {
+					position = [
+						31.2504539
+						49.7749138
+						1.20340812
+					]
+					rotation = [
+						0
+						0
+						0
+						1
+					]
+					scale = [
+						1
+						1
+						1
+					]
+				}
+			}
+		}
+		prefab = "core/units/primitives/sphere"
+	}
+	{
+		_guid = "334f72fc-9f10-4687-8ddf-73b0759a100c"
+		_type = "unit"
+		children = [
+		]
+		editor = {
+			name = "cube"
+		}
+		modified_components = {
+			#23dbf108-db64-4ca2-9647-8c639ee039ad = {
+				data = {
+					position = [
+						-2.4267325400000002
+						6.1078081099999997
+						2.09425712
+					]
+					rotation = [
+						0
+						0
+						0
+						1
+					]
+					scale = [
+						1
+						1
+						4.3674974400000002
+					]
+				}
+			}
+		}
+		prefab = "core/units/primitives/cube"
+	}
+	{
+		_guid = "3454e11c-4c11-482c-8183-7a4e0c1e7ad9"
+		_type = "unit"
+		children = [
+		]
+		editor = {
+			name = "sphere"
+		}
+		modified_components = {
+			#8972a214-327e-4396-b01e-45701189e8c9 = {
+				data = {
+					position = [
+						-23.004627200000002
+						98.064720199999996
+						1.20340812
+					]
+					rotation = [
+						0
+						0
+						0
+						1
+					]
+					scale = [
+						1
+						1
+						1
+					]
+				}
+			}
+		}
+		prefab = "core/units/primitives/sphere"
+	}
+	{
+		_guid = "37675370-75ff-4a95-9e7d-54c3cc2ea117"
+		_type = "unit"
+		children = [
+		]
+		editor = {
+			name = "sphere"
+		}
+		modified_components = {
+			#8972a214-327e-4396-b01e-45701189e8c9 = {
+				data = {
+					position = [
+						-22.9002266
+						92.249313400000005
+						1.20340812
+					]
+					rotation = [
+						0
+						0
+						0
+						1
+					]
+					scale = [
+						1
+						1
+						1
+					]
+				}
+			}
+		}
+		prefab = "core/units/primitives/sphere"
+	}
+	{
+		_guid = "39f04212-cfd8-495a-b8fb-3ddfb8978e4c"
+		_type = "unit"
+		children = [
+		]
+		editor = {
+			name = "sphere"
+		}
+		modified_components = {
+			#8972a214-327e-4396-b01e-45701189e8c9 = {
+				data = {
+					position = [
+						-19.444812800000001
+						-54.8794708
+						1.20340812
+					]
+					rotation = [
+						0
+						0
+						0
+						1
+					]
+					scale = [
+						1
+						1
+						1
+					]
+				}
+			}
+		}
+		prefab = "core/units/primitives/sphere"
+	}
+	{
+		_guid = "3da6f46d-5524-476f-ba9b-d37df4ab7df0"
+		_type = "unit"
+		children = [
+		]
+		editor = {
+			name = "sphere"
+		}
+		modified_components = {
+			#8972a214-327e-4396-b01e-45701189e8c9 = {
+				data = {
+					position = [
+						-17.2251625
+						93.948348999999993
+						1.20340812
+					]
+					rotation = [
+						0
+						0
+						0
+						1
+					]
+					scale = [
+						1
+						1
+						1
+					]
+				}
+			}
+		}
+		prefab = "core/units/primitives/sphere"
+	}
+	{
+		_guid = "4434a172-c16b-4d8a-adc7-b0ceac6e78de"
+		_type = "unit"
+		children = [
+		]
+		editor = {
+			name = "sphere"
+		}
+		modified_components = {
+			#8972a214-327e-4396-b01e-45701189e8c9 = {
+				data = {
+					position = [
+						49.914657599999998
+						15.2674141
+						1.20340812
+					]
+					rotation = [
+						0
+						0
+						0
+						1
+					]
+					scale = [
+						1
+						1
+						1
+					]
+				}
+			}
+		}
+		prefab = "core/units/primitives/sphere"
+	}
+	{
+		_guid = "45115c93-2874-4742-8852-8cb2d9398fec"
+		_type = "unit"
+		children = [
+		]
+		editor = {
+			name = "light2"
+		}
+		modified_components = {
+			#3f6f6b7c-b4cf-4173-aab0-288a63d7c73a = {
+				data = {
+					position = [
+						17.618820199999998
+						-50.878906299999997
+						3.2171907399999999
+					]
+					rotation = [
+						0
+						0
+						0
+						1
+					]
+					scale = [
+						1
+						1
+						1
+					]
+				}
+			}
+			#45e54fbe-018c-4ee2-917d-398c13bd3e7e = {
+				data = {
+					intensity = 100
+					shadow_bias = 0.00040000000000000002
+				}
+			}
+		}
+		prefab = "core/units/light"
+	}
+	{
+		_guid = "45e2c032-1e2a-434b-a41a-c6997afa8d25"
+		_type = "unit"
+		children = [
+		]
+		editor = {
+			name = "sphere"
+		}
+		modified_components = {
+			#8972a214-327e-4396-b01e-45701189e8c9 = {
+				data = {
+					position = [
+						-12.675800300000001
+						34.210052500000003
+						1.20340812
+					]
+					rotation = [
+						0
+						0
+						0
+						1
+					]
+					scale = [
+						1
+						1
+						1
+					]
+				}
+			}
+		}
+		prefab = "core/units/primitives/sphere"
+	}
+	{
+		_guid = "468735da-14b5-407e-bdd8-83743094d1f4"
+		_type = "unit"
+		children = [
+		]
+		editor = {
+			name = "light2"
+		}
+		modified_components = {
+			#3f6f6b7c-b4cf-4173-aab0-288a63d7c73a = {
+				data = {
+					position = [
+						46.866413100000003
+						12.8785057
+						3.2171907399999999
+					]
+					rotation = [
+						0
+						0
+						0
+						1
+					]
+					scale = [
+						1
+						1
+						1
+					]
+				}
+			}
+			#45e54fbe-018c-4ee2-917d-398c13bd3e7e = {
+				data = {
+					intensity = 100
+					shadow_bias = 0.00040000000000000002
+				}
+			}
+		}
+		prefab = "core/units/light"
+	}
+	{
+		_guid = "471c2c3b-e702-4667-a794-2d05acddaea2"
+		_type = "unit"
+		children = [
+		]
+		editor = {
+			name = "sphere"
+		}
+		modified_components = {
+			#8972a214-327e-4396-b01e-45701189e8c9 = {
+				data = {
+					position = [
+						-62.982528700000003
+						92.394149799999994
+						1.20340812
+					]
+					rotation = [
+						0
+						0
+						0
+						1
+					]
+					scale = [
+						1
+						1
+						1
+					]
+				}
+			}
+		}
+		prefab = "core/units/primitives/sphere"
+	}
+	{
+		_guid = "47ca6e1e-43b8-4b56-a17d-05a6fef8852c"
+		_type = "unit"
+		children = [
+		]
+		editor = {
+			name = "sphere"
+		}
+		modified_components = {
+			#8972a214-327e-4396-b01e-45701189e8c9 = {
+				data = {
+					position = [
+						-141.93899500000001
+						55.721851299999997
+						1.20340812
+					]
+					rotation = [
+						0
+						0
+						0
+						1
+					]
+					scale = [
+						1
+						1
+						1
+					]
+				}
+			}
+		}
+		prefab = "core/units/primitives/sphere"
+	}
+	{
+		_guid = "4af8ad2a-4dcc-4528-88cb-3bc7e8d09ac6"
+		_type = "unit"
+		children = [
+		]
+		editor = {
+			name = "sphere"
+		}
+		modified_components = {
+			#8972a214-327e-4396-b01e-45701189e8c9 = {
+				data = {
+					position = [
+						-46.905559500000003
+						49.953330999999999
+						1.20340812
+					]
+					rotation = [
+						0
+						0
+						0
+						1
+					]
+					scale = [
+						1
+						1
+						1
+					]
+				}
+			}
+		}
+		prefab = "core/units/primitives/sphere"
+	}
+	{
+		_guid = "4e999174-154f-4259-b8a1-0fc005872125"
+		_type = "unit"
+		children = [
+		]
+		editor = {
+			name = "sphere"
+		}
+		modified_components = {
+			#8972a214-327e-4396-b01e-45701189e8c9 = {
+				data = {
+					position = [
+						17.891826600000002
+						101.47257999999999
+						1.20340812
+					]
+					rotation = [
+						0
+						0
+						0
+						1
+					]
+					scale = [
+						1
+						1
+						1
+					]
+				}
+			}
+		}
+		prefab = "core/units/primitives/sphere"
+	}
+	{
+		_guid = "4fd2b40e-3703-41dd-b4d8-166c79cf5396"
+		_type = "unit"
+		children = [
+		]
+		editor = {
+			name = "sphere"
+		}
+		modified_components = {
+			#8972a214-327e-4396-b01e-45701189e8c9 = {
+				data = {
+					position = [
+						-23.860111199999999
+						-61.080963099999998
+						1.20340812
+					]
+					rotation = [
+						0
+						0
+						0
+						1
+					]
+					scale = [
+						1
+						1
+						1
+					]
+				}
+			}
+		}
+		prefab = "core/units/primitives/sphere"
+	}
+	{
+		_guid = "502ee127-ccb6-455c-b0dc-4e87215af93a"
+		_type = "unit"
+		children = [
+		]
+		editor = {
+			name = "sphere"
+		}
+		modified_components = {
+			#8972a214-327e-4396-b01e-45701189e8c9 = {
+				data = {
+					position = [
+						51.887206999999997
+						108.891747
+						1.20340812
+					]
+					rotation = [
+						0
+						0
+						0
+						1
+					]
+					scale = [
+						1
+						1
+						1
+					]
+				}
+			}
+		}
+		prefab = "core/units/primitives/sphere"
+	}
+	{
+		_guid = "519e563d-f20f-47e7-b8e7-6568dda49b71"
+		_type = "unit"
+		children = [
+		]
+		editor = {
+			name = "sphere"
+		}
+		modified_components = {
+			#8972a214-327e-4396-b01e-45701189e8c9 = {
+				data = {
+					position = [
+						-107.65117600000001
+						73.705719000000002
+						1.20340812
+					]
+					rotation = [
+						0
+						0
+						0
+						1
+					]
+					scale = [
+						1
+						1
+						1
+					]
+				}
+			}
+		}
+		prefab = "core/units/primitives/sphere"
+	}
+	{
+		_guid = "550ca3d9-9a3b-4aaa-8ceb-abf3b0c55bc6"
+		_type = "unit"
+		children = [
+		]
+		editor = {
+			name = "sphere"
+		}
+		modified_components = {
+			#8972a214-327e-4396-b01e-45701189e8c9 = {
+				data = {
+					position = [
+						-110.906746
+						75.891799899999995
+						1.20340812
+					]
+					rotation = [
+						0
+						0
+						0
+						1
+					]
+					scale = [
+						1
+						1
+						1
+					]
+				}
+			}
+		}
+		prefab = "core/units/primitives/sphere"
+	}
+	{
+		_guid = "581ab6b4-9a8f-4c2c-890f-39f65a6c0d0f"
+		_type = "unit"
+		children = [
+		]
+		editor = {
+			name = "sphere"
+		}
+		modified_components = {
+			#8972a214-327e-4396-b01e-45701189e8c9 = {
+				data = {
+					position = [
+						-7.0007381400000002
+						35.909095800000003
+						1.20340812
+					]
+					rotation = [
+						0
+						0
+						0
+						1
+					]
+					scale = [
+						1
+						1
+						1
+					]
+				}
+			}
+		}
+		prefab = "core/units/primitives/sphere"
+	}
+	{
+		_guid = "5a7ef7ec-2a97-402b-a37b-bc0ca83cdd44"
+		_type = "unit"
+		children = [
+		]
+		editor = {
+			name = "sphere"
+		}
+		modified_components = {
+			#8972a214-327e-4396-b01e-45701189e8c9 = {
+				data = {
+					position = [
+						-58.715816500000003
+						11.361824
+						1.20340812
+					]
+					rotation = [
+						0
+						0
+						0
+						1
+					]
+					scale = [
+						1
+						1
+						1
+					]
+				}
+			}
+		}
+		prefab = "core/units/primitives/sphere"
+	}
+	{
+		_guid = "5b5be461-23a1-4b69-9eb3-2fd448c6339e"
+		_type = "unit"
+		children = [
+		]
+		editor = {
+			name = "sphere"
+		}
+		modified_components = {
+			#8972a214-327e-4396-b01e-45701189e8c9 = {
+				data = {
+					position = [
+						-143.38665800000001
+						57.628936799999998
+						1.20340812
+					]
+					rotation = [
+						0
+						0
+						0
+						1
+					]
+					scale = [
+						1
+						1
+						1
+					]
+				}
+			}
+		}
+		prefab = "core/units/primitives/sphere"
+	}
+	{
+		_guid = "6170afbe-859d-41b3-9aba-8db5397d5e2f"
+		_type = "unit"
+		children = [
+		]
+		editor = {
+			name = "sphere"
+		}
+		modified_components = {
+			#8972a214-327e-4396-b01e-45701189e8c9 = {
+				data = {
+					position = [
+						14.523403200000001
+						108.004845
+						1.20340812
+					]
+					rotation = [
+						0
+						0
+						0
+						1
+					]
+					scale = [
+						1
+						1
+						1
+					]
+				}
+			}
+		}
+		prefab = "core/units/primitives/sphere"
+	}
+	{
+		_guid = "61ae8369-0c6a-40d8-b28a-9a02a6296058"
+		_type = "unit"
+		children = [
+		]
+		editor = {
+			name = "sphere"
+		}
+		modified_components = {
+			#8972a214-327e-4396-b01e-45701189e8c9 = {
+				data = {
+					position = [
+						-57.357894899999998
+						-37.845401799999998
+						1.20340812
+					]
+					rotation = [
+						0
+						0
+						0
+						1
+					]
+					scale = [
+						1
+						1
+						1
+					]
+				}
+			}
+		}
+		prefab = "core/units/primitives/sphere"
+	}
+	{
+		_guid = "662aca87-1a9e-460e-89ab-92b3f2c8454f"
+		_type = "unit"
+		children = [
+		]
+		editor = {
+			name = "cube"
+		}
+		modified_components = {
+			#23dbf108-db64-4ca2-9647-8c639ee039ad = {
+				data = {
+					position = [
+						-13.5793266
+						11.8900299
+						2.09425712
+					]
+					rotation = [
+						0
+						0
+						0
+						1
+					]
+					scale = [
+						1
+						1
+						4.3674974400000002
+					]
+				}
+			}
+		}
+		prefab = "core/units/primitives/cube"
+	}
+	{
+		_guid = "67bce678-9db9-4384-8512-33610a2e1241"
+		_type = "unit"
+		children = [
+		]
+		editor = {
+			name = "sphere"
+		}
+		modified_components = {
+			#8972a214-327e-4396-b01e-45701189e8c9 = {
+				data = {
+					position = [
+						89.727615400000005
+						107.49715399999999
+						1.20340812
+					]
+					rotation = [
+						0
+						0
+						0
+						1
+					]
+					scale = [
+						1
+						1
+						1
+					]
+				}
+			}
+		}
+		prefab = "core/units/primitives/sphere"
+	}
+	{
+		_guid = "68667791-8df3-4b6a-ae53-811ce74084f0"
+		_type = "unit"
+		children = [
+		]
+		editor = {
+			name = "sphere"
+		}
+		modified_components = {
+			#8972a214-327e-4396-b01e-45701189e8c9 = {
+				data = {
+					position = [
+						45.4993591
+						9.06592178
+						1.20340812
+					]
+					rotation = [
+						0
+						0
+						0
+						1
+					]
+					scale = [
+						1
+						1
+						1
+					]
+				}
+			}
+		}
+		prefab = "core/units/primitives/sphere"
+	}
+	{
+		_guid = "6adde92f-1eab-441d-8bbc-72a335bfc098"
+		_type = "unit"
+		children = [
+		]
+		editor = {
+			name = "sphere"
+		}
+		modified_components = {
+			#8972a214-327e-4396-b01e-45701189e8c9 = {
+				data = {
+					position = [
+						20.667064700000001
+						-48.489997899999999
+						1.20340812
+					]
+					rotation = [
+						0
+						0
+						0
+						1
+					]
+					scale = [
+						1
+						1
+						1
+					]
+				}
+			}
+		}
+		prefab = "core/units/primitives/sphere"
+	}
+	{
+		_guid = "6b4be953-300b-4811-9849-ee947b5e5d35"
+		_type = "unit"
+		children = [
+		]
+		editor = {
+			name = "sphere"
+		}
+		modified_components = {
+			#8972a214-327e-4396-b01e-45701189e8c9 = {
+				data = {
+					position = [
+						-140.01823400000001
+						51.096672099999999
+						1.20340812
+					]
+					rotation = [
+						0
+						0
+						0
+						1
+					]
+					scale = [
+						1
+						1
+						1
+					]
+				}
+			}
+		}
+		prefab = "core/units/primitives/sphere"
+	}
+	{
+		_guid = "6d974e85-f73a-4eb1-92a5-d60d534d9fec"
+		_type = "unit"
+		children = [
+		]
+		editor = {
+			name = "sphere"
+		}
+		modified_components = {
+			#8972a214-327e-4396-b01e-45701189e8c9 = {
+				data = {
+					position = [
+						42.956573499999998
+						109.378792
+						1.20340812
+					]
+					rotation = [
+						0
+						0
+						0
+						1
+					]
+					scale = [
+						1
+						1
+						1
+					]
+				}
+			}
+		}
+		prefab = "core/units/primitives/sphere"
+	}
+	{
+		_guid = "6e109f2b-414c-4884-ba00-a405b0c189aa"
+		_type = "unit"
+		children = [
+		]
+		editor = {
+			name = "cone"
+		}
+		modified_components = {
+			#1689686c-99b6-4b8a-90c8-9606bb466096 = {
+				data = {
+					position = [
+						-13.730410600000001
+						-9.4479141200000001
+						4.8732638399999999
+					]
+					rotation = [
+						0
+						0
+						0
+						1
+					]
+					scale = [
+						2.08965969
+						2.08965969
+						2.08965969
+					]
+				}
+			}
+		}
+		prefab = "core/units/primitives/cone"
+	}
+	{
+		_guid = "70153379-1325-4bfb-a67c-2160e9aba587"
+		_type = "unit"
+		children = [
+		]
+		editor = {
+			name = "sphere"
+		}
+		modified_components = {
+			#8972a214-327e-4396-b01e-45701189e8c9 = {
+				data = {
+					position = [
+						-20.596095999999999
+						-61.797817199999997
+						1.20340812
+					]
+					rotation = [
+						0
+						0
+						0
+						1
+					]
+					scale = [
+						1
+						1
+						1
+					]
+				}
+			}
+		}
+		prefab = "core/units/primitives/sphere"
+	}
+	{
+		_guid = "7032681c-98c8-4b5b-a23c-cd0d90f7ae41"
+		_type = "unit"
+		children = [
+		]
+		editor = {
+			name = "sphere"
+		}
+		modified_components = {
+			#8972a214-327e-4396-b01e-45701189e8c9 = {
+				data = {
+					position = [
+						-12.780210500000001
+						40.025463100000003
+						1.20340812
+					]
+					rotation = [
+						0
+						0
+						0
+						1
+					]
+					scale = [
+						1
+						1
+						1
+					]
+				}
+			}
+		}
+		prefab = "core/units/primitives/sphere"
+	}
+	{
+		_guid = "70b2c86a-aa0c-49bb-8368-38de2167cfc2"
+		_type = "unit"
+		children = [
+		]
+		editor = {
+			name = "sphere"
+		}
+		modified_components = {
+			#8972a214-327e-4396-b01e-45701189e8c9 = {
+				data = {
+					position = [
+						-54.576427500000001
+						45.937919600000001
+						1.20340812
+					]
+					rotation = [
+						0
+						0
+						0
+						1
+					]
+					scale = [
+						1
+						1
+						1
+					]
+				}
+			}
+		}
+		prefab = "core/units/primitives/sphere"
+	}
+	{
+		_guid = "74f069ca-d6e9-49bb-818c-5f68c93630c4"
+		_type = "unit"
+		children = [
+		]
+		editor = {
+			name = "sphere"
+		}
+		modified_components = {
+			#8972a214-327e-4396-b01e-45701189e8c9 = {
+				data = {
+					position = [
+						46.842624700000002
+						12.974247
+						1.20340812
+					]
+					rotation = [
+						0
+						0
+						0
+						1
+					]
+					scale = [
+						1
+						1
+						1
+					]
+				}
+			}
+		}
+		prefab = "core/units/primitives/sphere"
+	}
+	{
+		_guid = "75020d9c-5b70-49ba-b15d-188913ca45be"
+		_type = "unit"
+		children = [
+		]
+		editor = {
+			name = "sphere"
+		}
+		modified_components = {
+			#8972a214-327e-4396-b01e-45701189e8c9 = {
+				data = {
+					position = [
+						51.174419399999998
+						10.7649651
+						1.20340812
+					]
+					rotation = [
+						0
+						0
+						0
+						1
+					]
+					scale = [
+						1
+						1
+						1
+					]
+				}
+			}
+		}
+		prefab = "core/units/primitives/sphere"
+	}
+	{
+		_guid = "751b51be-d545-4e0b-8f5f-96b37e5a6912"
+		_type = "unit"
+		children = [
+		]
+		editor = {
+			name = "sphere"
+		}
+		modified_components = {
+			#8972a214-327e-4396-b01e-45701189e8c9 = {
+				data = {
+					position = [
+						-19.636203800000001
+						91.532455400000003
+						1.20340812
+					]
+					rotation = [
+						0
+						0
+						0
+						1
+					]
+					scale = [
+						1
+						1
+						1
+					]
+				}
+			}
+		}
+		prefab = "core/units/primitives/sphere"
+	}
+	{
+		_guid = "75e77a1e-6bcc-4fd2-976a-3689743ca44c"
+		_type = "unit"
+		children = [
+		]
+		editor = {
+			name = "sphere"
+		}
+		modified_components = {
+			#8972a214-327e-4396-b01e-45701189e8c9 = {
+				data = {
+					position = [
+						21.926826500000001
+						-52.992446899999997
+						1.20340812
+					]
+					rotation = [
+						0
+						0
+						0
+						1
+					]
+					scale = [
+						1
+						1
+						1
+					]
+				}
+			}
+		}
+		prefab = "core/units/primitives/sphere"
+	}
+	{
+		_guid = "77d3be44-63d0-443e-8447-9979114dcb32"
+		_type = "unit"
+		children = [
+		]
+		editor = {
+			name = "cube"
+		}
+		modified_components = {
+			#23dbf108-db64-4ca2-9647-8c639ee039ad = {
+				data = {
+					position = [
+						-19.842224099999999
+						-8.1500368099999996
+						2.6338594
+					]
+					rotation = [
+						0
+						0
+						0
+						1
+					]
+					scale = [
+						1
+						1
+						5.6023411799999998
+					]
+				}
+			}
+		}
+		prefab = "core/units/primitives/cube"
+	}
+	{
+		_guid = "7f74e9a2-bc6b-4991-ba78-925c3f5e6ce8"
+		_type = "unit"
+		children = [
+		]
+		editor = {
+			name = "sphere"
+		}
+		modified_components = {
+			#8972a214-327e-4396-b01e-45701189e8c9 = {
+				data = {
+					position = [
+						20.302867899999999
+						103.888474
+						1.20340812
+					]
+					rotation = [
+						0
+						0
+						0
+						1
+					]
+					scale = [
+						1
+						1
+						1
+					]
+				}
+			}
+		}
+		prefab = "core/units/primitives/sphere"
+	}
+	{
+		_guid = "7fac2c34-6866-42db-b7b3-9b1cfff637f4"
+		_type = "unit"
+		children = [
+		]
+		editor = {
+			name = "sphere"
+		}
+		modified_components = {
+			#8972a214-327e-4396-b01e-45701189e8c9 = {
+				data = {
+					position = [
+						14.627803800000001
+						102.189438
+						1.20340812
+					]
+					rotation = [
+						0
+						0
+						0
+						1
+					]
+					scale = [
+						1
+						1
+						1
+					]
+				}
+			}
+		}
+		prefab = "core/units/primitives/sphere"
+	}
+	{
+		_guid = "856f80b5-cb1d-4e72-9177-d5a77e6cf9aa"
+		_type = "unit"
+		children = [
+		]
+		editor = {
+			name = "sphere"
+		}
+		modified_components = {
+			#8972a214-327e-4396-b01e-45701189e8c9 = {
+				data = {
+					position = [
+						-106.30791499999999
+						77.614044199999995
+						1.20340812
+					]
+					rotation = [
+						0
+						0
+						0
+						1
+					]
+					scale = [
+						1
+						1
+						1
+					]
+				}
+			}
+		}
+		prefab = "core/units/primitives/sphere"
+	}
+	{
+		_guid = "8707e478-8c41-4a3c-b2bb-85a008181d09"
+		_type = "unit"
+		children = [
+		]
+		editor = {
+			name = "sphere"
+		}
+		modified_components = {
+			#8972a214-327e-4396-b01e-45701189e8c9 = {
+				data = {
+					position = [
+						-58.383697499999997
+						94.116394
+						1.20340812
+					]
+					rotation = [
+						0
+						0
+						0
+						1
+					]
+					scale = [
+						1
+						1
+						1
+					]
+				}
+			}
+		}
+		prefab = "core/units/primitives/sphere"
+	}
+	{
+		_guid = "87330e81-c3a6-4452-88be-f6b7426ee053"
+		_type = "unit"
+		children = [
+		]
+		editor = {
+			name = "sphere"
+		}
+		modified_components = {
+			#8972a214-327e-4396-b01e-45701189e8c9 = {
+				data = {
+					position = [
+						-104.387154
+						72.988861099999994
+						1.20340812
+					]
+					rotation = [
+						0
+						0
+						0
+						1
+					]
+					scale = [
+						1
+						1
+						1
+					]
+				}
+			}
+		}
+		prefab = "core/units/primitives/sphere"
+	}
+	{
+		_guid = "87530b34-2fd1-475c-8828-7d47b1a4e982"
+		_type = "unit"
+		children = [
+		]
+		editor = {
+			name = "cube"
+		}
+		modified_components = {
+			#23dbf108-db64-4ca2-9647-8c639ee039ad = {
+				data = {
+					position = [
+						-13.5977335
+						-9.7192716600000004
+						2.09425712
+					]
+					rotation = [
+						0
+						0
+						0
+						1
+					]
+					scale = [
+						1
+						1
+						4.3674974400000002
+					]
+				}
+			}
+		}
+		prefab = "core/units/primitives/cube"
+	}
+	{
+		_guid = "87e2d22e-c47e-4e8a-9c54-55da62d60559"
+		_type = "unit"
+		children = [
+		]
+		editor = {
+			name = "sphere"
+		}
+		modified_components = {
+			#8972a214-327e-4396-b01e-45701189e8c9 = {
+				data = {
+					position = [
+						-55.4518013
+						10.6449699
+						1.20340812
+					]
+					rotation = [
+						0
+						0
+						0
+						1
+					]
+					scale = [
+						1
+						1
+						1
+					]
+				}
+			}
+		}
+		prefab = "core/units/primitives/sphere"
+	}
+	{
+		_guid = "87ff58c8-33d9-464e-bd5a-97914ce203fc"
+		_type = "unit"
+		children = [
+		]
+		editor = {
+			name = "cube"
+		}
+		modified_components = {
+			#23dbf108-db64-4ca2-9647-8c639ee039ad = {
+				data = {
+					position = [
+						-7.0459604300000001
+						10.246681199999999
+						2.09425712
+					]
+					rotation = [
+						0
+						0
+						0
+						1
+					]
+					scale = [
+						1
+						1
+						4.3674974400000002
+					]
+				}
+			}
+		}
+		prefab = "core/units/primitives/cube"
+	}
+	{
+		_guid = "8cab0643-9b63-4264-bee6-c26ea6e98a81"
+		_type = "unit"
+		children = [
+		]
+		editor = {
+			name = "sphere"
+		}
+		modified_components = {
+			#8972a214-327e-4396-b01e-45701189e8c9 = {
+				data = {
+					position = [
+						44.0852127
+						-26.768218999999998
+						1.20340812
+					]
+					rotation = [
+						0
+						0
+						0
+						1
+					]
+					scale = [
+						1
+						1
+						1
+					]
+				}
+			}
+		}
+		prefab = "core/units/primitives/sphere"
+	}
+	{
+		_guid = "8d138466-1d66-40cb-a215-0f827e5641d7"
+		_type = "unit"
+		children = [
+		]
+		editor = {
+			name = "sphere"
+		}
+		modified_components = {
+			#8972a214-327e-4396-b01e-45701189e8c9 = {
+				data = {
+					position = [
+						30.099170699999998
+						42.856567400000003
+						1.20340812
+					]
+					rotation = [
+						0
+						0
+						0
+						1
+					]
+					scale = [
+						1
+						1
+						1
+					]
+				}
+			}
+		}
+		prefab = "core/units/primitives/sphere"
+	}
+	{
+		_guid = "8ee4ca83-b03b-4945-9e6a-d2d0a24c1e2e"
+		_type = "unit"
+		children = [
+		]
+		editor = {
+			name = "sphere"
+		}
+		modified_components = {
+			#8972a214-327e-4396-b01e-45701189e8c9 = {
+				data = {
+					position = [
+						47.3407822
+						-28.954299899999999
+						1.20340812
+					]
+					rotation = [
+						0
+						0
+						0
+						1
+					]
+					scale = [
+						1
+						1
+						1
+					]
+				}
+			}
+		}
+		prefab = "core/units/primitives/sphere"
+	}
+	{
+		_guid = "8f242146-c1c2-4062-b9eb-f32ec07f9ade"
+		_type = "unit"
+		children = [
+		]
+		editor = {
+			name = "plane"
+		}
+		modified_components = {
+			#238ae946-75d4-4c4e-b326-ff4c6562fba4 = {
+				data = {
+					position = [
+						0
+						0
+						0.130067825
+					]
+					rotation = [
+						0
+						0
+						0
+						1
+					]
+					scale = [
+						300
+						300
+						1
+					]
+				}
+			}
+		}
+		prefab = "core/units/primitives/plane"
+	}
+	{
+		_guid = "8fe83bd2-8e28-4fef-bcea-5d7302560501"
+		_type = "unit"
+		children = [
+		]
+		editor = {
+			name = "sphere"
+		}
+		modified_components = {
+			#8972a214-327e-4396-b01e-45701189e8c9 = {
+				data = {
+					position = [
+						28.178421
+						47.481746700000002
+						1.20340812
+					]
+					rotation = [
+						0
+						0
+						0
+						1
+					]
+					scale = [
+						1
+						1
+						1
+					]
+				}
+			}
+		}
+		prefab = "core/units/primitives/sphere"
+	}
+	{
+		_guid = "92691159-2aeb-4188-8ac9-2b7a944274d5"
+		_type = "unit"
+		children = [
+		]
+		editor = {
+			name = "camera"
+		}
+		modified_components = {
+			#1d578001-d96b-4b0e-90a9-181b32161a7d = {
+				data = {
+					position = [
+						0
+						-15
+						6.5
+					]
+					rotation = [
+						-0.17364817766693033
+						0
+						0
+						0.98480775301220802
+					]
+					scale = [
+						1
+						1
+						1
+					]
+				}
+			}
+		}
+		prefab = "core/units/camera"
+	}
+	{
+		_guid = "93876c2b-3622-4928-9458-4085bef3d536"
+		_type = "unit"
+		children = [
+		]
+		editor = {
+			name = "sphere"
+		}
+		modified_components = {
+			#8972a214-327e-4396-b01e-45701189e8c9 = {
+				data = {
+					position = [
+						-8.2605009099999993
+						40.411544800000001
+						1.20340812
+					]
+					rotation = [
+						0
+						0
+						0
+						1
+					]
+					scale = [
+						1
+						1
+						1
+					]
+				}
+			}
+		}
+		prefab = "core/units/primitives/sphere"
+	}
+	{
+		_guid = "95380075-7c68-4edb-8437-ff98096de819"
+		_type = "unit"
+		children = [
+		]
+		editor = {
+			name = "sphere"
+		}
+		modified_components = {
+			#8972a214-327e-4396-b01e-45701189e8c9 = {
+				data = {
+					position = [
+						-59.726959200000003
+						90.208068800000007
+						1.20340812
+					]
+					rotation = [
+						0
+						0
+						0
+						1
+					]
+					scale = [
+						1
+						1
+						1
+					]
+				}
+			}
+		}
+		prefab = "core/units/primitives/sphere"
+	}
+	{
+		_guid = "98889edd-0aa7-4ed2-8140-b4d2ff5c94cd"
+		_type = "unit"
+		children = [
+		]
+		editor = {
+			name = "sphere"
+		}
+		modified_components = {
+			#8972a214-327e-4396-b01e-45701189e8c9 = {
+				data = {
+					position = [
+						26.730743400000001
+						49.388832100000002
+						1.20340812
+					]
+					rotation = [
+						0
+						0
+						0
+						1
+					]
+					scale = [
+						1
+						1
+						1
+					]
+				}
+			}
+		}
+		prefab = "core/units/primitives/sphere"
+	}
+	{
+		_guid = "9925aa93-8a3a-407c-9026-920de8f962e0"
+		_type = "unit"
+		children = [
+		]
+		editor = {
+			name = "sphere"
+		}
+		modified_components = {
+			#8972a214-327e-4396-b01e-45701189e8c9 = {
+				data = {
+					position = [
+						-137.607193
+						53.512569399999997
+						1.20340812
+					]
+					rotation = [
+						0
+						0
+						0
+						1
+					]
+					scale = [
+						1
+						1
+						1
+					]
+				}
+			}
+		}
+		prefab = "core/units/primitives/sphere"
+	}
+	{
+		_guid = "9cdb2aed-d6bf-4623-82f1-64611e571e25"
+		_type = "unit"
+		children = [
+		]
+		editor = {
+			name = "light"
+		}
+		modified_components = {
+			#3f6f6b7c-b4cf-4173-aab0-288a63d7c73a = {
+				data = {
+					position = [
+						-12.6656713
+						1.9390049
+						7.0149669599999998
+					]
+					rotation = [
+						0
+						0
+						0
+						1
+					]
+					scale = [
+						1
+						1
+						1
+					]
+				}
+			}
+			#45e54fbe-018c-4ee2-917d-398c13bd3e7e = {
+				data = {
+					cast_shadows = true
+					range = 50
+					shadow_bias = 0.00040000000000000002
+				}
+			}
+		}
+		prefab = "core/units/light"
+	}
+	{
+		_guid = "9e2cebc9-b030-4a5f-ad6d-4b477820df01"
+		_type = "unit"
+		children = [
+		]
+		editor = {
+			name = "light2"
+		}
+		modified_components = {
+			#3f6f6b7c-b4cf-4173-aab0-288a63d7c73a = {
+				data = {
+					position = [
+						86.6793823
+						105.108238
+						3.2171907399999999
+					]
+					rotation = [
+						0
+						0
+						0
+						1
+					]
+					scale = [
+						1
+						1
+						1
+					]
+				}
+			}
+			#45e54fbe-018c-4ee2-917d-398c13bd3e7e = {
+				data = {
+					intensity = 100
+					shadow_bias = 0.00040000000000000002
+				}
+			}
+		}
+		prefab = "core/units/light"
+	}
+	{
+		_guid = "a057977d-2d01-4591-a97b-b204f9d02a63"
+		_type = "unit"
+		children = [
+		]
+		editor = {
+			name = "sphere"
+		}
+		modified_components = {
+			#8972a214-327e-4396-b01e-45701189e8c9 = {
+				data = {
+					position = [
+						-54.300517999999997
+						17.5633163
+						1.20340812
+					]
+					rotation = [
+						0
+						0
+						0
+						1
+					]
+					scale = [
+						1
+						1
+						1
+					]
+				}
+			}
+		}
+		prefab = "core/units/primitives/sphere"
+	}
+	{
+		_guid = "a3d418bf-3a21-48f6-915a-03f5d927d22c"
+		_type = "unit"
+		children = [
+		]
+		editor = {
+			name = "sphere"
+		}
+		modified_components = {
+			#8972a214-327e-4396-b01e-45701189e8c9 = {
+				data = {
+					position = [
+						-51.578422500000002
+						-41.961769099999998
+						1.20340812
+					]
+					rotation = [
+						0
+						0
+						0
+						1
+					]
+					scale = [
+						1
+						1
+						1
+					]
+				}
+			}
+		}
+		prefab = "core/units/primitives/sphere"
+	}
+	{
+		_guid = "a5118232-338b-40d4-a5e9-0277d928c262"
+		_type = "unit"
+		children = [
+		]
+		editor = {
+			name = "sphere"
+		}
+		modified_components = {
+			#8972a214-327e-4396-b01e-45701189e8c9 = {
+				data = {
+					position = [
+						50.627441400000002
+						113.394203
+						1.20340812
+					]
+					rotation = [
+						0
+						0
+						0
+						1
+					]
+					scale = [
+						1
+						1
+						1
+					]
+				}
+			}
+		}
+		prefab = "core/units/primitives/sphere"
+	}
+	{
+		_guid = "a5658c06-2f88-4655-9879-f890745a693a"
+		_type = "unit"
+		children = [
+		]
+		editor = {
+			name = "light2"
+		}
+		modified_components = {
+			#3f6f6b7c-b4cf-4173-aab0-288a63d7c73a = {
+				data = {
+					position = [
+						15.9948692
+						106.002014
+						3.2171907399999999
+					]
+					rotation = [
+						0
+						0
+						0
+						1
+					]
+					scale = [
+						1
+						1
+						1
+					]
+				}
+			}
+			#45e54fbe-018c-4ee2-917d-398c13bd3e7e = {
+				data = {
+					intensity = 100
+					shadow_bias = 0.00040000000000000002
+				}
+			}
+		}
+		prefab = "core/units/light"
+	}
+	{
+		_guid = "a70491ed-b628-4c65-bb2e-30a85ed2ea8c"
+		_type = "unit"
+		children = [
+		]
+		editor = {
+			name = "sphere"
+		}
+		modified_components = {
+			#8972a214-327e-4396-b01e-45701189e8c9 = {
+				data = {
+					position = [
+						88.576339700000005
+						100.57880400000001
+						1.20340812
+					]
+					rotation = [
+						0
+						0
+						0
+						1
+					]
+					scale = [
+						1
+						1
+						1
+					]
+				}
+			}
+		}
+		prefab = "core/units/primitives/sphere"
+	}
+	{
+		_guid = "adda06bb-b4e5-4ba0-9bbf-31d2e93c49fb"
+		_type = "unit"
+		children = [
+		]
+		editor = {
+			name = "light2"
+		}
+		modified_components = {
+			#3f6f6b7c-b4cf-4173-aab0-288a63d7c73a = {
+				data = {
+					position = [
+						-141.91519199999999
+						55.626110099999998
+						3.2171907399999999
+					]
+					rotation = [
+						0
+						0
+						0
+						1
+					]
+					scale = [
+						1
+						1
+						1
+					]
+				}
+			}
+			#45e54fbe-018c-4ee2-917d-398c13bd3e7e = {
+				data = {
+					intensity = 100
+					shadow_bias = 0.00040000000000000002
+				}
+			}
+		}
+		prefab = "core/units/light"
+	}
+	{
+		_guid = "aebb6c59-e5d8-4c75-8619-c86271bd0223"
+		_type = "unit"
+		children = [
+		]
+		editor = {
+			name = "sphere"
+		}
+		modified_components = {
+			#8972a214-327e-4396-b01e-45701189e8c9 = {
+				data = {
+					position = [
+						86.655578599999998
+						105.203987
+						1.20340812
+					]
+					rotation = [
+						0
+						0
+						0
+						1
+					]
+					scale = [
+						1
+						1
+						1
+					]
+				}
+			}
+		}
+		prefab = "core/units/primitives/sphere"
+	}
+	{
+		_guid = "b1ad4edd-0498-4114-a5de-ad413c4a0b23"
+		_type = "unit"
+		children = [
+		]
+		editor = {
+			name = "sphere"
+		}
+		modified_components = {
+			#8972a214-327e-4396-b01e-45701189e8c9 = {
+				data = {
+					position = [
+						-49.9775925
+						47.660163900000001
+						1.20340812
+					]
+					rotation = [
+						0
+						0
+						0
+						1
+					]
+					scale = [
+						1
+						1
+						1
+					]
+				}
+			}
+		}
+		prefab = "core/units/primitives/sphere"
+	}
+	{
+		_guid = "b24563fa-d1f0-4cd4-8e1b-b9fe22234845"
+		_type = "unit"
+		children = [
+		]
+		editor = {
+			name = "sphere"
+		}
+		modified_components = {
+			#8972a214-327e-4396-b01e-45701189e8c9 = {
+				data = {
+					position = [
+						-9.4117860800000006
+						33.493198399999997
+						1.20340812
+					]
+					rotation = [
+						0
+						0
+						0
+						1
+					]
+					scale = [
+						1
+						1
+						1
+					]
+				}
+			}
+		}
+		prefab = "core/units/primitives/sphere"
+	}
+	{
+		_guid = "b2cd1aaf-d17b-4f0f-b628-aca400007c79"
+		_type = "unit"
+		children = [
+		]
+		editor = {
+			name = "sphere"
+		}
+		modified_components = {
+			#8972a214-327e-4396-b01e-45701189e8c9 = {
+				data = {
+					position = [
+						32.510215799999997
+						45.272464800000002
+						1.20340812
+					]
+					rotation = [
+						0
+						0
+						0
+						1
+					]
+					scale = [
+						1
+						1
+						1
+					]
+				}
+			}
+		}
+		prefab = "core/units/primitives/sphere"
+	}
+	{
+		_guid = "b4480d5a-8bbb-4c94-a045-0fd5fc05bce4"
+		_type = "unit"
+		children = [
+		]
+		editor = {
+			name = "sphere"
+		}
+		modified_components = {
+			#8972a214-327e-4396-b01e-45701189e8c9 = {
+				data = {
+					position = [
+						-27.115680699999999
+						-58.894882199999998
+						1.20340812
+					]
+					rotation = [
+						0
+						0
+						0
+						1
+					]
+					scale = [
+						1
+						1
+						1
+					]
+				}
+			}
+		}
+		prefab = "core/units/primitives/sphere"
+	}
+	{
+		_guid = "b4dafce4-4f89-4c01-82f7-6cc6410f8d40"
+		_type = "unit"
+		children = [
+		]
+		editor = {
+			name = "sphere"
+		}
+		modified_components = {
+			#8972a214-327e-4396-b01e-45701189e8c9 = {
+				data = {
+					position = [
+						12.9961967
+						-52.505409200000003
+						1.20340812
+					]
+					rotation = [
+						0
+						0
+						0
+						1
+					]
+					scale = [
+						1
+						1
+						1
+					]
+				}
+			}
+		}
+		prefab = "core/units/primitives/sphere"
+	}
+	{
+		_guid = "b5834be3-b67e-48b9-9e70-c2e16268ee70"
+		_type = "unit"
+		children = [
+		]
+		editor = {
+			name = "light2"
+		}
+		modified_components = {
+			#3f6f6b7c-b4cf-4173-aab0-288a63d7c73a = {
+				data = {
+					position = [
+						48.707836200000003
+						-25.141715999999999
+						3.2171907399999999
+					]
+					rotation = [
+						0
+						0
+						0
+						1
+					]
+					scale = [
+						1
+						1
+						1
+					]
+				}
+			}
+			#45e54fbe-018c-4ee2-917d-398c13bd3e7e = {
+				data = {
+					intensity = 100
+					shadow_bias = 0.00040000000000000002
+				}
+			}
+		}
+		prefab = "core/units/light"
+	}
+	{
+		_guid = "b6c0a347-95f3-4e79-b017-19147441abf2"
+		_type = "unit"
+		children = [
+		]
+		editor = {
+			name = "sphere"
+		}
+		modified_components = {
+			#8972a214-327e-4396-b01e-45701189e8c9 = {
+				data = {
+					position = [
+						-138.86695900000001
+						58.015018499999996
+						1.20340812
+					]
+					rotation = [
+						0
+						0
+						0
+						1
+					]
+					scale = [
+						1
+						1
+						1
+					]
+				}
+			}
+		}
+		prefab = "core/units/primitives/sphere"
+	}
+	{
+		_guid = "b9410cb2-cfdf-496d-b832-4a88710351e6"
+		_type = "unit"
+		children = [
+		]
+		editor = {
+			name = "sphere"
+		}
+		modified_components = {
+			#8972a214-327e-4396-b01e-45701189e8c9 = {
+				data = {
+					position = [
+						-107.755577
+						79.521125799999993
+						1.20340812
+					]
+					rotation = [
+						0
+						0
+						0
+						1
+					]
+					scale = [
+						1
+						1
+						1
+					]
+				}
+			}
+		}
+		prefab = "core/units/primitives/sphere"
+	}
+	{
+		_guid = "b9ff459f-a75c-478f-8c8d-7555550076af"
+		_type = "unit"
+		children = [
+		]
+		editor = {
+			name = "sphere"
+		}
+		modified_components = {
+			#8972a214-327e-4396-b01e-45701189e8c9 = {
+				data = {
+					position = [
+						42.243789700000001
+						11.2520027
+						1.20340812
+					]
+					rotation = [
+						0
+						0
+						0
+						1
+					]
+					scale = [
+						1
+						1
+						1
+					]
+				}
+			}
+		}
+		prefab = "core/units/primitives/sphere"
+	}
+	{
+		_guid = "bad3007d-92a8-4c08-af1d-deaef5bc0eea"
+		_type = "unit"
+		children = [
+		]
+		editor = {
+			name = "sphere"
+		}
+		modified_components = {
+			#8972a214-327e-4396-b01e-45701189e8c9 = {
+				data = {
+					position = [
+						-11.3325338
+						38.118377700000003
+						1.7693737700000001
+					]
+					rotation = [
+						0
+						0
+						0
+						1
+					]
+					scale = [
+						1
+						1
+						1
+					]
+				}
+			}
+		}
+		prefab = "core/units/primitives/sphere"
+	}
+	{
+		_guid = "bbe69256-285d-4c9f-8ead-4a778ddd6bd3"
+		_type = "unit"
+		children = [
+		]
+		editor = {
+			name = "sphere"
+		}
+		modified_components = {
+			#8972a214-327e-4396-b01e-45701189e8c9 = {
+				data = {
+					position = [
+						-45.645797700000003
+						45.450882
+						1.20340812
+					]
+					rotation = [
+						0
+						0
+						0
+						1
+					]
+					scale = [
+						1
+						1
+						1
+					]
+				}
+			}
+		}
+		prefab = "core/units/primitives/sphere"
+	}
+	{
+		_guid = "bff1f076-2014-46e9-819d-55dcce41b929"
+		_type = "unit"
+		children = [
+		]
+		editor = {
+			name = "sphere"
+		}
+		modified_components = {
+			#8972a214-327e-4396-b01e-45701189e8c9 = {
+				data = {
+					position = [
+						48.684047700000001
+						-25.045974699999999
+						1.20340812
+					]
+					rotation = [
+						0
+						0
+						0
+						1
+					]
+					scale = [
+						1
+						1
+						1
+					]
+				}
+			}
+		}
+		prefab = "core/units/primitives/sphere"
+	}
+	{
+		_guid = "c0af780e-28c5-41d0-a5ae-4c249a92aba6"
+		_type = "unit"
+		children = [
+		]
+		editor = {
+			name = "sphere"
+		}
+		modified_components = {
+			#8972a214-327e-4396-b01e-45701189e8c9 = {
+				data = {
+					position = [
+						-15.9313688
+						36.396133399999997
+						1.20340812
+					]
+					rotation = [
+						0
+						0
+						0
+						1
+					]
+					scale = [
+						1
+						1
+						1
+					]
+				}
+			}
+		}
+		prefab = "core/units/primitives/sphere"
+	}
+	{
+		_guid = "c0ff664f-cc19-4186-b0a7-a97397afc99c"
+		_type = "unit"
+		children = [
+		]
+		editor = {
+			name = "cube"
+		}
+		modified_components = {
+			#23dbf108-db64-4ca2-9647-8c639ee039ad = {
+				data = {
+					position = [
+						-25.313713100000001
+						3.4004457000000001
+						5.2930860500000003
+					]
+					rotation = [
+						0
+						0
+						0
+						1
+					]
+					scale = [
+						1
+						1
+						10.8745852
+					]
+				}
+			}
+		}
+		prefab = "core/units/primitives/cube"
+	}
+	{
+		_guid = "c502609a-8bb6-42ea-9e7f-b28e487ddc36"
+		_type = "unit"
+		children = [
+		]
+		editor = {
+			name = "light2"
+		}
+		modified_components = {
+			#3f6f6b7c-b4cf-4173-aab0-288a63d7c73a = {
+				data = {
+					position = [
+						47.579208399999999
+						111.005287
+						3.2171907399999999
+					]
+					rotation = [
+						0
+						0
+						0
+						1
+					]
+					scale = [
+						1
+						1
+						1
+					]
+				}
+			}
+			#45e54fbe-018c-4ee2-917d-398c13bd3e7e = {
+				data = {
+					intensity = 100
+					shadow_bias = 0.00040000000000000002
+				}
+			}
+		}
+		prefab = "core/units/light"
+	}
+	{
+		_guid = "c5e8aae7-46e6-49d4-8c46-23eef968c28f"
+		_type = "unit"
+		children = [
+		]
+		editor = {
+			name = "sphere"
+		}
+		modified_components = {
+			#8972a214-327e-4396-b01e-45701189e8c9 = {
+				data = {
+					position = [
+						-146.53782699999999
+						53.999607099999999
+						1.20340812
+					]
+					rotation = [
+						0
+						0
+						0
+						1
+					]
+					scale = [
+						1
+						1
+						1
+					]
+				}
+			}
+		}
+		prefab = "core/units/primitives/sphere"
+	}
+	{
+		_guid = "c6039c5a-d89f-488b-94d5-cad0d79f774f"
+		_type = "unit"
+		children = [
+		]
+		editor = {
+			name = "sphere"
+		}
+		modified_components = {
+			#8972a214-327e-4396-b01e-45701189e8c9 = {
+				data = {
+					position = [
+						-22.516845700000001
+						-57.172637899999998
+						1.20340812
+					]
+					rotation = [
+						0
+						0
+						0
+						1
+					]
+					scale = [
+						1
+						1
+						1
+					]
+				}
+			}
+		}
+		prefab = "core/units/primitives/sphere"
+	}
+	{
+		_guid = "c9e5411d-ba70-49a6-bb24-d0c99aad7652"
+		_type = "unit"
+		children = [
+		]
+		editor = {
+			name = "sphere"
+		}
+		modified_components = {
+			#8972a214-327e-4396-b01e-45701189e8c9 = {
+				data = {
+					position = [
+						23.579585999999999
+						45.759502400000002
+						1.20340812
+					]
+					rotation = [
+						0
+						0
+						0
+						1
+					]
+					scale = [
+						1
+						1
+						1
+					]
+				}
+			}
+		}
+		prefab = "core/units/primitives/sphere"
+	}
+	{
+		_guid = "ca630f31-cc4f-42c7-9023-e17a27d4ce71"
+		_type = "unit"
+		children = [
+		]
+		editor = {
+			name = "light2"
+		}
+		modified_components = {
+			#3f6f6b7c-b4cf-4173-aab0-288a63d7c73a = {
+				data = {
+					position = [
+						-57.348762499999999
+						15.174408
+						3.2171907399999999
+					]
+					rotation = [
+						0
+						0
+						0
+						1
+					]
+					scale = [
+						1
+						1
+						1
+					]
+				}
+			}
+			#45e54fbe-018c-4ee2-917d-398c13bd3e7e = {
+				data = {
+					intensity = 100
+					shadow_bias = 0.00040000000000000002
+				}
+			}
+		}
+		prefab = "core/units/light"
+	}
+	{
+		_guid = "cae4c3fa-1405-495b-8305-b24d623e8c55"
+		_type = "unit"
+		children = [
+		]
+		editor = {
+			name = "sphere"
+		}
+		modified_components = {
+			#8972a214-327e-4396-b01e-45701189e8c9 = {
+				data = {
+					position = [
+						-58.8202286
+						17.177234599999998
+						1.20340812
+					]
+					rotation = [
+						0
+						0
+						0
+						1
+					]
+					scale = [
+						1
+						1
+						1
+					]
+				}
+			}
+		}
+		prefab = "core/units/primitives/sphere"
+	}
+	{
+		_guid = "cbb99307-ade0-4db9-aba9-97ce79e8b300"
+		_type = "unit"
+		children = [
+		]
+		editor = {
+			name = "cube"
+		}
+		modified_components = {
+			#23dbf108-db64-4ca2-9647-8c639ee039ad = {
+				data = {
+					position = [
+						-25.4659996
+						-3.4403066600000001
+						3.3929557799999999
+					]
+					rotation = [
+						0
+						0
+						0
+						1
+					]
+					scale = [
+						1
+						1
+						6.9634246800000001
+					]
+				}
+			}
+		}
+		prefab = "core/units/primitives/cube"
+	}
+	{
+		_guid = "cd6812ed-03f4-4b88-bda0-b1959fa959a7"
+		_type = "unit"
+		children = [
+		]
+		editor = {
+			name = "sphere"
+		}
+		modified_components = {
+			#8972a214-327e-4396-b01e-45701189e8c9 = {
+				data = {
+					position = [
+						-53.989467599999998
+						-44.377666499999997
+						1.20340812
+					]
+					rotation = [
+						0
+						0
+						0
+						1
+					]
+					scale = [
+						1
+						1
+						1
+					]
+				}
+			}
+		}
+		prefab = "core/units/primitives/sphere"
+	}
+	{
+		_guid = "ceb43f76-71cf-4ce5-91b9-424a75e1e370"
+		_type = "unit"
+		children = [
+		]
+		editor = {
+			name = "sphere"
+		}
+		modified_components = {
+			#8972a214-327e-4396-b01e-45701189e8c9 = {
+				data = {
+					position = [
+						45.394947100000003
+						14.8813324
+						1.20340812
+					]
+					rotation = [
+						0
+						0
+						0
+						1
+					]
+					scale = [
+						1
+						1
+						1
+					]
+				}
+			}
+		}
+		prefab = "core/units/primitives/sphere"
+	}
+	{
+		_guid = "d00d6437-683c-4bf9-af96-0bc277b1760a"
+		_type = "unit"
+		children = [
+		]
+		editor = {
+			name = "light2"
+		}
+		modified_components = {
+			#3f6f6b7c-b4cf-4173-aab0-288a63d7c73a = {
+				data = {
+					position = [
+						-22.4930573
+						-57.268379199999998
+						3.2171907399999999
+					]
+					rotation = [
+						0
+						0
+						0
+						1
+					]
+					scale = [
+						1
+						1
+						1
+					]
+				}
+			}
+			#45e54fbe-018c-4ee2-917d-398c13bd3e7e = {
+				data = {
+					intensity = 100
+					shadow_bias = 0.00040000000000000002
+				}
+			}
+		}
+		prefab = "core/units/light"
+	}
+	{
+		_guid = "d49624cd-ecc5-492b-a65c-3fd3c3a5dcdd"
+		_type = "unit"
+		children = [
+		]
+		editor = {
+			name = "sphere"
+		}
+		modified_components = {
+			#8972a214-327e-4396-b01e-45701189e8c9 = {
+				data = {
+					position = [
+						90.987380999999999
+						102.994698
+						1.20340812
+					]
+					rotation = [
+						0
+						0
+						0
+						1
+					]
+					scale = [
+						1
+						1
+						1
+					]
+				}
+			}
+		}
+		prefab = "core/units/primitives/sphere"
+	}
+	{
+		_guid = "d633c768-105d-4e0d-9c7f-875bf87a8885"
+		_type = "unit"
+		children = [
+		]
+		editor = {
+			name = "sphere"
+		}
+		modified_components = {
+			#8972a214-327e-4396-b01e-45701189e8c9 = {
+				data = {
+					position = [
+						-2.3261070300000002
+						40.506855000000002
+						1.20365751
+					]
+					rotation = [
+						0
+						0
+						0
+						1
+					]
+					scale = [
+						1
+						1
+						1
+					]
+				}
+			}
+		}
+		prefab = "core/units/primitives/sphere"
+	}
+	{
+		_guid = "d8bde426-f875-4e8e-969d-6901d018fa68"
+		_type = "unit"
+		children = [
+		]
+		editor = {
+			name = "sphere"
+		}
+		modified_components = {
+			#8972a214-327e-4396-b01e-45701189e8c9 = {
+				data = {
+					position = [
+						-55.311660799999999
+						96.409561199999999
+						1.20340812
+					]
+					rotation = [
+						0
+						0
+						0
+						1
+					]
+					scale = [
+						1
+						1
+						1
+					]
+				}
+			}
+		}
+		prefab = "core/units/primitives/sphere"
+	}
+	{
+		_guid = "d8c54048-68b1-4659-b6c9-87875762fb7e"
+		_type = "unit"
+		children = [
+		]
+		editor = {
+			name = "light2"
+		}
+		modified_components = {
+			#3f6f6b7c-b4cf-4173-aab0-288a63d7c73a = {
+				data = {
+					position = [
+						-21.533161199999999
+						96.061889600000001
+						3.2171907399999999
+					]
+					rotation = [
+						0
+						0
+						0
+						1
+					]
+					scale = [
+						1
+						1
+						1
+					]
+				}
+			}
+			#45e54fbe-018c-4ee2-917d-398c13bd3e7e = {
+				data = {
+					intensity = 100
+					shadow_bias = 0.00040000000000000002
+				}
+			}
+		}
+		prefab = "core/units/light"
+	}
+	{
+		_guid = "d8f56f4b-041f-4870-b668-64720a75c65a"
+		_type = "unit"
+		children = [
+		]
+		editor = {
+			name = "character2"
+		}
+		modified_components = {
+			#53b687c2-1368-4e17-aa19-c7dc965531cd = {
+				data = {
+					position = [
+						-2.74203777
+						-3.3444905299999999
+						-0.017684564
+					]
+					rotation = [
+						0.70710670900000006
+						0
+						0
+						0.70710682899999999
+					]
+					scale = [
+						0.0099999997799999994
+						0.0099999997799999994
+						0.0099999997799999994
+					]
+				}
+			}
+		}
+		prefab = "units/character/character"
+	}
+	{
+		_guid = "d961b058-940d-44f3-b6c6-0844886467a8"
+		_type = "unit"
+		children = [
+		]
+		editor = {
+			name = "sphere"
+		}
+		modified_components = {
+			#8972a214-327e-4396-b01e-45701189e8c9 = {
+				data = {
+					position = [
+						46.107742299999998
+						113.008118
+						1.20340812
+					]
+					rotation = [
+						0
+						0
+						0
+						1
+					]
+					scale = [
+						1
+						1
+						1
+					]
+				}
+			}
+		}
+		prefab = "core/units/primitives/sphere"
+	}
+	{
+		_guid = "d99b9582-80b3-4023-a8f9-690703e1cab6"
+		_type = "unit"
+		children = [
+		]
+		editor = {
+			name = "sphere"
+		}
+		modified_components = {
+			#8972a214-327e-4396-b01e-45701189e8c9 = {
+				data = {
+					position = [
+						-52.838184400000003
+						-37.459320099999999
+						1.20340812
+					]
+					rotation = [
+						0
+						0
+						0
+						1
+					]
+					scale = [
+						1
+						1
+						1
+					]
+				}
+			}
+		}
+		prefab = "core/units/primitives/sphere"
+	}
+	{
+		_guid = "dbf71d16-d803-44a6-8700-840413f56cbb"
+		_type = "unit"
+		children = [
+		]
+		editor = {
+			name = "sphere"
+		}
+		modified_components = {
+			#8972a214-327e-4396-b01e-45701189e8c9 = {
+				data = {
+					position = [
+						11.372234300000001
+						104.375519
+						1.20340812
+					]
+					rotation = [
+						0
+						0
+						0
+						1
+					]
+					scale = [
+						1
+						1
+						1
+					]
+				}
+			}
+		}
+		prefab = "core/units/primitives/sphere"
+	}
+	{
+		_guid = "dda1c288-8a61-422c-840c-bb5d7393e5fd"
+		_type = "unit"
+		children = [
+		]
+		editor = {
+			name = "light2"
+		}
+		modified_components = {
+			#3f6f6b7c-b4cf-4173-aab0-288a63d7c73a = {
+				data = {
+					position = [
+						-58.359893800000002
+						94.020645099999996
+						3.2171907399999999
+					]
+					rotation = [
+						0
+						0
+						0
+						1
+					]
+					scale = [
+						1
+						1
+						1
+					]
+				}
+			}
+			#45e54fbe-018c-4ee2-917d-398c13bd3e7e = {
+				data = {
+					intensity = 100
+					shadow_bias = 0.00040000000000000002
+				}
+			}
+		}
+		prefab = "core/units/light"
+	}
+	{
+		_guid = "e0ba33af-7ec5-495a-ab93-bef0331fe235"
+		_type = "unit"
+		children = [
+		]
+		editor = {
+			name = "sphere"
+		}
+		modified_components = {
+			#8972a214-327e-4396-b01e-45701189e8c9 = {
+				data = {
+					position = [
+						50.604797400000002
+						-29.671154000000001
+						1.20340812
+					]
+					rotation = [
+						0
+						0
+						0
+						1
+					]
+					scale = [
+						1
+						1
+						1
+					]
+				}
+			}
+		}
+		prefab = "core/units/primitives/sphere"
+	}
+	{
+		_guid = "e121f684-40d7-4c41-acd4-a0f6963d20ff"
+		_type = "unit"
+		children = [
+		]
+		editor = {
+			name = "sphere"
+		}
+		modified_components = {
+			#8972a214-327e-4396-b01e-45701189e8c9 = {
+				data = {
+					position = [
+						-18.484928100000001
+						98.450805700000004
+						1.20340812
+					]
+					rotation = [
+						0
+						0
+						0
+						1
+					]
+					scale = [
+						1
+						1
+						1
+					]
+				}
+			}
+		}
+		prefab = "core/units/primitives/sphere"
+	}
+	{
+		_guid = "e242b6e8-6568-4a8e-b727-1d939ee5a5ae"
+		_type = "unit"
+		children = [
+		]
+		editor = {
+			name = "sphere"
+		}
+		modified_components = {
+			#8972a214-327e-4396-b01e-45701189e8c9 = {
+				data = {
+					position = [
+						-26.1557961
+						94.435394299999999
+						1.20340812
+					]
+					rotation = [
+						0
+						0
+						0
+						1
+					]
+					scale = [
+						1
+						1
+						1
+					]
+				}
+			}
+		}
+		prefab = "core/units/primitives/sphere"
+	}
+	{
+		_guid = "e77b5882-c813-4879-8fc0-631d3091cdda"
+		_type = "unit"
+		children = [
+		]
+		editor = {
+			name = "sphere"
+		}
+		modified_components = {
+			#8972a214-327e-4396-b01e-45701189e8c9 = {
+				data = {
+					position = [
+						-60.5090523
+						-41.474731400000003
+						1.20340812
+					]
+					rotation = [
+						0
+						0
+						0
+						1
+					]
+					scale = [
+						1
+						1
+						1
+					]
+				}
+			}
+		}
+		prefab = "core/units/primitives/sphere"
+	}
+	{
+		_guid = "ea683149-cc31-43af-8944-878a46d34eb2"
+		_type = "unit"
+		children = [
+		]
+		editor = {
+			name = "sphere"
+		}
+		modified_components = {
+			#8972a214-327e-4396-b01e-45701189e8c9 = {
+				data = {
+					position = [
+						19.043102300000001
+						108.39093
+						1.20340812
+					]
+					rotation = [
+						0
+						0
+						0
+						1
+					]
+					scale = [
+						1
+						1
+						1
+					]
+				}
+			}
+		}
+		prefab = "core/units/primitives/sphere"
+	}
+	{
+		_guid = "eab6c6e5-39a1-4b35-ae1c-fe39eed2d69d"
+		_type = "unit"
+		children = [
+		]
+		editor = {
+			name = "sphere"
+		}
+		modified_components = {
+			#8972a214-327e-4396-b01e-45701189e8c9 = {
+				data = {
+					position = [
+						-56.462936399999997
+						89.491210899999999
+						1.20340812
+					]
+					rotation = [
+						0
+						0
+						0
+						1
+					]
+					scale = [
+						1
+						1
+						1
+					]
+				}
+			}
+		}
+		prefab = "core/units/primitives/sphere"
+	}
+	{
+		_guid = "eff86772-599e-4675-bd41-59aaebed8dcc"
+		_type = "unit"
+		children = [
+		]
+		editor = {
+			name = "light"
+		}
+		modified_components = {
+			#3f6f6b7c-b4cf-4173-aab0-288a63d7c73a = {
+				data = {
+					position = [
+						-8.6733303100000008
+						7.8685140599999999
+						10.1236248
+					]
+					rotation = [
+						0
+						-0.154413208
+						0
+						0.98800635299999995
+					]
+					scale = [
+						1
+						1
+						1
+					]
+				}
+			}
+			#45e54fbe-018c-4ee2-917d-398c13bd3e7e = {
+				data = {
+					cast_shadows = true
+					color = [
+						0.8784313725490196
+						0.10588235294117647
+						0.14117647058823529
+					]
+					type = "spot"
+				}
+			}
+		}
+		prefab = "core/units/light"
+	}
+	{
+		_guid = "effee719-00ae-4552-93d2-e2130cf8fa28"
+		_type = "unit"
+		children = [
+		]
+		editor = {
+			name = "sphere"
+		}
+		modified_components = {
+			#8972a214-327e-4396-b01e-45701189e8c9 = {
+				data = {
+					position = [
+						16.251766199999999
+						-54.691490199999997
+						1.20340812
+					]
+					rotation = [
+						0
+						0
+						0
+						1
+					]
+					scale = [
+						1
+						1
+						1
+					]
+				}
+			}
+		}
+		prefab = "core/units/primitives/sphere"
+	}
+	{
+		_guid = "f2e46d99-f32f-4cd8-a853-973780ce9d07"
+		_type = "unit"
+		children = [
+		]
+		editor = {
+			name = "sphere"
+		}
+		modified_components = {
+			#8972a214-327e-4396-b01e-45701189e8c9 = {
+				data = {
+					position = [
+						47.236370100000002
+						-23.138889299999999
+						1.20340812
+					]
+					rotation = [
+						0
+						0
+						0
+						1
+					]
+					scale = [
+						1
+						1
+						1
+					]
+				}
+			}
+		}
+		prefab = "core/units/primitives/sphere"
+	}
+	{
+		_guid = "f6c54e09-62a0-4987-8935-c9de4920321b"
+		_type = "unit"
+		children = [
+		]
+		editor = {
+			name = "light2"
+		}
+		modified_components = {
+			#3f6f6b7c-b4cf-4173-aab0-288a63d7c73a = {
+				data = {
+					position = [
+						-11.3087482
+						38.022636400000003
+						3.2171905000000001
+					]
+					rotation = [
+						0
+						0
+						0
+						1
+					]
+					scale = [
+						1
+						1
+						1
+					]
+				}
+			}
+			#45e54fbe-018c-4ee2-917d-398c13bd3e7e = {
+				data = {
+					cast_shadows = true
+					intensity = 100
+					range = 25
+					shadow_bias = 0.00040000000000000002
+					type = "omni"
+				}
+			}
+		}
+		prefab = "core/units/light"
+	}
+	{
+		_guid = "f87b3f05-9881-4885-8297-eebda2b5949a"
+		_type = "unit"
+		children = [
+		]
+		editor = {
+			name = "cube"
+		}
+		modified_components = {
+			#23dbf108-db64-4ca2-9647-8c639ee039ad = {
+				data = {
+					position = [
+						-5.3494787199999996
+						-6.7357821500000004
+						2.09425712
+					]
+					rotation = [
+						0
+						0
+						0
+						1
+					]
+					scale = [
+						1
+						1
+						4.3674974400000002
+					]
+				}
+			}
+		}
+		prefab = "core/units/primitives/cube"
+	}
+	{
+		_guid = "f9274265-c2cd-46a2-b443-5dc824bde6a8"
+		_type = "unit"
+		children = [
+		]
+		editor = {
+			name = "sphere"
+		}
+		modified_components = {
+			#8972a214-327e-4396-b01e-45701189e8c9 = {
+				data = {
+					position = [
+						-103.235878
+						79.9072113
+						1.20340812
+					]
+					rotation = [
+						0
+						0
+						0
+						1
+					]
+					scale = [
+						1
+						1
+						1
+					]
+				}
+			}
+		}
+		prefab = "core/units/primitives/sphere"
+	}
+	{
+		_guid = "f9e12e01-c38c-4086-9242-be802f06fde8"
+		_type = "unit"
+		children = [
+		]
+		editor = {
+			name = "shading_environment"
+		}
+		prefab = "core/renderer/default_shading_environment"
+	}
+	{
+		_guid = "fa07bf9e-73ea-4a60-aa0e-529372776265"
+		_type = "unit"
+		children = [
+		]
+		editor = {
+			name = "sphere"
+		}
+		modified_components = {
+			#8972a214-327e-4396-b01e-45701189e8c9 = {
+				data = {
+					position = [
+						85.312316899999999
+						101.29566199999999
+						1.20340812
+					]
+					rotation = [
+						0
+						0
+						0
+						1
+					]
+					scale = [
+						1
+						1
+						1
+					]
+				}
+			}
+		}
+		prefab = "core/units/primitives/sphere"
+	}
+	{
+		_guid = "faf68955-8731-4f96-8e0d-788870eb839b"
+		_type = "unit"
+		children = [
+		]
+		editor = {
+			name = "cube"
+		}
+		modified_components = {
+			#23dbf108-db64-4ca2-9647-8c639ee039ad = {
+				data = {
+					position = [
+						-21.014505400000001
+						9.8439655300000002
+						2.09425712
+					]
+					rotation = [
+						0
+						0
+						0
+						1
+					]
+					scale = [
+						1
+						1
+						4.3674974400000002
+					]
+				}
+			}
+		}
+		prefab = "core/units/primitives/cube"
+	}
+	{
+		_guid = "fb4956c9-4744-4c06-8a8e-940c232211f4"
+		_type = "unit"
+		children = [
+		]
+		editor = {
+			name = "sphere"
+		}
+		modified_components = {
+			#8972a214-327e-4396-b01e-45701189e8c9 = {
+				data = {
+					position = [
+						48.763374300000002
+						8.34906769
+						1.20340812
+					]
+					rotation = [
+						0
+						0
+						0
+						1
+					]
+					scale = [
+						1
+						1
+						1
+					]
+				}
+			}
+		}
+		prefab = "core/units/primitives/sphere"
+	}
+	{
+		_guid = "fbbfde98-a4fe-4965-930a-1c8a4ab4b5d5"
+		_type = "unit"
+		children = [
+		]
+		editor = {
+			name = "sphere"
+		}
+		modified_components = {
+			#8972a214-327e-4396-b01e-45701189e8c9 = {
+				data = {
+					position = [
+						82.056747400000006
+						103.48174299999999
+						1.20340812
+					]
+					rotation = [
+						0
+						0
+						0
+						1
+					]
+					scale = [
+						1
+						1
+						1
+					]
+				}
+			}
+		}
+		prefab = "core/units/primitives/sphere"
+	}
+]

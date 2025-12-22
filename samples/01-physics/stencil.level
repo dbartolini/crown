@@ -1,0 +1,574 @@
+_guid = "583b287b-372d-4620-9173-74ea4f09b729"
+_type = "level"
+editor = {
+	camera = {
+		orthographic_size = 25.1063881
+		position = [
+			103.416611
+			39.105579400000003
+			64.452789300000006
+		]
+		rotation = [
+			-0.12810848699999999
+			-0.17907495800000001
+			0.79334872999999995
+			0.56755447400000003
+		]
+		target_distance = 122.113136
+		view_type = 0
+	}
+}
+skydome_unit = "core/units/skydome/skydome"
+sounds = [
+]
+units = [
+	{
+		_guid = "02a9ba56-6ef3-4e88-aae3-9414cbbea08f"
+		_type = "unit"
+		children = [
+		]
+		editor = {
+			name = "light"
+		}
+		modified_components = {
+			#3f6f6b7c-b4cf-4173-aab0-288a63d7c73a = {
+				data = {
+					position = [
+						0
+						0
+						11
+					]
+					rotation = [
+						0
+						0
+						0
+						1
+					]
+					scale = [
+						1
+						1
+						1
+					]
+				}
+			}
+			#45e54fbe-018c-4ee2-917d-398c13bd3e7e = {
+				data = {
+					intensity = 750
+					range = 75
+				}
+			}
+			#65f81abd-43ea-4c15-8d96-b82fec868bcd = {
+				data = {
+					visible = false
+				}
+			}
+		}
+		prefab = "core/units/light"
+	}
+	{
+		_guid = "1320a6bf-b91e-4316-9b66-6ab331ac0ebe"
+		_type = "unit"
+		children = [
+		]
+		editor = {
+			name = "cube"
+		}
+		modified_components = {
+			#23dbf108-db64-4ca2-9647-8c639ee039ad = {
+				data = {
+					position = [
+						0
+						-2
+						4.0000009500000004
+					]
+					rotation = [
+						0
+						0
+						0
+						1
+					]
+					scale = [
+						1
+						1
+						1
+					]
+				}
+			}
+			#49753fff-34ea-4aff-8bcf-5116f1c1519a = {
+				data = {
+					geometry_name = "Sphere"
+					mesh_resource = "core/units/primitives/sphere"
+				}
+			}
+		}
+		prefab = "core/units/primitives/cube"
+	}
+	{
+		_guid = "4528a908-e5bb-4fec-925d-59a62b61e910"
+		_type = "unit"
+		children = [
+		]
+		editor = {
+			name = "shading_environment"
+		}
+		prefab = "core/renderer/default_shading_environment"
+	}
+	{
+		_guid = "519180d0-9ce1-4486-a41b-d6a0de158b52"
+		_type = "unit"
+		children = [
+		]
+		editor = {
+			name = "cube"
+		}
+		modified_components = {
+			#23dbf108-db64-4ca2-9647-8c639ee039ad = {
+				data = {
+					position = [
+						0
+						-6
+						4.0000009500000004
+					]
+					rotation = [
+						0
+						0
+						0
+						1
+					]
+					scale = [
+						1
+						1
+						1
+					]
+				}
+			}
+			#49753fff-34ea-4aff-8bcf-5116f1c1519a = {
+				data = {
+					geometry_name = "Cone"
+					mesh_resource = "core/units/primitives/cone"
+				}
+			}
+		}
+		prefab = "core/units/primitives/cube"
+	}
+	{
+		_guid = "57ae6ec4-2b37-4779-b6b0-d0b4b711f071"
+		_type = "unit"
+		children = [
+		]
+		editor = {
+			name = "cube"
+		}
+		modified_components = {
+			#23dbf108-db64-4ca2-9647-8c639ee039ad = {
+				data = {
+					position = [
+						0
+						6
+						4.0000009500000004
+					]
+					rotation = [
+						0
+						0
+						0
+						1
+					]
+					scale = [
+						1
+						1
+						1
+					]
+				}
+			}
+			#49753fff-34ea-4aff-8bcf-5116f1c1519a = {
+				data = {
+					geometry_name = "Cone"
+					mesh_resource = "core/units/primitives/cone"
+				}
+			}
+		}
+		prefab = "core/units/primitives/cube"
+	}
+	{
+		_guid = "5b11c6a9-48ba-43bc-b634-23512aafba02"
+		_type = "unit"
+		children = [
+		]
+		editor = {
+			name = "cube"
+		}
+		modified_components = {
+			#23dbf108-db64-4ca2-9647-8c639ee039ad = {
+				data = {
+					position = [
+						0
+						12
+						4.0000009500000004
+					]
+					rotation = [
+						0
+						0
+						0
+						1
+					]
+					scale = [
+						1
+						1
+						1
+					]
+				}
+			}
+		}
+		prefab = "core/units/primitives/cube"
+	}
+	{
+		_guid = "5b6dde96-6a7f-4e6a-87b8-b73421c834fa"
+		_type = "unit"
+		children = [
+		]
+		editor = {
+			name = "plane"
+		}
+		modified_components = {
+			#238ae946-75d4-4c4e-b326-ff4c6562fba4 = {
+				data = {
+					position = [
+						0
+						0
+						0.050000011900000002
+					]
+					rotation = [
+						0
+						0
+						0
+						1
+					]
+					scale = [
+						100
+						100
+						1
+					]
+				}
+			}
+		}
+		prefab = "core/units/primitives/plane"
+	}
+	{
+		_guid = "814c56c3-1b8e-4fb8-b2e1-964cf5189746"
+		_type = "unit"
+		children = [
+		]
+		editor = {
+			name = "camera"
+		}
+		modified_components = {
+			#1d578001-d96b-4b0e-90a9-181b32161a7d = {
+				data = {
+					position = [
+						0
+						-15
+						6.5
+					]
+					rotation = [
+						-0.17364817766693033
+						0
+						0
+						0.98480775301220802
+					]
+					scale = [
+						1
+						1
+						1
+					]
+				}
+			}
+		}
+		prefab = "core/units/camera"
+	}
+	{
+		_guid = "8953a982-e2fb-4e53-81df-f98709f9b85b"
+		_type = "unit"
+		children = [
+		]
+		editor = {
+			name = "cube"
+		}
+		modified_components = {
+			#23dbf108-db64-4ca2-9647-8c639ee039ad = {
+				data = {
+					position = [
+						2
+						0
+						4.0000009500000004
+					]
+					rotation = [
+						0
+						0
+						0
+						1
+					]
+					scale = [
+						1
+						1
+						1
+					]
+				}
+			}
+			#49753fff-34ea-4aff-8bcf-5116f1c1519a = {
+				data = {
+					geometry_name = "Sphere"
+					mesh_resource = "core/units/primitives/sphere"
+				}
+			}
+		}
+		prefab = "core/units/primitives/cube"
+	}
+	{
+		_guid = "98059b31-a775-4252-aad5-039eb94a95b6"
+		_type = "unit"
+		children = [
+		]
+		editor = {
+			name = "cube"
+		}
+		modified_components = {
+			#23dbf108-db64-4ca2-9647-8c639ee039ad = {
+				data = {
+					position = [
+						-6
+						0
+						4.0000009500000004
+					]
+					rotation = [
+						0
+						0
+						0
+						1
+					]
+					scale = [
+						1
+						1
+						1
+					]
+				}
+			}
+			#49753fff-34ea-4aff-8bcf-5116f1c1519a = {
+				data = {
+					geometry_name = "Cone"
+					mesh_resource = "core/units/primitives/cone"
+				}
+			}
+		}
+		prefab = "core/units/primitives/cube"
+	}
+	{
+		_guid = "a2624d40-1b86-4610-97fe-227b7d9406bc"
+		_type = "unit"
+		children = [
+		]
+		editor = {
+			name = "cube"
+		}
+		modified_components = {
+			#23dbf108-db64-4ca2-9647-8c639ee039ad = {
+				data = {
+					position = [
+						6
+						0
+						4.0000009500000004
+					]
+					rotation = [
+						0
+						0
+						0
+						1
+					]
+					scale = [
+						1
+						1
+						1
+					]
+				}
+			}
+			#49753fff-34ea-4aff-8bcf-5116f1c1519a = {
+				data = {
+					geometry_name = "Cone"
+					mesh_resource = "core/units/primitives/cone"
+				}
+			}
+		}
+		prefab = "core/units/primitives/cube"
+	}
+	{
+		_guid = "a6807034-7b1a-4e78-8fa3-17f2d321d81b"
+		_type = "unit"
+		children = [
+		]
+		editor = {
+			name = "cube"
+		}
+		modified_components = {
+			#23dbf108-db64-4ca2-9647-8c639ee039ad = {
+				data = {
+					position = [
+						12
+						0
+						4.0000009500000004
+					]
+					rotation = [
+						0
+						0
+						0
+						1
+					]
+					scale = [
+						1
+						1
+						1
+					]
+				}
+			}
+		}
+		prefab = "core/units/primitives/cube"
+	}
+	{
+		_guid = "ac8e73a9-27c8-4959-bb67-9230761b0ac3"
+		_type = "unit"
+		children = [
+		]
+		editor = {
+			name = "cube"
+		}
+		modified_components = {
+			#23dbf108-db64-4ca2-9647-8c639ee039ad = {
+				data = {
+					position = [
+						-12
+						0
+						4.0000009500000004
+					]
+					rotation = [
+						0
+						0
+						0
+						1
+					]
+					scale = [
+						1
+						1
+						1
+					]
+				}
+			}
+		}
+		prefab = "core/units/primitives/cube"
+	}
+	{
+		_guid = "d5cb74a8-d22b-4fe0-8636-dede7535b6be"
+		_type = "unit"
+		children = [
+		]
+		editor = {
+			name = "cube"
+		}
+		modified_components = {
+			#23dbf108-db64-4ca2-9647-8c639ee039ad = {
+				data = {
+					position = [
+						-2
+						0
+						4.0000009500000004
+					]
+					rotation = [
+						0
+						0
+						0
+						1
+					]
+					scale = [
+						1
+						1
+						1
+					]
+				}
+			}
+			#49753fff-34ea-4aff-8bcf-5116f1c1519a = {
+				data = {
+					geometry_name = "Sphere"
+					mesh_resource = "core/units/primitives/sphere"
+				}
+			}
+		}
+		prefab = "core/units/primitives/cube"
+	}
+	{
+		_guid = "e38cf11d-8652-4b96-ab5a-840123d794b9"
+		_type = "unit"
+		children = [
+		]
+		editor = {
+			name = "cube"
+		}
+		modified_components = {
+			#23dbf108-db64-4ca2-9647-8c639ee039ad = {
+				data = {
+					position = [
+						0
+						2
+						4.0000009500000004
+					]
+					rotation = [
+						0
+						0
+						0
+						1
+					]
+					scale = [
+						1
+						1
+						1
+					]
+				}
+			}
+			#49753fff-34ea-4aff-8bcf-5116f1c1519a = {
+				data = {
+					geometry_name = "Sphere"
+					mesh_resource = "core/units/primitives/sphere"
+				}
+			}
+		}
+		prefab = "core/units/primitives/cube"
+	}
+	{
+		_guid = "fa6ce8aa-28fa-44ba-8e0e-051f78f79374"
+		_type = "unit"
+		children = [
+		]
+		editor = {
+			name = "cube"
+		}
+		modified_components = {
+			#23dbf108-db64-4ca2-9647-8c639ee039ad = {
+				data = {
+					position = [
+						0
+						-12
+						4.0000009500000004
+					]
+					rotation = [
+						0
+						0
+						0
+						1
+					]
+					scale = [
+						1
+						1
+						1
+					]
+				}
+			}
+		}
+		prefab = "core/units/primitives/cube"
+	}
+]
