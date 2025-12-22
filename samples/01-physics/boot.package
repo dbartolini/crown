@@ -13,6 +13,7 @@ unit = [
 ]
 level = [
 	"levels/mover"
+	"stencil"
 ]
 font = [
 	"core/game/hud/debug"

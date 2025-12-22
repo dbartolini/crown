@@ -35,7 +35,7 @@ Game = Game or {
 }
 
 GameBase.game = Game
-GameBase.game_level = "levels/mover"
+GameBase.game_level = "stencil"
 GameBase.show_help = true
 GameBase.show_build = true
 
