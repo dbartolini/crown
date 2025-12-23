@@ -18,8 +18,8 @@ bgfx_shaders = {
 			uniform vec4 u_shadow_maps_texel_sizes;
 		#	define sun_sm_texel_size u_shadow_maps_texel_sizes.xy
 		#	define local_lights_sm_texel_size u_shadow_maps_texel_sizes.zw
-			SAMPLER2DSHADOW(u_cascaded_shadow_map, 10);
-			SAMPLER2DSHADOW(u_local_lights_shadow_map, 11);
+			SAMPLER2D(u_cascaded_shadow_map, 10);
+			SAMPLER2D(u_local_lights_shadow_map, 11);
 			uniform vec4 u_local_lights_params;
 		#	define local_lights_distance_culling u_local_lights_params.x
 		#	define local_lights_distance_culling_fade u_local_lights_params.y

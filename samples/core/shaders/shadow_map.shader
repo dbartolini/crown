@@ -15,18 +15,20 @@ bgfx_shaders = {
 		includes = [ "common" ]
 
 		code = """
-			#define Sampler sampler2DShadow
 			#define map_offt atlas_offset.xy
 			#define map_size atlas_offset.z
 
-			float hard_shadow(Sampler _sampler, vec4 shadow_coord, float bias, vec3 atlas_offset)
+			float hard_shadow(sampler2D _sampler, vec4 shadow_coord, float bias, vec3 atlas_offset)
 			{
-				vec3 tex_coord = shadow_coord.xyz/shadow_coord.w;
+				vec2 tex_coord = shadow_coord.xy/shadow_coord.w;
+				float receiver = (shadow_coord.z - bias)/shadow_coord.w;
+				float occluder = texture2D(_sampler, tex_coord.xy * map_size + map_offt).r;
 
-				return shadow2D(_sampler, vec3(tex_coord.xy * map_size + map_offt, tex_coord.z - bias));
+				float visibility = step(receiver, occluder);
+				return visibility;
 			}
 
-			float PCF(Sampler _sampler, vec4 shadow_coord, float bias, vec2 texel_size, vec3 atlas_offset)
+			float PCF(sampler2D _sampler, vec4 shadow_coord, float bias, vec2 texel_size, vec3 atlas_offset)
 			{
 				vec2 tex_coord = shadow_coord.xy/shadow_coord.w;
 				tex_coord = tex_coord * atlas_offset.z + atlas_offset.xy;
