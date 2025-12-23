@@ -214,38 +214,50 @@ void Pipeline::create(u16 width, u16 height, const RenderSettings &render_settin
 	// Create cascaded shadow map resources.
 	if (bgfx::isValid(_sun_shadow_map_texture))
 		bgfx::destroy(_sun_shadow_map_texture);
-	_sun_shadow_map_texture = bgfx::createTexture2D(_render_settings.sun_shadow_map_size.x
-		, _render_settings.sun_shadow_map_size.y
-		, false
-		, 1
-		, bgfx::TextureFormat::D32F
-		, BGFX_TEXTURE_RT | BGFX_SAMPLER_COMPARE_LEQUAL
-		);
 	const bgfx::TextureHandle fbtextures[] =
 	{
-		_sun_shadow_map_texture
+		bgfx::createTexture2D(_render_settings.sun_shadow_map_size.x
+			, _render_settings.sun_shadow_map_size.y
+			, false
+			, 1
+			, bgfx::TextureFormat::RGBA8
+			, BGFX_TEXTURE_RT
+			),
+		bgfx::createTexture2D(_render_settings.sun_shadow_map_size.x
+			, _render_settings.sun_shadow_map_size.y
+			, false
+			, 1
+			, bgfx::TextureFormat::D24
+			, BGFX_TEXTURE_RT
+			)
 	};
 	if (bgfx::isValid(_sun_shadow_map_frame_buffer))
 		bgfx::destroy(_sun_shadow_map_frame_buffer);
-	_sun_shadow_map_frame_buffer = bgfx::createFrameBuffer(countof(fbtextures), fbtextures);
+	_sun_shadow_map_frame_buffer = bgfx::createFrameBuffer(countof(fbtextures), fbtextures, true);
+	_sun_shadow_map_texture = fbtextures[0];
 
 	// Create local-lights shadow map resources.
-	if (bgfx::isValid(_local_lights_shadow_map_texture))
-		bgfx::destroy(_local_lights_shadow_map_texture);
-	_local_lights_shadow_map_texture = bgfx::createTexture2D(_render_settings.local_lights_shadow_map_size.x
-		, _render_settings.local_lights_shadow_map_size.y
-		, false
-		, 1
-		, bgfx::TextureFormat::D24S8
-		, BGFX_TEXTURE_RT | BGFX_SAMPLER_COMPARE_LEQUAL
-		);
 	const bgfx::TextureHandle llfbtextures[] =
 	{
-		_local_lights_shadow_map_texture
+		bgfx::createTexture2D(_render_settings.local_lights_shadow_map_size.x
+			, _render_settings.local_lights_shadow_map_size.y
+			, false
+			, 1
+			, bgfx::TextureFormat::RGBA8
+			, BGFX_TEXTURE_RT
+			),
+		bgfx::createTexture2D(_render_settings.local_lights_shadow_map_size.x
+			, _render_settings.local_lights_shadow_map_size.y
+			, false
+			, 1
+			, bgfx::TextureFormat::D24S8
+			, BGFX_TEXTURE_RT
+			)
 	};
 	if (bgfx::isValid(_local_lights_shadow_map_frame_buffer))
 		bgfx::destroy(_local_lights_shadow_map_frame_buffer);
-	_local_lights_shadow_map_frame_buffer = bgfx::createFrameBuffer(countof(llfbtextures), llfbtextures);
+	_local_lights_shadow_map_frame_buffer = bgfx::createFrameBuffer(countof(llfbtextures), llfbtextures, true);
+	_local_lights_shadow_map_texture = llfbtextures[0];
 
 	// FIXME: this is a pretty dumb allocation scheme but it's fine for now.
 	_local_lights_tile_size = best_square_size(_render_settings.local_lights_shadow_map_size.x
@@ -556,7 +568,7 @@ void Pipeline::render(u16 width, u16 height, const Matrix4x4 &view, const Matrix
 				, 0.0f
 				, caps->homogeneousDepth
 				);
-			bgfx::setViewClear(id, BGFX_CLEAR_DEPTH | BGFX_CLEAR_STENCIL, 0, 1.0f, 0);
+			bgfx::setViewClear(id, BGFX_CLEAR_COLOR | BGFX_CLEAR_DEPTH | BGFX_CLEAR_STENCIL, 0, 1.0f, 0);
 			bgfx::setViewFrameBuffer(id, _local_lights_shadow_map_frame_buffer);
 			bgfx::setViewRect(id, 0, 0, (u16)_render_settings.local_lights_shadow_map_size.x, (u16)_render_settings.local_lights_shadow_map_size.y);
 			bgfx::setViewTransform(id, to_float_ptr(MATRIX4X4_IDENTITY), to_float_ptr(screen_proj));

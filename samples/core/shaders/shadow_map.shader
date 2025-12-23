@@ -3,8 +3,8 @@ include = [ "core/shaders/common.shader" ]
 render_states = {
 	shadow = {
 		states = {
-			rgb_write_enable = false
-			alpha_write_enable = false
+			rgb_write_enable = true
+			alpha_write_enable = true
 			depth_write_enable = true
 		}
 	}
@@ -22,7 +22,7 @@ bgfx_shaders = {
 			{
 				vec2 tex_coord = shadow_coord.xy/shadow_coord.w;
 				float receiver = (shadow_coord.z - bias)/shadow_coord.w;
-				float occluder = texture2D(_sampler, tex_coord.xy * map_size + map_offt).r;
+				float occluder = unpackRgbaToFloat(texture2D(_sampler, tex_coord.xy * map_size + map_offt));
 
 				float visibility = step(receiver, occluder);
 				return visibility;
@@ -72,12 +72,15 @@ bgfx_shaders = {
 		includes = [ "common" ]
 
 		varying = """
+			vec4 v_position : TEXCOORD0 = vec4(0.0, 0.0, 0.0, 0.0);
+
 			vec3 a_position : POSITION;
 			vec4 a_indices  : BLENDINDICES;
 			vec4 a_weight   : BLENDWEIGHT;
 		"""
 
 		vs_input_output = """
+			$output v_position
 		#if defined(SKINNING)
 			$input a_position, a_indices, a_weight
 		#else
@@ -98,16 +101,19 @@ bgfx_shaders = {
 		#else
 				gl_Position = mul(mul(u_viewProj, u_model[0]), vec4(a_position, 1.0));
 		#endif
+				v_position = gl_Position;
 			}
 		"""
 
 		fs_input_output = """
+			$input v_position
 		"""
 
 		fs_code = """
 			void main()
 			{
-				gl_FragColor = vec4_splat(0.0);
+				float depth = v_position.z/v_position.w * 0.5 + 0.5;
+				gl_FragColor = packFloatToRgba(depth);
 			}
 		"""
 	}
