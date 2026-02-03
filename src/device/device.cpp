@@ -772,8 +772,13 @@ int Device::main_loop()
 	_bgfx_callback  = CE_NEW(_allocator, BgfxCallback)(default_allocator());
 
 	bgfx::Init init;
-	init.resolution.width  = _width;
-	init.resolution.height = _height;
+	if (_options._headless) {
+		init.resolution.width  = 0;
+		init.resolution.height = 0;
+	} else {
+		init.resolution.width  = _width;
+		init.resolution.height = _height;
+	}
 	init.resolution.reset  = _boot_config.vsync ? BGFX_RESET_VSYNC : BGFX_RESET_NONE;
 #if CROWN_PLATFORM_EMSCRIPTEN || CROWN_PLATFORM_LINUX
 	// Avoids gray text fringe on HTML5 and translucent window on OpenGL + Wayland.
@@ -1148,8 +1153,12 @@ void Device::refresh(const char *json)
 
 void Device::screenshot(const char *path)
 {
-	bgfx::requestScreenShot(BGFX_INVALID_HANDLE, path);
-	++device()->_needs_draw; // 1 frame for the request to be fulfilled.
+	if (_options._headless) {
+		// TODO
+	} else {
+		bgfx::requestScreenShot(BGFX_INVALID_HANDLE, path);
+		++device()->_needs_draw; // 1 frame for the request to be fulfilled.
+	}
 }
 
 Device *_device = NULL;

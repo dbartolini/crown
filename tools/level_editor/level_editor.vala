@@ -2521,7 +2521,8 @@ public class LevelEditorApplication : Gtk.Application
 			port_file,
 			"--wait-console",
 			"--pumped",
-			"--hidden"
+			"--hidden",
+			//"--headless",
 		};
 
 		try {
