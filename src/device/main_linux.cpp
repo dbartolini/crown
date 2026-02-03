@@ -1452,7 +1452,7 @@ struct LinuxDevice
 	{
 		int system_fd = -1;
 		const char *display = NULL;
-		bool disable_wayland = true;
+		bool disable_wayland = false;
 
 		if (system_fd < 0 && !disable_wayland
 			&& (display = getenv("WAYLAND_DISPLAY")) != NULL
