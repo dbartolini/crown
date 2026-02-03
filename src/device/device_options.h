@@ -34,6 +34,7 @@ struct DeviceOptions
 	bool _server;
 	bool _pumped;
 	bool _hidden;
+	bool _headless;
 	u32 _parent_window;
 	u16 _console_port;
 	u16 _window_x;

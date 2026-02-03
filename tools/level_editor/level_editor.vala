@@ -1632,7 +1632,8 @@ public class LevelEditorApplication : Gtk.Application
 			THUMBNAIL_TCP_PORT.to_string(),
 			"--wait-console",
 			"--pumped",
-			"--hidden"
+			"--hidden",
+			//"--headless",
 		};
 
 		try {
