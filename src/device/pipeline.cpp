@@ -8,7 +8,18 @@
 #include "device/pipeline.h"
 #include "world/shader_manager.h"
 #include "core/math/matrix4x4.inl"
+#include "device/log.h"
 #include <bx/math.h>
+#include <bgfx/platform.h>
+#include <inttypes.h>
+
+LOG_SYSTEM(PIPELINE, "pipeline")
+
+extern "C" {
+extern int create_socket(const char *path);
+extern int connect_socket(int sock, const char *path);
+extern void write_fd(int sock, int fd, void *data, size_t data_len);
+}
 
 namespace crown
 {
@@ -156,6 +167,7 @@ static void lookup_default_shaders(Pipeline &pl)
 
 Pipeline::Pipeline(ShaderManager &sm)
 	: _shader_manager(&sm)
+	, _export_backbuffer(false)
 	, _color_sdr(BGFX_INVALID_HANDLE)
 	, _depth_texture(BGFX_INVALID_HANDLE)
 	, _color_map(BGFX_INVALID_HANDLE)
@@ -192,9 +204,10 @@ Pipeline::Pipeline(ShaderManager &sm)
 	lookup_default_shaders(*this);
 }
 
-void Pipeline::create(u16 width, u16 height, const RenderSettings &render_settings)
+void Pipeline::create(u16 width, u16 height, const RenderSettings &render_settings, bool export_backbuffer)
 {
 	_render_settings = render_settings;
+	_export_backbuffer = export_backbuffer;
 
 	reset(width, height);
 
@@ -446,7 +459,7 @@ void Pipeline::reset(u16 width, u16 height)
 			, false
 			, 1
 			, bgfx::TextureFormat::RGBA8
-			, color_texture_flags
+			, color_texture_flags | (_export_backbuffer ? BGFX_TEXTURE_EXPORT : 0)
 			),
 		_depth_texture
 	};
@@ -514,6 +527,33 @@ void Pipeline::reset(u16 width, u16 height)
 				);
 		}
 	}
+}
+
+void Pipeline::export_backbuffer()
+{
+	const char *SERVER_FILE = "/tmp/test_server";
+	const char *CLIENT_FILE = "/tmp/test_client";
+
+	bgfx::ExternalTextureInfo info = {};
+	bgfx::exportTexture(info, bgfx::getTexture(_color_sdr));
+	int fd = (int)(intptr_t)info.handle;
+
+	logi(PIPELINE, "width    %u", info.width);
+	logi(PIPELINE, "height   %u", info.height);
+	logi(PIPELINE, "stride   %u", info.stride);
+	logi(PIPELINE, "offset   %u", info.offset);
+	logi(PIPELINE, "size     %u", info.size);
+	logi(PIPELINE, "fourcc   %.8x", info.fourcc);
+	logi(PIPELINE, "modifier %.16" PRIx64, info.modifier);
+	logi(PIPELINE, "fd       %d", fd);
+
+	if (fd <= 0)
+		return;
+
+	int sock = create_socket(SERVER_FILE);
+	while (connect_socket(sock, CLIENT_FILE) != 0)
+		;
+	write_fd(sock, fd, &info, sizeof(info));
 }
 
 void Pipeline::render(u16 width, u16 height, const Matrix4x4 &view, const Matrix4x4 &proj)

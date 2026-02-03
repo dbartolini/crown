@@ -49,6 +49,7 @@ static void help(const char *msg = NULL)
 		"  --pumped                        Do not advance the renderer unless explicitly requested via console.\n"
 		"  --hidden                        Make the main window initially invisible.\n"
 		"  --headless                      Start in headless mode.\n"
+		"  --export                        Enable backbuffer texture exporting.\n"
 		"  --window-rect <x y w h>         Sets the main window's position and size.\n"
 		"  --string-id <string>            Prints the 32- and 64-bits IDs of <string>.\n"
 		"  --run-unit-tests                Run unit tests and quit.\n"
@@ -79,6 +80,7 @@ DeviceOptions::DeviceOptions(Allocator &a, int argc, const char **argv)
 	, _pumped(false)
 	, _hidden(false)
 	, _headless(false)
+	, _export(false)
 	, _parent_window(0)
 	, _console_port(CROWN_DEFAULT_CONSOLE_PORT)
 	, _window_x(0)
@@ -164,6 +166,7 @@ int DeviceOptions::parse(bool *quit)
 	_pumped = cl.has_option("pumped");
 	_hidden = cl.has_option("hidden");
 	_headless = cl.has_option("headless");
+	_export = cl.has_option("export");
 
 	if (!_data_dir.empty()) {
 		if (!path::is_absolute(_data_dir.c_str())) {

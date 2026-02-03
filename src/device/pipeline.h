@@ -72,6 +72,7 @@ struct Pipeline
 {
 	ShaderManager *_shader_manager;
 	RenderSettings _render_settings;
+	bool _export_backbuffer;
 
 	// Main output color/depth handles.
 	bgfx::FrameBufferHandle _color_sdr;
@@ -151,13 +152,16 @@ struct Pipeline
 	Pipeline(ShaderManager &sm);
 
 	///
-	void create(u16 width, u16 height, const RenderSettings &render_settings);
+	void create(u16 width, u16 height, const RenderSettings &render_settings, bool export_backbuffer);
 
 	///
 	void destroy();
 
 	///
 	void reset(u16 width, u16 height);
+
+	///
+	void export_backbuffer();
 
 	///
 	void render(u16 width, u16 height, const Matrix4x4 &view, const Matrix4x4 &proj);

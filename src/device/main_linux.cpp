@@ -1432,7 +1432,7 @@ struct LinuxDevice
 	{
 		int init_ret = -1;
 		const char *display = NULL;
-		bool disable_wayland = true;
+		bool disable_wayland = false;
 
 		if (init_ret != 0 && !disable_wayland
 			&& (display = getenv("WAYLAND_DISPLAY")) != NULL

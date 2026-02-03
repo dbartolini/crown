@@ -104,6 +104,11 @@ namespace DeviceApi
 		return "{\"type\":\"refresh\",\"list\":[%s]}".printf(sb.str);
 	}
 
+	public string export_backbuffer()
+	{
+		return "{\"type\":\"export_backbuffer\"}";
+	}
+
 } /* namespace DeviceApi */
 
 namespace LevelEditorApi
