@@ -377,6 +377,13 @@ RenderSettings merged_render_settings(const Device *device)
 	return rs;
 }
 
+static void device_message_export_backbuffer(ConsoleServer &cs, u32 client_id, const char *json, void *user_data)
+{
+	CE_UNUSED_4(cs, client_id, json, user_data);
+
+	((Device *)user_data)->_pipeline->export_backbuffer();
+}
+
 Device::Device(const DeviceOptions &opts, ConsoleServer &cs)
 	: _allocator(default_allocator(), CROWN_MAX_SUBSYSTEMS_HEAP)
 	, _options(opts)
@@ -611,10 +618,11 @@ int Device::main_loop()
 	_console_server->register_command_name("game",    "Pause/resume the engine.", device_command_game, this);
 	_console_server->register_command_name("crash",   "Crash the engine.", device_command_crash, this);
 
-	_console_server->register_message_type("resize",  device_message_resize,  this);
-	_console_server->register_message_type("frame",   device_message_frame,   this);
-	_console_server->register_message_type("quit",    device_message_quit,    this);
-	_console_server->register_message_type("refresh", device_message_refresh, this);
+	_console_server->register_message_type("resize",            device_message_resize,            this);
+	_console_server->register_message_type("frame",             device_message_frame,             this);
+	_console_server->register_message_type("quit",              device_message_quit,              this);
+	_console_server->register_message_type("refresh",           device_message_refresh,           this);
+	_console_server->register_message_type("export_backbuffer", device_message_export_backbuffer, this);
 
 #if !CROWN_PLATFORM_EMSCRIPTEN
 	_console_server->listen(_options._console_port
@@ -868,7 +876,7 @@ int Device::main_loop()
 	_lua_environment->execute_string(_options._lua_string.c_str());
 
 	_pipeline = CE_NEW(_allocator, Pipeline)(*_shader_manager);
-	_pipeline->create(_width, _height, merged_render_settings(this));
+	_pipeline->create(_width, _height, merged_render_settings(this), _options._export);
 
 	stat_globals::init(_allocator
 		, *_resource_manager
@@ -1098,7 +1106,7 @@ void Device::refresh(const char *json)
 				if (_render_config_resource == old_resource) {
 					_render_config_resource = (RenderConfigResource *)new_resource;
 					_pipeline->destroy();
-					_pipeline->create(_width, _height, merged_render_settings(this));
+					_pipeline->create(_width, _height, merged_render_settings(this), _options._export);
 				}
 			} else if (resource_type == RESOURCE_TYPE_SPRITE) {
 				ListNode *cur;

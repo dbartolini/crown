@@ -48,6 +48,7 @@ struct DeviceOptions
 	bool _hidden;
 	bool _keep_above;
 	bool _headless;
+	bool _export;
 	u32 _parent_window;
 	u16 _console_port;
 	u16 _window_x;

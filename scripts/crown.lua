@@ -160,6 +160,7 @@ function crown_project(_name, _kind, _defines)
 			CROWN_DIR .. "src/**.cpp",
 			CROWN_DIR .. "3rdparty/lz4/lib/*.c",
 			CROWN_DIR .. "scripts/win32/app.rc",
+			CROWN_DIR .. "tools/core/socket.c",
 		}
 
 		configuration { "not vs*", "not mingw*" }

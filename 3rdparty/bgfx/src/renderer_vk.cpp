@@ -1228,7 +1228,7 @@ VK_IMPORT_DEVICE
 			if (_init.debug
 			||  _init.profile)
 			{
-				m_renderDocDll = loadRenderDoc();
+				m_renderDocDll = NULL; // loadRenderDoc();
 			}
 
 			setGraphicsDebuggerPresent(false

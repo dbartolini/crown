@@ -51,6 +51,7 @@ static void help(const char *msg = NULL)
 		"  --hidden                        Make the main window initially invisible.\n"
 		"  --keep-above                    Keep the main window above other windows.\n"
 		"  --headless                      Start in headless mode.\n"
+		"  --export                        Enable backbuffer texture exporting.\n"
 		"  --display-server <server>       Set the display server backend.\n"
 		"      wayland\n"
 		"      x11\n"
@@ -92,6 +93,7 @@ DeviceOptions::DeviceOptions(Allocator &a, int argc, const char **argv)
 	, _hidden(false)
 	, _keep_above(false)
 	, _headless(false)
+	, _export(false)
 	, _parent_window(0)
 	, _console_port(0)
 	, _window_x(0)
@@ -99,7 +101,7 @@ DeviceOptions::DeviceOptions(Allocator &a, int argc, const char **argv)
 	, _window_width(CROWN_DEFAULT_WINDOW_WIDTH)
 	, _window_height(CROWN_DEFAULT_WINDOW_HEIGHT)
 	, _renderer_type(RendererType::AUTO)
-	, _display_server(DisplayServer::X11)
+	, _display_server(DisplayServer::WAYLAND)
 {
 }
 
@@ -177,6 +179,7 @@ int DeviceOptions::parse(bool *quit)
 	_hidden = cl.has_option("hidden");
 	_keep_above = cl.has_option("keep-above");
 	_headless = cl.has_option("headless");
+	_export = cl.has_option("export");
 
 	if (cl.has_option("renderer")) {
 		const char *renderer = cl.get_parameter(0, "renderer");
