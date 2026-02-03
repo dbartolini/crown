@@ -388,6 +388,13 @@ namespace bgfx
 		return rci->getInternal(_handle);
 	}
 
+	void exportTexture(ExternalTextureInfo &_info, TextureHandle _handle)
+	{
+		//BGFX_CHECK_RENDER_THREAD();
+		RendererContextI* rci = s_ctx->m_renderCtx;
+		rci->exportTexture(_info, _handle);
+	}
+
 	void setGraphicsDebuggerPresent(bool _present)
 	{
 		BX_TRACE("Graphics debugger is %spresent.", _present ? "" : "not ");
@@ -1545,6 +1552,7 @@ namespace bgfx
 		CAPS_FLAGS(BGFX_CAPS_VERTEX_ATTRIB_UINT10),
 		CAPS_FLAGS(BGFX_CAPS_VERTEX_ID),
 		CAPS_FLAGS(BGFX_CAPS_VIEWPORT_LAYER_ARRAY),
+		CAPS_FLAGS(BGFX_CAPS_TEXTURE_EXPORT),
 #undef CAPS_FLAGS
 	};
 

@@ -1919,6 +1919,10 @@ namespace bgfx { namespace d3d11
 			return uintptr_t(m_textures[_handle.idx].m_ptr);
 		}
 
+		void exportTexture(ExternalTextureInfo& /*info*/, TextureHandle /*_handle*/) override
+		{
+		}
+
 		void destroyTexture(TextureHandle _handle) override
 		{
 			m_textures[_handle.idx].destroy();
