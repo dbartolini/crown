@@ -4541,7 +4541,7 @@ public static GLib.SubprocessFlags subprocess_flags()
 {
 	GLib.SubprocessFlags flags = SubprocessFlags.NONE;
 #if !CROWN_DEBUG
-	flags |= SubprocessFlags.STDOUT_SILENCE | SubprocessFlags.STDERR_SILENCE;
+	flags |= /*SubprocessFlags.STDOUT_SILENCE |*/ SubprocessFlags.STDERR_SILENCE;
 #endif
 	return flags;
 }

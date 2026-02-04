@@ -3,13 +3,20 @@
  * SPDX-License-Identifier: GPL-3.0-or-later
  */
 
-/*
-#if CROWN_PLATFORM_LINUX
-extern uint gdk_x11_window_get_xid(Gdk.Window window);
-#elif CROWN_PLATFORM_WINDOWS
-extern uint gdk_win32_window_get_handle(Gdk.Window window);
-#endif
-*/
+public struct ExternalTextureInfo
+{
+	uint16 width;
+	uint16 height;
+	uint32 stride;
+	uint32 offset;
+	uint32 size;
+	uint32 fourcc;
+	uint64 modifier;
+	void* handle;
+}
+
+extern int create_socket(string path);
+extern void read_fd(int sock, int *fd, void *data, size_t data_len);
 
 namespace Crown
 {
@@ -34,8 +41,10 @@ public class EditorView : Gtk.Box
 	public bool _mouse_middle;
 	public bool _mouse_right;
 
-	public uint _window_id;
-	public uint _last_window_id;
+	public Gdk.DmabufTextureBuilder _dmabuf_texture_builder;
+	public Gtk.Picture? _picture;
+	public Gtk.GraphicsOffload _graphics_offload;
+	public uint _update_picture_tick_id;
 
 	public Gee.HashMap<uint, bool> _keys;
 	public bool _input_enabled;
@@ -98,8 +107,10 @@ public class EditorView : Gtk.Box
 		_mouse_middle = false;
 		_mouse_right  = false;
 
-		_window_id = 0;
-		_last_window_id = 0;
+		_dmabuf_texture_builder = new Gdk.DmabufTextureBuilder();
+		_picture = new Gtk.Picture();
+		_picture.set_content_fit(Gtk.ContentFit.FILL);
+		_graphics_offload = new Gtk.GraphicsOffload(_picture);
 
 		_keys = new Gee.HashMap<uint, bool>();
 		_keys[Gdk.Key.w] = false;
@@ -149,23 +160,16 @@ public class EditorView : Gtk.Box
 		}
 
 		/*
-		this.realize.connect(on_event_box_realized);
-		this.set_visual(Gdk.Screen.get_default().get_system_visual());
-		this.events |= Gdk.EventMask.STRUCTURE_MASK; // map_event
-		this.map_event.connect(() => {
-				device_frame_delayed(16, _runtime);
-				return Gdk.EVENT_PROPAGATE;
-			});
-
 		Gtk.drag_dest_set(this, Gtk.DestDefaults.MOTION, dnd_targets, Gdk.DragAction.COPY);
 		this.drag_data_received.connect(on_drag_data_received);
 		this.drag_motion.connect(on_drag_motion);
 		this.drag_drop.connect(on_drag_drop);
 		this.drag_leave.connect(on_drag_leave);
 		*/
-		Gtk.Label placeholder = new Gtk.Label("EditorView");
-		placeholder.hexpand = true;
-		this.append(placeholder);
+
+		_graphics_offload.hexpand = true;
+		_graphics_offload.vexpand = true;
+		this.append(_graphics_offload);
 	}
 
 	/*
@@ -448,22 +452,15 @@ public class EditorView : Gtk.Box
 		_runtime.send_script(LevelEditorApi.key_up(key_to_string(Gdk.Key.Shift_L)));
 	}
 
-	/*
-	public void on_size_allocate(Gtk.Allocation ev)
+	public void on_realize()
 	{
-		int scale = this.get_scale_factor();
-
+#if 0
 		if (_allocation.x == ev.x
 			&& _allocation.y == ev.y
 			&& _allocation.width == ev.width
 			&& _allocation.height == ev.height
 			)
 			return;
-
-		if (_last_window_id != _window_id) {
-			_last_window_id = _window_id;
-			native_window_ready(_window_id, ev.width*scale, ev.height*scale);
-		}
 
 		_allocation = ev;
 		_runtime.send(DeviceApi.resize(_allocation.width*scale, _allocation.height*scale));
@@ -476,19 +473,45 @@ public class EditorView : Gtk.Box
 					return GLib.Source.REMOVE;
 				});
 		}
-	}
-
-	public void on_event_box_realized()
-	{
-		this.get_window().ensure_native();
-#if CROWN_PLATFORM_LINUX
-		this.get_display().sync();
-		_window_id = gdk_x11_window_get_xid(this.get_window());
-#elif CROWN_PLATFORM_WINDOWS
-		_window_id = gdk_win32_window_get_handle(this.get_window());
 #endif
 	}
-	*/
+
+	public void create()
+	{
+		try {
+			const string SOCKET_CLIENT = "/tmp/test_client";
+			ExternalTextureInfo eti = ExternalTextureInfo();
+			int fd = 0;
+
+			int sock = create_socket(SOCKET_CLIENT);
+			read_fd(sock, &fd, &eti, sizeof(ExternalTextureInfo));
+
+			logi("width     %d".printf(eti.width));
+			logi("height    %d".printf(eti.height));
+			logi("stride    %u".printf(eti.stride));
+			logi("offest    %u".printf(eti.offset));
+			logi("size      %u".printf(eti.size));
+			logi("fourcc    %.8x".printf(eti.fourcc));
+			logi("modifier  %.16llx".printf(eti.modifier));
+			logi("fd        %d".printf(fd));
+
+			_dmabuf_texture_builder.set_display (Gdk.Display.get_default());
+			_dmabuf_texture_builder.set_width   (eti.width);
+			_dmabuf_texture_builder.set_height  (eti.height);
+			_dmabuf_texture_builder.set_fourcc  (eti.fourcc);
+			_dmabuf_texture_builder.set_modifier(eti.modifier);
+			_dmabuf_texture_builder.set_n_planes(1);
+			_dmabuf_texture_builder.set_stride  (0, eti.stride);
+			_dmabuf_texture_builder.set_offset  (0, eti.offset);
+			_dmabuf_texture_builder.set_fd      (0, fd);
+
+			var tex = _dmabuf_texture_builder.build(null, null);
+			_picture.set_paintable(tex);
+			_update_picture_tick_id = add_tick_callback(on_update_picture);
+		} catch (Error e) {
+			loge("%s".printf(e.message));
+		}
+	}
 
 	public void on_enter(double x, double y)
 	{
@@ -498,6 +521,14 @@ public class EditorView : Gtk.Box
 	public bool on_tick(Gtk.Widget widget, Gdk.FrameClock frame_clock)
 	{
 		_runtime.send(DeviceApi.frame());
+		return GLib.Source.CONTINUE;
+	}
+
+	public bool on_update_picture()
+	{
+		var tex = _dmabuf_texture_builder.build(null, null);
+		if (tex != null)
+			_picture.set_paintable(tex);
 		return GLib.Source.CONTINUE;
 	}
 
