@@ -17,6 +17,7 @@ public class EditorViewport : Gtk.Box
 {
 	public const string EDITOR_DISCONNECTED = "editor-disconnected";
 	public const string EDITOR_OOPS = "editor-oops";
+	public const string EDITOR_VIEWPORT = "editor-viewport";
 
 	public const GLib.ActionEntry[] actions =
 	{
@@ -57,8 +58,7 @@ public class EditorViewport : Gtk.Box
 
 		_runtime = new RuntimeInstance(name);
 		_runtime.disconnected_unexpected.connect(on_editor_disconnected_unexpected);
-
-		_overlay = new Gtk.Overlay();
+		_runtime.connected.connect(on_editor_connected);
 
 		_stack = new Gtk.Stack();
 		_stack.halign = Gtk.Align.FILL;
@@ -72,6 +72,13 @@ public class EditorViewport : Gtk.Box
 		_action_group.add_action_entries(actions, this);
 		this.insert_action_group("viewport", _action_group);
 
+		_editor_view = new EditorView(_runtime, _input_enabled);
+		_editor_view.show.connect(() => { restart_runtime(); });
+		_overlay = new Gtk.Overlay();
+		_overlay.set_child(_editor_view);
+		_stack.add_named(_overlay, EDITOR_VIEWPORT);
+		_stack.set_visible_child_name(EDITOR_VIEWPORT);
+
 		this.focusable = true;
 		this.append(_stack);
 	}
@@ -81,11 +88,18 @@ public class EditorViewport : Gtk.Box
 		_stack.set_visible_child_name(EDITOR_OOPS);
 	}
 
+	public void on_editor_connected()
+	{
+		_runtime.send(DeviceApi.frame());
+		_runtime.send(DeviceApi.frame());
+		_runtime.send(DeviceApi.export_backbuffer());
+
+		_editor_view.create();
+		_stack.set_visible_child_name(EDITOR_VIEWPORT);
+	}
+
 	public async void start_runtime(uint window_xid, int width, int height)
 	{
-		if (window_xid == 0)
-			return;
-
 		// Spawn the level editor.
 		string args[] =
 		{
@@ -94,13 +108,14 @@ public class EditorViewport : Gtk.Box
 			_project.data_dir(),
 			"--boot-dir",
 			_boot_dir,
-			"--parent-window",
-			window_xid.to_string(),
 			"--console-port",
 			_console_port.to_string(),
 			"--wait-console",
 			_render_mode == ViewportRenderMode.PUMPED ? "--pumped" : "",
 			"--window-rect", "0", "0", width.to_string(), height.to_string(),
+			"--headless",
+			"--hidden",
+			"--export",
 		};
 
 		try {
@@ -130,25 +145,7 @@ public class EditorViewport : Gtk.Box
 	public async void restart_runtime()
 	{
 		yield stop_runtime();
-
-		if (_editor_view != null) {
-			_overlay.set_child(null);
-			_stack.remove(_overlay);
-			_editor_view = null;
-		}
-
-		_editor_view = new EditorView(_runtime, _input_enabled);
-		_editor_view.native_window_ready.connect(on_editor_view_realized);
-
-		_overlay.set_child(_editor_view);
-
-		_stack.add_child(_overlay);
-		_stack.set_visible_child(_overlay);
-	}
-
-	public async void on_editor_view_realized(uint window_id, int width, int height)
-	{
-		start_runtime.begin(window_id, width, height);
+		start_runtime.begin(1, 1280, 720);
 	}
 
 	public void frame()
