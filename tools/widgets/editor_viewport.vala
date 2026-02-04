@@ -21,6 +21,9 @@ public class EditorViewport : Gtk.Box
 {
 	public const string EDITOR_DISCONNECTED = "editor-disconnected";
 	public const string EDITOR_OOPS = "editor-oops";
+#if !CROWN_GTK3
+	public const string EDITOR_VIEWPORT = "editor-viewport";
+#endif
 
 	public const GLib.ActionEntry[] actions =
 	{
@@ -65,8 +68,12 @@ public class EditorViewport : Gtk.Box
 
 		_runtime = new RuntimeInstance(name, data_compiler);
 		_runtime.disconnected_unexpected.connect(on_editor_disconnected_unexpected);
+#if CROWN_GTK3
 
 		_overlay = new Gtk.Overlay();
+#else
+		_runtime.connected.connect(on_editor_connected);
+#endif
 
 		_stack = new Gtk.Stack();
 		_stack.halign = Gtk.Align.FILL;
@@ -84,6 +91,13 @@ public class EditorViewport : Gtk.Box
 		this.can_focus = true;
 		this.add(_stack);
 #else
+		_editor_view = new EditorView(_runtime, _input_enabled);
+		_editor_view.show.connect(() => { restart_runtime(); });
+		_overlay = new Gtk.Overlay();
+		_overlay.set_child(_editor_view);
+		_stack.add_named(_overlay, EDITOR_VIEWPORT);
+		_stack.set_visible_child_name(EDITOR_VIEWPORT);
+
 		this.focusable = true;
 		this.append(_stack);
 #endif
@@ -94,11 +108,25 @@ public class EditorViewport : Gtk.Box
 		_stack.set_visible_child_name(EDITOR_OOPS);
 	}
 
+#if !CROWN_GTK3
+	public void on_editor_connected()
+	{
+		_runtime.send(DeviceApi.frame());
+		_runtime.send(DeviceApi.frame());
+		_runtime.send(DeviceApi.export_backbuffer());
+
+		_editor_view.create();
+		_stack.set_visible_child_name(EDITOR_VIEWPORT);
+	}
+
+#endif
 	public async void start_runtime(uint window_xid, int width, int height)
 	{
+#if CROWN_GTK3
 		if (window_xid == 0)
 			return;
 
+#endif
 		// Spawn the level editor.
 		string port_file;
 		if (!create_port_file_path(out port_file))
@@ -116,13 +144,20 @@ public class EditorViewport : Gtk.Box
 			_project.data_dir(),
 			"--boot-dir",
 			_boot_dir,
+#if CROWN_GTK3
 			"--parent-window",
 			window_xid.to_string(),
+#endif
 			"--port-file",
 			port_file,
 			"--wait-console",
 			_render_mode == ViewportRenderMode.PUMPED ? "--pumped" : "",
 			"--window-rect", "0", "0", width.to_string(), height.to_string(),
+#if !CROWN_GTK3
+			"--headless",
+			"--hidden",
+			"--export",
+#endif
 		};
 
 		try {
@@ -164,13 +199,10 @@ public class EditorViewport : Gtk.Box
 	public async void restart_runtime()
 	{
 		yield stop_runtime();
+#if CROWN_GTK3
 
 		if (_editor_view != null) {
-#if CROWN_GTK3
 			_overlay.remove(_editor_view);
-#else
-			_overlay.set_child(null);
-#endif
 			_stack.remove(_overlay);
 			_editor_view = null;
 		}
@@ -178,22 +210,19 @@ public class EditorViewport : Gtk.Box
 		_editor_view = new EditorView(_runtime, _input_enabled);
 		_editor_view.native_window_ready.connect(on_editor_view_realized);
 
-#if CROWN_GTK3
 		_overlay.add(_editor_view);
 		_overlay.show_all();
 
 		_stack.add(_overlay);
-#else
-		_overlay.set_child(_editor_view);
-
-		_stack.add_child(_overlay);
-#endif
 		_stack.set_visible_child(_overlay);
 	}
 
 	public async void on_editor_view_realized(uint window_id, int width, int height)
 	{
 		start_runtime.begin(window_id, width, height);
+#else
+		start_runtime.begin(1, 1280, 720);
+#endif
 	}
 
 	public void frame()

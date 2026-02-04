@@ -9,6 +9,23 @@ extern uint gdk_x11_window_get_xid(Gdk.Window window);
 extern uint gdk_win32_window_get_handle(Gdk.Window window);
 #endif
 
+#if !CROWN_GTK3
+public struct ExternalTextureInfo
+{
+	uint16 width;
+	uint16 height;
+	uint32 stride;
+	uint32 offset;
+	uint32 size;
+	uint32 fourcc;
+	uint64 modifier;
+	void* handle;
+}
+
+extern int create_socket(string path);
+extern void read_fd(int sock, int *fd, void *data, size_t data_len);
+#endif
+
 namespace Crown
 {
 #if CROWN_GTK3
@@ -37,8 +54,15 @@ public class EditorView : Gtk.Box
 	public double _flythrough_mouse_x;
 	public double _flythrough_mouse_y;
 
+#if CROWN_GTK3
 	public uint _window_id;
 	public uint _last_window_id;
+#else
+	public Gdk.DmabufTextureBuilder _dmabuf_texture_builder;
+	public Gtk.Picture? _picture;
+	public Gtk.GraphicsOffload _graphics_offload;
+	public uint _update_picture_tick_id;
+#endif
 
 	public GLib.HashTable<uint, bool> _keys;
 	public bool _input_enabled;
@@ -115,8 +139,15 @@ public class EditorView : Gtk.Box
 		_flythrough_mouse_x = 0.0;
 		_flythrough_mouse_y = 0.0;
 
+#if CROWN_GTK3
 		_window_id = 0;
 		_last_window_id = 0;
+#else
+		_dmabuf_texture_builder = new Gdk.DmabufTextureBuilder();
+		_picture = new Gtk.Picture();
+		_picture.set_content_fit(Gtk.ContentFit.FILL);
+		_graphics_offload = new Gtk.GraphicsOffload(_picture);
+#endif
 
 		_keys = new GLib.HashTable<uint, bool>(GLib.direct_hash, GLib.direct_equal);
 		_keys[Gdk.Key.w] = false;
@@ -190,6 +221,7 @@ public class EditorView : Gtk.Box
 			_controller_motion = new Gtk.EventControllerMotion();
 			_controller_scroll = new Gtk.EventControllerScroll(Gtk.EventControllerScrollFlags.BOTH_AXES);
 			this.add_controller(_controller_key);
+			_gesture_click = gesture_click;
 			this.add_controller(_gesture_click);
 			this.add_controller(_controller_motion);
 			this.add_controller(_controller_scroll);
@@ -197,7 +229,9 @@ public class EditorView : Gtk.Box
 #endif /* if CROWN_GTK3 */
 			gesture_click.pressed.connect(on_button_pressed);
 			gesture_click.released.connect(on_button_released);
+#if CROWN_GTK3
 			_gesture_click = gesture_click;
+#endif
 			_controller_key.key_pressed.connect(on_key_pressed);
 			_controller_key.key_released.connect(on_key_released);
 			_gesture_click.set_button(0);
@@ -232,9 +266,9 @@ public class EditorView : Gtk.Box
 		_drop_target.drop.connect(on_drag_drop);
 		_drop_target.leave.connect(on_drag_leave);
 		this.add_controller(_drop_target);
-		Gtk.Label placeholder = new Gtk.Label("EditorView");
-		placeholder.hexpand = true;
-		this.append(placeholder);
+		_graphics_offload.hexpand = true;
+		_graphics_offload.vexpand = true;
+		this.append(_graphics_offload);
 #endif /* if CROWN_GTK3 */
 	}
 
@@ -842,7 +876,11 @@ public class EditorView : Gtk.Box
 
 #if CROWN_GTK3
 	public void on_event_box_realized()
+#else
+	public void create()
+#endif
 	{
+#if CROWN_GTK3
 		this.get_window().ensure_native();
 #if CROWN_PLATFORM_LINUX
 		this.get_display().sync();
@@ -850,8 +888,42 @@ public class EditorView : Gtk.Box
 #elif CROWN_PLATFORM_WINDOWS
 		_window_id = gdk_win32_window_get_handle(this.get_window());
 #endif
-	}
+#else
+		try {
+			const string SOCKET_CLIENT = "/tmp/test_client";
+			ExternalTextureInfo eti = ExternalTextureInfo();
+			int fd = 0;
+
+			int sock = create_socket(SOCKET_CLIENT);
+			read_fd(sock, &fd, &eti, sizeof(ExternalTextureInfo));
+
+			logi("width     %d".printf(eti.width));
+			logi("height    %d".printf(eti.height));
+			logi("stride    %u".printf(eti.stride));
+			logi("offest    %u".printf(eti.offset));
+			logi("size      %u".printf(eti.size));
+			logi("fourcc    %.8x".printf(eti.fourcc));
+			logi("modifier  %.16llx".printf(eti.modifier));
+			logi("fd        %d".printf(fd));
+
+			_dmabuf_texture_builder.set_display (Gdk.Display.get_default());
+			_dmabuf_texture_builder.set_width   (eti.width);
+			_dmabuf_texture_builder.set_height  (eti.height);
+			_dmabuf_texture_builder.set_fourcc  (eti.fourcc);
+			_dmabuf_texture_builder.set_modifier(eti.modifier);
+			_dmabuf_texture_builder.set_n_planes(1);
+			_dmabuf_texture_builder.set_stride  (0, eti.stride);
+			_dmabuf_texture_builder.set_offset  (0, eti.offset);
+			_dmabuf_texture_builder.set_fd      (0, fd);
+
+			var tex = _dmabuf_texture_builder.build(null, null);
+			_picture.set_paintable(tex);
+			_update_picture_tick_id = add_tick_callback(on_update_picture);
+		} catch (Error e) {
+			loge("%s".printf(e.message));
+		}
 #endif
+	}
 
 	public void on_enter(double x, double y)
 	{
@@ -874,6 +946,16 @@ public class EditorView : Gtk.Box
 		return GLib.Source.CONTINUE;
 	}
 
+#if !CROWN_GTK3
+	public bool on_update_picture()
+	{
+		var tex = _dmabuf_texture_builder.build(null, null);
+		if (tex != null)
+			_picture.set_paintable(tex);
+		return GLib.Source.CONTINUE;
+	}
+
+#endif
 	public bool on_enable_accels()
 	{
 		((LevelEditorApplication)GLib.Application.get_default()).set_conflicting_accels(true);
