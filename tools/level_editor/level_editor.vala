@@ -4631,7 +4631,7 @@ public static int main(string[] args)
 				if (field.key == "MESSAGE") {
 					switch (log_level) {
 					case LEVEL_DEBUG:
-#if CROWN_DEBUG
+#if CROWN_DEBUG && CROWN_GTK3
 						logi((string)field.value);
 #endif
 						break;
