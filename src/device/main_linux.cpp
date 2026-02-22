@@ -498,6 +498,7 @@ static bool push_event(const OsEvent &ev);
 	DL_IMPORT_FUNC(XNextEvent,                 int,         (::Display *, XEvent *));                                                                                                                         \
 	DL_IMPORT_FUNC(XOpenDisplay,               ::Display *, (_Xconst char *));                                                                                                                                \
 	DL_IMPORT_FUNC(XOpenIM,                    XIM,         (::Display *, struct _XrmHashBucketRec *, char *, char *));                                                                                       \
+	DL_IMPORT_FUNC(XQueryExtension,            Bool,        (::Display *, char *, int *, int *, int *));                                                                                                      \
 	DL_IMPORT_FUNC(XRefreshKeyboardMapping,    int,         (XMappingEvent *));                                                                                                                               \
 	DL_IMPORT_FUNC(XResizeWindow,              int,         (::Display *, ::Window, unsigned int, unsigned int));                                                                                             \
 	DL_IMPORT_FUNC(XSendEvent,                 Status,      (::Display *, ::Window, Bool, long, XEvent *));                                                                                                   \
@@ -1102,6 +1103,7 @@ struct SystemX11 : public System
 	s16 mouse_last_x;
 	s16 mouse_last_y;
 	CursorMode::Enum cursor_mode;
+	bool xwayland;
 	DeviceEventQueue &queue;
 
 	explicit SystemX11(DeviceEventQueue &event_queue)
@@ -1121,6 +1123,7 @@ struct SystemX11 : public System
 		, mouse_last_x(INT16_MAX)
 		, mouse_last_y(INT16_MAX)
 		, cursor_mode(CursorMode::NORMAL)
+		, xwayland(false)
 		, queue(event_queue)
 	{
 	}
@@ -1157,6 +1160,9 @@ struct SystemX11 : public System
 		display = XOpenDisplay(NULL);
 		CE_ASSERT(display != NULL, "XOpenDisplay: error");
 		display_fd = ConnectionNumber(display);
+
+		int dummy_ret;
+		xwayland = XQueryExtension(display, "XWAYLAND", &dummy_ret, &dummy_ret, &dummy_ret);
 
 		root_window = RootWindow(display, DefaultScreen(display));
 
@@ -1660,20 +1666,27 @@ struct WindowX11 : public Window
 		XDefineCursor(_x11->display, _x11->window, _x11->cursors[cursor]);
 	}
 
-	void set_cursor_mode(CursorMode::Enum mode) override
+	bool set_cursor_mode(CursorMode::Enum mode) override
 	{
 		if (mode == _x11->cursor_mode)
-			return;
-
-		_x11->cursor_mode = mode;
+			return true;
 
 		if (mode == CursorMode::DISABLED) {
 			XWindowAttributes window_attribs;
 			XGetWindowAttributes(_x11->display, _x11->window, &window_attribs);
-			unsigned width = window_attribs.width;
-			unsigned height = window_attribs.height;
-			_x11->mouse_last_x = width/2;
-			_x11->mouse_last_y = height/2;
+
+			bool cursor_inside_window = true
+				&& _x11->mouse_last_x >= window_attribs.x
+				&& _x11->mouse_last_x <= window_attribs.width
+				&& _x11->mouse_last_y >= window_attribs.y
+				&& _x11->mouse_last_y <= window_attribs.height
+				;
+
+			if (_x11->xwayland && !cursor_inside_window)
+				return false;
+
+			_x11->mouse_last_x = window_attribs.width/2;
+			_x11->mouse_last_y = window_attribs.height/2;
 
 			XWarpPointer(_x11->display
 				, None
@@ -1682,8 +1695,8 @@ struct WindowX11 : public Window
 				, 0
 				, 0
 				, 0
-				, width/2
-				, height/2
+				, _x11->mouse_last_x
+				, _x11->mouse_last_y
 				);
 			XGrabPointer(_x11->display
 				, _x11->window
@@ -1700,6 +1713,9 @@ struct WindowX11 : public Window
 			XUngrabPointer(_x11->display, CurrentTime);
 			XFlush(_x11->display);
 		}
+
+		_x11->cursor_mode = mode;
+		return true;
 	}
 
 	void *native_handle() override
@@ -1794,19 +1810,19 @@ struct WindowWayland : public Window
 	{
 	}
 
-	void set_cursor_mode(CursorMode::Enum mode) override
+	bool set_cursor_mode(CursorMode::Enum mode) override
 	{
 		if (mode == _wl->cursor_mode)
-			return;
+			return true;
 
 		_wl->cursor_mode = mode;
 
 		if (mode == CursorMode::DISABLED) {
 			if (!_wl->relative_pointer_manager)
-				return;
+				return false;
 
 			if (!_wl->pointer_constraints)
-				return;
+				return false;
 
 			_wl->relative_pointer = zwp_relative_pointer_manager_v1_get_relative_pointer(_wl->relative_pointer_manager, _wl->pointer);
 			zwp_relative_pointer_v1_add_listener(_wl->relative_pointer, &relative_pointer_listener, _wl);
@@ -1828,6 +1844,8 @@ struct WindowWayland : public Window
 			zwp_locked_pointer_v1_destroy(_wl->locked_pointer);
 			_wl->locked_pointer = NULL;
 		}
+
+		return true;
 	}
 
 	void *native_handle() override
