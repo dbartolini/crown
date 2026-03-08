@@ -2935,7 +2935,7 @@ public class LevelEditorApplication : Gtk.Application
 	public void compile_and_reveal_resource(string type, string dir_name, string res_name)
 	{
 		string full_path = dir_name != "" ? dir_name + "/" + res_name : res_name;
-		
+
 		string cap_type = type;
 		string cap_dir = dir_name;
 		string cap_path = full_path;
@@ -2957,7 +2957,7 @@ public class LevelEditorApplication : Gtk.Application
 	}
 
 	public void on_create_resource(GLib.Variant? param, string type, int num_params)
-	{	
+	{
 		string dir_name = (string)param.get_child_value(0);
 		string res_name = (string)param.get_child_value(1);
 
@@ -2980,7 +2980,7 @@ public class LevelEditorApplication : Gtk.Application
 							string parent = ResourceId.parent_folder(full_path);
 
 							_project_browser.reveal("<folder>", parent != "" ? parent : "");
-							
+
 							_project_browser._folder_view.select_resource("<folder>", full_path);
 							return GLib.Source.REMOVE;
 						});
