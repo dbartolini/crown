@@ -35,6 +35,10 @@ project "crown-editor"
 
 	configuration {}
 
+	flags {
+		"FatalWarnings"
+	}
+
 	defines {
 		"CROWN_GTK3"
 	}

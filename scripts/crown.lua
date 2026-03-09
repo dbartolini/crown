@@ -8,6 +8,10 @@ function crown_project(_name, _kind, _defines)
 	project ("crown" .. _name)
 		kind (_kind)
 
+		flags {
+			"FatalWarnings"
+		}
+
 		includedirs {
 			CROWN_DIR .. "src",
 			CROWN_DIR .. "3rdparty/bgfx/include",
