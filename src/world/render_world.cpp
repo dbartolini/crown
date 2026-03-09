@@ -624,6 +624,7 @@ FogId RenderWorld::fog_create(UnitId unit, const FogDesc &desc)
 void RenderWorld::fog_destroy(FogId fog)
 {
 	CE_ASSERT(fog.i == _fog.i, "Instance not found");
+	CE_UNUSED(fog);
 	_fog_desc = {};
 	_fog = { UINT32_MAX };
 	_fog_unit = UNIT_INVALID;
@@ -640,36 +641,42 @@ FogId RenderWorld::fog_instance(UnitId unit)
 void RenderWorld::fog_set_color(FogId fog, Vector3 color)
 {
 	CE_ASSERT(fog.i == _fog.i, "Instance not found");
+	CE_UNUSED(fog);
 	_fog_desc.color = color;
 }
 
 void RenderWorld::fog_set_density(FogId fog, float density)
 {
 	CE_ASSERT(fog.i == _fog.i, "Instance not found");
+	CE_UNUSED(fog);
 	_fog_desc.density = density;
 }
 
 void RenderWorld::fog_set_range_min(FogId fog, float range)
 {
 	CE_ASSERT(fog.i == _fog.i, "Instance not found");
+	CE_UNUSED(fog);
 	_fog_desc.range_min = range;
 }
 
 void RenderWorld::fog_set_range_max(FogId fog, float range)
 {
 	CE_ASSERT(fog.i == _fog.i, "Instance not found");
+	CE_UNUSED(fog);
 	_fog_desc.range_max = range;
 }
 
 void RenderWorld::fog_set_sun_blend(FogId fog, float sun_blend)
 {
 	CE_ASSERT(fog.i == _fog.i, "Instance not found");
+	CE_UNUSED(fog);
 	_fog_desc.sun_blend = sun_blend;
 }
 
 void RenderWorld::fog_set_enabled(FogId fog, bool enable)
 {
 	CE_ASSERT(fog.i == _fog.i, "Instance not found");
+	CE_UNUSED(fog);
 	_fog_desc.enabled = (f32)enable;
 }
 
@@ -1005,10 +1012,10 @@ void RenderWorld::render(const Matrix4x4 &view, const Matrix4x4 &proj, const Mat
 	frustum::from_matrix(view_frustum, view * proj, caps->homogeneousDepth, bx::Handedness::Right);
 	culling_set::cull_spheres(_cullable_objects, view_frustum, 0, array::size(_cullable_objects.id));
 	u32 visible_meshes = culling_set::remove_culled(_cullable_objects);
-	RECORD_FLOAT("world.visible_meshes", visible_meshes);
+	RECORD_FLOAT("world.visible_meshes", (f32)visible_meshes);
 	culling_set::cull_spheres(_cullable_sprites, view_frustum, 0, array::size(_cullable_sprites.id));
 	u32 visible_sprites = culling_set::remove_culled(_cullable_sprites);
-	RECORD_FLOAT("world.visible_sprites", visible_sprites);
+	RECORD_FLOAT("world.visible_sprites", (f32)visible_sprites);
 
 	const f32 sy = caps->originBottomLeft ? 0.5f : -0.5f;
 	const f32 sz = caps->homogeneousDepth ? 0.5f :  1.0f;
@@ -1149,7 +1156,12 @@ void RenderWorld::render(const Matrix4x4 &view, const Matrix4x4 &proj, const Mat
 #endif
 				lid.shader[L].map_size = 0.5f;
 
-				bgfx::setViewRect(View::CASCADE_0 + i, rects[i].x, rects[i].y, rects[i].z, rects[i].w);
+				bgfx::setViewRect(View::CASCADE_0 + i
+					, (u16)rects[i].x
+					, (u16)rects[i].y
+					, (u16)rects[i].z
+					, (u16)rects[i].w
+					);
 				bgfx::setViewFrameBuffer(View::CASCADE_0 + i, _pipeline->_sun_shadow_map_frame_buffer);
 				bgfx::setViewTransform(View::CASCADE_0 + i, to_float_ptr(light_view), to_float_ptr(light_proj));
 
@@ -1233,7 +1245,12 @@ void RenderWorld::render(const Matrix4x4 &view, const Matrix4x4 &proj, const Mat
 					shader.map_size = rect.w / _pipeline->_render_settings.local_lights_shadow_map_size.x;
 
 					bgfx::setViewFrameBuffer(sm_local_view_id, _pipeline->_local_lights_shadow_map_frame_buffer);
-					bgfx::setViewRect(sm_local_view_id, rect.x, rect.y, rect.z, rect.w);
+					bgfx::setViewRect(sm_local_view_id
+						, (u16)rect.x
+						, (u16)rect.y
+						, (u16)rect.z
+						, (u16)rect.w
+						);
 					bgfx::setViewTransform(sm_local_view_id, to_float_ptr(light_view), to_float_ptr(light_proj));
 					_mesh_manager.draw_shadow_casters(sm_local_view_id, *_scene_graph);
 					++sm_local_view_id;
@@ -1342,7 +1359,12 @@ void RenderWorld::render(const Matrix4x4 &view, const Matrix4x4 &proj, const Mat
 						shader.map_size = rect.w / _pipeline->_render_settings.local_lights_shadow_map_size.x;
 
 						bgfx::setViewFrameBuffer(sm_local_view_id, _pipeline->_local_lights_shadow_map_frame_buffer);
-						bgfx::setViewRect(sm_local_view_id, rect.x, rect.y, rect.z, rect.w);
+						bgfx::setViewRect(sm_local_view_id
+							, (u16)rect.x
+							, (u16)rect.y
+							, (u16)rect.z
+							, (u16)rect.w
+							);
 						bgfx::setViewTransform(sm_local_view_id, to_float_ptr(light_view), to_float_ptr(light_proj[strip]));
 						_mesh_manager.draw_shadow_casters(sm_local_view_id, *_scene_graph, stencil[strip]);
 						++sm_local_view_id;
@@ -1365,9 +1387,9 @@ void RenderWorld::render(const Matrix4x4 &view, const Matrix4x4 &proj, const Mat
 
 	// Send lights data to GPU.
 	Vector4 h;
-	h.x = array::size(lm._directional_lights);
-	h.y = array::size(lm._local_lights_omni);
-	h.z = array::size(lm._local_lights_spot);
+	h.x = (f32)array::size(lm._directional_lights);
+	h.y = (f32)array::size(lm._local_lights_omni);
+	h.z = (f32)array::size(lm._local_lights_spot);
 	h.w = 0.0f;
 	bgfx::setUniform(_pipeline->_lights_num, &h);
 	CE_ENSURE(array::size(lm._lights_data) <= MAX_NUM_LIGHTS);

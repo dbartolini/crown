@@ -21,8 +21,8 @@ namespace sjson
 {
 	static void default_error(const char *msg, void *user_data)
 	{
-		CE_UNUSED(user_data);
 		CE_FATAL("%s", msg);
+		CE_UNUSED_2(msg, user_data);
 	}
 
 	static thread_local SJsonError _error_function = default_error;

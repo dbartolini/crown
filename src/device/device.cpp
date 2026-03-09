@@ -210,7 +210,9 @@ struct BgfxAllocator : public bx::AllocatorI
 
 	virtual void *realloc(void *_ptr, size_t _size, size_t _align, const char * /*_file*/, u32 /*_line*/)
 	{
-		return _allocator.reallocate(_ptr, _size, _align);
+		CE_ASSERT(_size <= UINT32_MAX, "bgfx realloc size overflow: %zu", _size);
+		CE_ASSERT(_align <= UINT32_MAX, "bgfx realloc alignment overflow: %zu", _align);
+		return _allocator.reallocate(_ptr, (u32)_size, (u32)_align);
 	}
 };
 

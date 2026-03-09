@@ -46,16 +46,16 @@ namespace fbx
 
 			parent_bone_id = UINT16_MAX;
 		} else {
-			bone_tm.position.x = bone->local_transform.translation.x;
-			bone_tm.position.y = bone->local_transform.translation.y;
-			bone_tm.position.z = bone->local_transform.translation.z;
-			bone_tm.rotation.x = bone->local_transform.rotation.x;
-			bone_tm.rotation.y = bone->local_transform.rotation.y;
-			bone_tm.rotation.z = bone->local_transform.rotation.z;
-			bone_tm.rotation.w = bone->local_transform.rotation.w;
-			bone_tm.scale.x = bone->local_transform.scale.x;
-			bone_tm.scale.y = bone->local_transform.scale.y;
-			bone_tm.scale.z = bone->local_transform.scale.z;
+			bone_tm.position.x = (f32)bone->local_transform.translation.x;
+			bone_tm.position.y = (f32)bone->local_transform.translation.y;
+			bone_tm.position.z = (f32)bone->local_transform.translation.z;
+			bone_tm.rotation.x = (f32)bone->local_transform.rotation.x;
+			bone_tm.rotation.y = (f32)bone->local_transform.rotation.y;
+			bone_tm.rotation.z = (f32)bone->local_transform.rotation.z;
+			bone_tm.rotation.w = (f32)bone->local_transform.rotation.w;
+			bone_tm.scale.x = (f32)bone->local_transform.scale.x;
+			bone_tm.scale.y = (f32)bone->local_transform.scale.y;
+			bone_tm.scale.z = (f32)bone->local_transform.scale.z;
 
 			parent_bone_id = bone_id(fbx, bone->parent->name.data);
 		}
@@ -66,21 +66,21 @@ namespace fbx
 		ufbx_skin_cluster *cluster = find_cluster(fbx.scene, bone);
 		if (cluster != NULL) {
 			Matrix4x4 m;
-			m.x.x = cluster->geometry_to_bone.cols[0].x;
-			m.x.y = cluster->geometry_to_bone.cols[0].y;
-			m.x.z = cluster->geometry_to_bone.cols[0].z;
+			m.x.x = (f32)cluster->geometry_to_bone.cols[0].x;
+			m.x.y = (f32)cluster->geometry_to_bone.cols[0].y;
+			m.x.z = (f32)cluster->geometry_to_bone.cols[0].z;
 			m.x.w = 0.0f;
-			m.y.x = cluster->geometry_to_bone.cols[1].x;
-			m.y.y = cluster->geometry_to_bone.cols[1].y;
-			m.y.z = cluster->geometry_to_bone.cols[1].z;
+			m.y.x = (f32)cluster->geometry_to_bone.cols[1].x;
+			m.y.y = (f32)cluster->geometry_to_bone.cols[1].y;
+			m.y.z = (f32)cluster->geometry_to_bone.cols[1].z;
 			m.y.w = 0.0f;
-			m.z.x = cluster->geometry_to_bone.cols[2].x;
-			m.z.y = cluster->geometry_to_bone.cols[2].y;
-			m.z.z = cluster->geometry_to_bone.cols[2].z;
+			m.z.x = (f32)cluster->geometry_to_bone.cols[2].x;
+			m.z.y = (f32)cluster->geometry_to_bone.cols[2].y;
+			m.z.z = (f32)cluster->geometry_to_bone.cols[2].z;
 			m.z.w = 0.0f;
-			m.t.x = cluster->geometry_to_bone.cols[3].x;
-			m.t.y = cluster->geometry_to_bone.cols[3].y;
-			m.t.z = cluster->geometry_to_bone.cols[3].z;
+			m.t.x = (f32)cluster->geometry_to_bone.cols[3].x;
+			m.t.y = (f32)cluster->geometry_to_bone.cols[3].y;
+			m.t.z = (f32)cluster->geometry_to_bone.cols[3].z;
 			m.t.w = 1.0f;
 			array::push_back(as.binding_matrices, m);
 		} else {

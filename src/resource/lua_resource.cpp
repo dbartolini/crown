@@ -68,7 +68,7 @@ namespace lua_resource_internal
 					const char *param_end   = strchr(param_begin, *lua);
 					if (param_end != NULL) {
 						hash_set::insert(requirements
-							, StringView(param_begin, param_end - param_begin)
+							, StringView(param_begin, u32(param_end - param_begin))
 							);
 						lua = param_end + 1;
 					}

@@ -98,6 +98,10 @@ WAYLAND_IMPORT();
 #define wl_display_flush (*crown_wl_display_flush)
 
 #include "wayland/wayland-client-protocol.h"
+#if CROWN_COMPILER_GCC || CROWN_COMPILER_CLANG
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wattributes"
+#endif
 #include "wayland/wayland-client-protocol.c"
 #include "wayland/xdg-shell-client-protocol.h"
 #include "wayland/xdg-shell-client-protocol.c"
@@ -105,6 +109,9 @@ WAYLAND_IMPORT();
 #include "wayland/relative-pointer-unstable-v1-client-protocol.c"
 #include "wayland/pointer-constraints-unstable-v1-client-protocol.h"
 #include "wayland/pointer-constraints-unstable-v1-client-protocol.c"
+#if CROWN_COMPILER_GCC || CROWN_COMPILER_CLANG
+#pragma GCC diagnostic pop
+#endif
 
 #include <libdecor-0/libdecor.h>
 
@@ -700,7 +707,7 @@ struct SystemWayland : public System
 	CE_ENSURE(func_name != NULL);
 		WAYLAND_IMPORT();
 #undef DL_IMPORT_FUNC
-		for (int i = 0; i < countof(xdg_shell_types); ++i) {
+		for (u32 i = 0; i < countof(xdg_shell_types); ++i) {
 			if (xdg_shell_types[i] == (void *)1)
 				xdg_shell_types[i] = &wl_surface_interface;
 			if (xdg_shell_types[i] == (void *)2)
@@ -1524,7 +1531,7 @@ struct SystemX11 : public System
 	void shutdown() override
 	{
 		// Free standard cursors.
-		for (s32 i = 0; i < countof(cursors); ++i)
+		for (u32 i = 0; i < countof(cursors); ++i)
 			XFreeCursor(display, cursors[i]);
 
 		// Free hidden cursor.
@@ -1792,7 +1799,8 @@ struct LinuxDevice
 				int ec = crown::main_runtime(*((DeviceOptions *)user_data));
 				s_exit = true;
 				// Write something just to unlock the listening select().
-				write(exit_pipe[1], &s_exit, sizeof(s_exit));
+				const ssize_t written = write(exit_pipe[1], &s_exit, sizeof(s_exit));
+				CE_UNUSED(written);
 				return ec;
 			}
 			, opts

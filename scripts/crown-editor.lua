@@ -67,6 +67,7 @@ project "crown-editor"
 		"-Wno-missing-field-initializers",
 		"-Wno-incompatible-pointer-types",
 		"-Wno-unused-value",
+		"-Wno-address",
 		"-D VALA_STRICT_C",
 		"-D GDK_DISABLE_DEPRECATED",
 		"-D GTK_DISABLE_DEPRECATED",

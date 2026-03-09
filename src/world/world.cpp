@@ -696,8 +696,8 @@ Vector3 World::camera_world_to_screen(CameraId camera, const Vector3 &pos)
 
 	Vector4 pos4 = { pos.x, pos.y, pos.z, 1.0f };
 	Vector4 ndc  = pos4 * camera_view_proj;
-	ndc.x *= 1.0 / ndc.w;
-	ndc.y *= 1.0 / ndc.w;
+	ndc.x *= 1.0f / ndc.w;
+	ndc.y *= 1.0f / ndc.w;
 
 	Vector3 screen;
 	screen.x = (x + w  * (ndc.x + 1.0f)) / 2.0f;

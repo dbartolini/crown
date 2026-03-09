@@ -328,13 +328,13 @@ namespace material_resource_internal
 			return;
 		}
 
-		shader_name = StringView(str, sep - str);
+		shader_name = StringView(str, u32(sep - str));
 		str = sep + 1;
 
 		// Tokenize defines.
 		for (;;) {
 			if ((sep = strchr(str, '+')) != NULL) {
-				vector::push_back(defines, StringView(str, sep - str));
+				vector::push_back(defines, StringView(str, u32(sep - str)));
 				str = sep + 1;
 				continue;
 			}

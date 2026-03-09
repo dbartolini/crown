@@ -215,8 +215,8 @@ void Pipeline::create(u16 width, u16 height, const RenderSettings &render_settin
 	// Create cascaded shadow map resources.
 	if (bgfx::isValid(_sun_shadow_map_texture))
 		bgfx::destroy(_sun_shadow_map_texture);
-	_sun_shadow_map_texture = bgfx::createTexture2D(_render_settings.sun_shadow_map_size.x
-		, _render_settings.sun_shadow_map_size.y
+	_sun_shadow_map_texture = bgfx::createTexture2D((u16)_render_settings.sun_shadow_map_size.x
+		, (u16)_render_settings.sun_shadow_map_size.y
 		, false
 		, 1
 		, bgfx::TextureFormat::D32F
@@ -233,8 +233,8 @@ void Pipeline::create(u16 width, u16 height, const RenderSettings &render_settin
 	// Create local-lights shadow map resources.
 	if (bgfx::isValid(_local_lights_shadow_map_texture))
 		bgfx::destroy(_local_lights_shadow_map_texture);
-	_local_lights_shadow_map_texture = bgfx::createTexture2D(_render_settings.local_lights_shadow_map_size.x
-		, _render_settings.local_lights_shadow_map_size.y
+	_local_lights_shadow_map_texture = bgfx::createTexture2D((u16)_render_settings.local_lights_shadow_map_size.x
+		, (u16)_render_settings.local_lights_shadow_map_size.y
 		, false
 		, 1
 		, bgfx::TextureFormat::D24S8
@@ -249,11 +249,11 @@ void Pipeline::create(u16 width, u16 height, const RenderSettings &render_settin
 	_local_lights_shadow_map_frame_buffer = bgfx::createFrameBuffer(countof(llfbtextures), llfbtextures);
 
 	// FIXME: this is a pretty dumb allocation scheme but it's fine for now.
-	_local_lights_tile_size = best_square_size(_render_settings.local_lights_shadow_map_size.x
-		, _render_settings.local_lights_shadow_map_size.y
+	_local_lights_tile_size = best_square_size((u32)_render_settings.local_lights_shadow_map_size.x
+		, (u32)_render_settings.local_lights_shadow_map_size.y
 		, LOCAL_LIGHTS_MAX_SHADOW_CASTERS
 		);
-	_local_lights_tile_cols = _render_settings.local_lights_shadow_map_size.x / _local_lights_tile_size;
+	_local_lights_tile_cols = u16(u32(_render_settings.local_lights_shadow_map_size.x) / _local_lights_tile_size);
 
 	_u_local_lights_shadow_map = bgfx::createUniform("u_local_lights_shadow_map", bgfx::UniformType::Sampler);
 	_u_local_lights_params = bgfx::createUniform("u_local_lights_params", bgfx::UniformType::Vec4);
@@ -577,7 +577,7 @@ void Pipeline::render(u16 width, u16 height, const Matrix4x4 &view, const Matrix
 
 			// Draw stencil "hourglass" pattern for omni lights.
 			const u16 sm_w = (u16)_render_settings.local_lights_shadow_map_size.x;
-			const f32 step = f32(_local_lights_tile_size) / f32(sm_w) * 0.5;
+			const f32 step = f32(_local_lights_tile_size) / f32(sm_w) * 0.5f;
 			const s32 num_cols = sm_w / _local_lights_tile_size;
 			const s32 num_rows = num_cols;
 			const s32 num_pins = num_cols + 1;
@@ -797,7 +797,7 @@ void Pipeline::render(u16 width, u16 height, const Matrix4x4 &view, const Matrix
 
 		// Upsample.
 		for (u32 i = 0; i < countof(_bloom_frame_buffers) - 1; ++i) {
-			const u16 shift = countof(_bloom_frame_buffers) - 2 - i;
+			const u16 shift = u16(countof(_bloom_frame_buffers) - 2 - i);
 			const u16 w = width >> shift;
 			const u16 h = height >> shift;
 			Vector4 pixel_size = { 1.0f/w, 1.0f/h, 0.0f, 0.0f };
@@ -884,7 +884,7 @@ void Pipeline::reload_shaders(const ShaderResource *old_resource, const ShaderRe
 void Pipeline::set_local_lights_params_uniform()
 {
 	Vector4 params;
-	params.x = _render_settings.flags & RenderSettingsFlags::LOCAL_LIGHTS_DISTANCE_CULLING;
+	params.x = f32((_render_settings.flags & RenderSettingsFlags::LOCAL_LIGHTS_DISTANCE_CULLING) != 0);
 	params.y = _render_settings.local_lights_distance_culling_fade;
 	params.z = _render_settings.local_lights_distance_culling_cutoff;
 

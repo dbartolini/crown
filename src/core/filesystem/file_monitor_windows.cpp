@@ -310,7 +310,7 @@ struct FileMonitorImpl
 	void write(FileMonitorEvent::Enum fme, bool is_dir, const char *path, const char *path_renamed)
 	{
 		if (fme == FileMonitorEvent::RENAMED) {
-			event_stream::write_header(_events, fme, 1 + strlen32(path) + 1 + strlen(path_renamed) + 1);
+			event_stream::write_header(_events, fme, 1 + strlen32(path) + 1 + strlen32(path_renamed) + 1);
 			event_stream::write_event(_events, 1, &is_dir);
 			event_stream::write_event(_events, strlen32(path), path);
 			event_stream::write_event(_events, 1, "\0");

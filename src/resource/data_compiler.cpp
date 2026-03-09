@@ -973,7 +973,7 @@ bool DataCompiler::compile_internal(const char *data_dir, const char *platform_n
 		while (_datafence_created != true && wait_ms != 0) {
 			s64 t0 = time::now();
 			_datafence_condition.wait(_datafence_mutex, wait_ms);
-			u32 elapsed_ms = time::seconds(time::now() - t0) * 1000.0;
+			u32 elapsed_ms = u32(time::seconds(time::now() - t0) * 1000.0);
 			if (wait_ms >= elapsed_ms)
 				wait_ms -= elapsed_ms;
 			else

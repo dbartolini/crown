@@ -53,13 +53,13 @@ namespace sound
 		if (sr.bit_depth == 8) {
 			const s32 scale = 255;
 			for (u32 i = 0; i < array::size(s._samples); ++i) {
-				s32 conv = scale * (s._samples[i] + 1.0f) * 0.5f;
+				s32 conv = s32(scale * (s._samples[i] + 1.0f) * 0.5f);
 				opts.write((u8)clamp(conv, 0, scale));
 			}
 		} else if (sr.bit_depth == 16) {
 			const s32 scale = 32768;
 			for (u32 i = 0; i < array::size(s._samples); ++i) {
-				s32 conv = scale * s._samples[i];
+				s32 conv = s32(scale * s._samples[i]);
 				opts.write((s16)clamp(conv, -scale, scale));
 			}
 		} else if (sr.bit_depth == 32) {

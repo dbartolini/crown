@@ -21,16 +21,16 @@ static ShaderData SHADER_DATA_INVALID =
 	BGFX_STENCIL_NONE,
 	{
 		{
-			0u, BGFX_INVALID_HANDLE
+			0u, 0u
 		},
 		{
-			0u, BGFX_INVALID_HANDLE
+			0u, 0u
 		},
 		{
-			0u, BGFX_INVALID_HANDLE
+			0u, 0u
 		},
 		{
-			0u, BGFX_INVALID_HANDLE
+			0u, 0u
 		}
 	},
 	BGFX_INVALID_HANDLE,

@@ -232,7 +232,7 @@ namespace fbx
 			Node new_node(default_allocator());
 
 			DynamicString node_name(default_allocator());
-			node_name.set(node->name.data, node->name.length);
+			node_name.set(node->name.data, (u32)node->name.length);
 
 			s32 err = fbx::parse_node(new_node, node);
 			ENSURE_OR_RETURN(err == 0, opts);

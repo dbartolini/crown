@@ -346,6 +346,7 @@ namespace package_resource_internal
 		file.read(compressed_data, compressed_size);
 		const int decompressed_size = LZ4_decompress_safe(compressed_data, data + header_size, compressed_size, uncompressed_size);
 		CE_ASSERT(decompressed_size >= 0 && u32(decompressed_size) == uncompressed_size, "Failed to decompress data");
+		CE_UNUSED(decompressed_size);
 		a.deallocate(compressed_data);
 		return data;
 	}

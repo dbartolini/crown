@@ -80,7 +80,7 @@ public class SubprocessLauncherServer : Object
 		subprocesses[ind].force_exit();
 	}
 
-	public int subprocess_index(uint32 process_id)
+	public int subprocess_index(uint32 process_id) throws GLib.Error
 	{
 		int ind;
 		for (ind = 0; ind < subprocesses.size; ++ind) {
@@ -191,7 +191,7 @@ public static int launcher_main(string[] args)
 
 	for (int i = 0; i < args.length; ++i) {
 		if (args[i] == "--launcher") {
-			monitored_pid = int.parse(args[i + 1]);
+			monitored_pid = (GLib.Pid)int.parse(args[i + 1]);
 			break;
 		}
 	}

@@ -90,9 +90,9 @@ static void test_memory()
 
 		for (int align = 1; align <= 16; align *= 2) {
 			for (size_t bs = sizeof(void *); bs < countof(A); ++bs) {
-				PoolAllocator pool(a, 2, bs, align);
-				char *a = (char *)pool.allocate(bs, align);
-				char *b = (char *)pool.allocate(bs, align);
+				PoolAllocator pool(a, 2, (u32)bs, (u32)align);
+				char *a = (char *)pool.allocate((u32)bs, (u32)align);
+				char *b = (char *)pool.allocate((u32)bs, (u32)align);
 				memset(a, 'A', bs);
 				memset(b, 'B', bs);
 
@@ -1059,7 +1059,7 @@ static void test_obb()
 		OBB a;
 		obb::reset(a);
 		a.half_extents = { 0.5f, 0.5f, 0.5f };
-		set_scale(a.tm, { 0.01, 0.01, 0.01 });
+		set_scale(a.tm, { 0.01f, 0.01f, 0.01f });
 
 		Vector3 ray_origin = { 0.0f, -2.0f, 0.25 };
 		Vector3 ray_target = { 0.0f,  0.0f, 0.25 };

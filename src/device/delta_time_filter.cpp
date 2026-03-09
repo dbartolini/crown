@@ -15,12 +15,12 @@ DeltaTimeFilter::DeltaTimeFilter()
 	: _simulated_time(0u)
 	, _drift(0u)
 	, _num_outliers(2)
-	, _previous_average(0.0f)
+	, _previous_average(0)
 	, _average_cap(0.1f)
 	, _max_wall_clock_debt(0.010f)
 	, _num_debt_frames(0u)
 	, _debt_frames_left(0u)
-	, _debt_cost(0.0f)
+	, _debt_cost(0)
 {
 	_start_time = time::now();
 
@@ -88,13 +88,13 @@ f32 DeltaTimeFilter::filter(s64 dt)
 
 	// Limit distance from previous average after at least one prior sample exists.
 	if (_history._size > 1)
-		avg = lerp(f32(_previous_average), f32(avg), _average_cap);
+		avg = s64(lerp(f32(_previous_average), f32(avg), _average_cap));
 
 	_previous_average = avg;
 
 	// Try to pay back time debt over _num_debt_frames.
 	if (_num_debt_frames > 0) {
-		if (_debt_frames_left == 0 && fabs(time::seconds(_drift)) >= _max_wall_clock_debt) {
+		if (_debt_frames_left == 0 && fabs((f32)time::seconds(_drift)) >= _max_wall_clock_debt) {
 			_debt_frames_left = _num_debt_frames;
 			_debt_cost = _drift / _num_debt_frames;
 		}
@@ -107,7 +107,7 @@ f32 DeltaTimeFilter::filter(s64 dt)
 	}
 
 	_simulated_time += avg;
-	return time::seconds(avg);
+	return (f32)time::seconds(avg);
 }
 
 } // namespace crown

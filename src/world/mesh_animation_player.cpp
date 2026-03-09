@@ -103,7 +103,7 @@ namespace mesh_animation_player
 		AnimationTrackSegment *tracks = array::begin(p._tracks) + anim.tracks_offset;
 
 		CE_ENSURE(time <= anim.animation_resource->total_time);
-		u16 ts = time * 1000.0f;
+		u16 ts = u16(time * 1000.0f);
 
 		// Fetch new keys until all tracks have enough data
 		// to interpolate values at current time.

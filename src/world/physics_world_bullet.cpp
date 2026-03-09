@@ -27,6 +27,10 @@
 #include "world/physics_world.h"
 #include "world/scene_graph.h"
 #include "world/unit_manager.h"
+#if CROWN_COMPILER_MSVC
+#pragma warning(push)
+#pragma warning(disable:4244) // conversion from 'double' to 'float', possible loss of data
+#endif
 #include <BulletCollision/BroadphaseCollision/btCollisionAlgorithm.h>
 #include <BulletCollision/BroadphaseCollision/btDbvtBroadphase.h>
 #include <BulletCollision/CollisionDispatch/btCollisionObject.h>
@@ -53,6 +57,9 @@
 #include <LinearMath/btDefaultMotionState.h>
 #include <LinearMath/btIDebugDraw.h>
 #include <LinearMath/btQuickprof.h>
+#if CROWN_COMPILER_MSVC
+#pragma warning(pop)
+#endif
 
 LOG_SYSTEM(PHYSICS, "physics")
 
@@ -354,8 +361,8 @@ struct Mover
 		_vertical_delta = 0.0;
 		_was_on_ground = false;
 		_current_step_offset = 0.0;
-		_max_penetration_depth = 0.2;
-		_step_height = 0.02; // FIXME: remove since we only use capsule colliders?
+		_max_penetration_depth = btScalar(0.2f);
+		_step_height = btScalar(0.02f); // FIXME: remove since we only use capsule colliders?
 		_center.setValue(0.0f, 0.0f, 0.0f);
 
 		_shape = CE_NEW(allocator, btCapsuleShapeZ)(radius, height);
@@ -422,7 +429,7 @@ struct Mover
 		_current_position = _ghost->m_worldTransform.m_origin - _center;
 
 		for (int i = 0; i < _ghost->getOverlappingPairCache()->getNumOverlappingPairs(); i++) {
-			_manifold_array.resize(0);
+			_manifold_array.resizeNoInitialize(0);
 
 			btBroadphasePair *collisionPair = &_ghost->getOverlappingPairCache()->getOverlappingPairArray()[i];
 
@@ -835,6 +842,16 @@ struct PhysicsWorldImpl
 		btCapsuleShape capsule;
 		btCapsuleShapeZ capsule_z;
 		btBoxShape box;
+
+		///
+		ColliderShape()
+		{
+		}
+
+		///
+		~ColliderShape()
+		{
+		}
 	};
 
 	struct ColliderInstanceData

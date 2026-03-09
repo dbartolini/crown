@@ -148,6 +148,7 @@ void MaterialManager::reload_textures(const TextureResource *old_resource, const
 void MaterialManager::reload_shaders(const ShaderResource *old_resource, const ShaderResource *new_resource)
 {
 #if CROWN_CAN_RELOAD
+	CE_UNUSED(new_resource);
 	auto cur = hash_map::begin(_materials);
 	auto end = hash_map::end(_materials);
 	for (; cur != end; ++cur) {

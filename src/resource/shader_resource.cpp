@@ -33,14 +33,6 @@ LOG_SYSTEM(SHADER_RESOURCE, "shader_resource")
 
 namespace crown
 {
-// Returns 0 if success.
-static int from_hex(s64 &val, const char *hex)
-{
-	errno = 0;
-	val = strtol(hex, NULL, 16);
-	return !(errno != ERANGE && errno != EINVAL);
-}
-
 namespace shader_resource_internal
 {
 	void *load(File &file, Allocator &a)
@@ -1031,6 +1023,14 @@ namespace shader_resource_internal
 		{
 		}
 	};
+
+	// Returns 0 if success.
+	static int from_hex(s64 &val, const char *hex)
+	{
+		errno = 0;
+		val = strtol(hex, NULL, 16);
+		return !(errno != ERANGE && errno != EINVAL);
+	}
 
 	struct ShaderCompiler
 	{
@@ -2450,7 +2450,7 @@ namespace shader_compiler
 
 				if (sc.has_shader(shader)) {
 					const char *sp = shader_library_path.c_str();
-					shader_library.set(sp, resource_type(sp) - sp - 1);
+					shader_library.set(sp, (u32)(resource_type(sp) - sp - 1));
 					break;
 				}
 			}

@@ -115,7 +115,8 @@ namespace debug
 						stbsp_snprintf(buf, sizeof(buf), "%s", msg);
 					}
 
-					write(demangled_fds[1], buf, sizeof(buf));
+					const ssize_t written = write(demangled_fds[1], buf, sizeof(buf));
+					CE_UNUSED(written);
 				}
 			}
 		}
@@ -131,7 +132,8 @@ namespace debug
 		if (demangler <= 0)
 			return;
 
-		write(exit_fds[1], "q", 1);
+		const ssize_t written = write(exit_fds[1], "q", 1);
+		CE_UNUSED(written);
 		waitpid(demangler, &wstatus, 0);
 		demangler = 0;
 	}
@@ -192,7 +194,8 @@ namespace debug
 		// Get symbols and write them to demangler process.
 		int size = backtrace(array, countof(array));
 		backtrace_symbols_fd(array, size, symbol_fds[1]);
-		write(symbol_fds[1], "\n", 1);
+		const ssize_t written = write(symbol_fds[1], "\n", 1);
+		CE_UNUSED(written);
 
 		// Log demangled symbols.
 		for (int i = 0; i < size; ++i) {

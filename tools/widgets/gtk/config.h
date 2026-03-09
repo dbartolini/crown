@@ -6,11 +6,11 @@
 
 #if defined(_WIN32) || defined(_WIN64)
 #	if !defined(G_OS_WIN32)
-#		define G_OS_WIN32 1
+#		define G_OS_WIN32
 #	endif
 #elif defined(__linux__)
 #	if !defined(G_OS_UNIX)
-#		define G_OS_UNIX 1
+#		define G_OS_UNIX
 #	endif
 #else
 #	error "Unknown platform."

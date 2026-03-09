@@ -368,6 +368,7 @@ function toolchain(build_dir, lib_dir)
 		buildoptions {
 			"-Wunused-value",
 			"-Wundef",
+			"-Wno-deprecated-pragma",
 			"-pthread",
 		}
 

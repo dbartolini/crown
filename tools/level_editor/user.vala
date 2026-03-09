@@ -133,7 +133,9 @@ public class User
 
 		_data.foreach((ee) => {
 				if (ee.key == "recent_projects") {
-					num = (ee.value as Gee.ArrayList<Value?>).size;
+					var recent_projects = ee.value as Gee.ArrayList<Value?>;
+					if (recent_projects != null)
+						num = recent_projects.size;
 					return false; // break
 				}
 

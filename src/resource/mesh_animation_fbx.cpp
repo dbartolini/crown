@@ -28,7 +28,7 @@ namespace fbx
 			, bake_error.description.data
 			);
 
-		ma.total_time = bake->playback_duration;
+		ma.total_time = (f32)bake->playback_duration;
 
 		for (size_t i = 0; i < bake->nodes.count; i++) {
 			ufbx_baked_node *bake_node = &bake->nodes.data[i];
@@ -69,7 +69,7 @@ namespace fbx
 
 			if (bake_node->translation_keys.count == 1) {
 				AnimationKey end_key = array::back(ma.keys);
-				end_key.h.time = bake->playback_duration * 1000.0f;
+				end_key.h.time = u16(bake->playback_duration * 1000.0);
 				array::push_back(ma.keys, end_key);
 			}
 
@@ -96,7 +96,7 @@ namespace fbx
 
 			if (bake_node->rotation_keys.count == 1) {
 				AnimationKey end_key = array::back(ma.keys);
-				end_key.h.time = bake->playback_duration * 1000.0f;
+				end_key.h.time = u16(bake->playback_duration * 1000.0);
 				array::push_back(ma.keys, end_key);
 			}
 		}

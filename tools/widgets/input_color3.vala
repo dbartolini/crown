@@ -138,6 +138,8 @@ static double angle_midpoint(double a, double b)
 
 static void color_from_anchors(out Vector3 rgb, double theta)
 {
+	rgb = VECTOR3_ZERO;
+
 	double theta_n = norm_angle(theta);
 	const double seg = Math.PI / 3.0;
 

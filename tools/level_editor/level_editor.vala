@@ -1092,7 +1092,7 @@ public class LevelEditorApplication : Gtk.Application
 			);
 	}
 
-	public void on_subprocess_launcher_appeared(GLib.DBusConnection connection, string name, string name_owner)
+	public void on_subprocess_launcher_appeared(GLib.DBusConnection connection, string name)
 	{
 		try {
 			GLib.Bus.unwatch_name(_launcher_watch_id);
@@ -2337,8 +2337,12 @@ public class LevelEditorApplication : Gtk.Application
 			, name
 			);
 
-		if (!GLib.File.new_for_path(new_source_dir).make_directory(null))
+		try {
+			GLib.File.new_for_path(new_source_dir).make_directory(null);
+		} catch (GLib.Error e) {
+			loge(e.message);
 			return -1;
+		}
 
 		if (copy_tree(GLib.File.new_for_path(new_source_dir), GLib.File.new_for_path(_project.source_dir())) != 0)
 			return -1;

@@ -21,7 +21,7 @@ inline bool fequal(f32 a, f32 b, f32 epsilon)
 
 inline f32 fsign(f32 a)
 {
-	return (a > 0.0f) - (a < 0.0f);
+	return f32((a > 0.0f) - (a < 0.0f));
 }
 
 inline f32 fceil(f32 a)
@@ -51,7 +51,7 @@ inline f32 fabs(f32 a)
 
 inline f32 fmod(f32 a, f32 b)
 {
-	return ::fmod(a, b);
+	return ::fmodf(a, b);
 }
 
 inline f32 fsin(f32 a)

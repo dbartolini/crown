@@ -53,7 +53,7 @@ namespace debug
 		case CrashType::OUT_OF_MEMORY: {
 			s64 size = 512*1024*1024;
 			for (s64 i = 0; i < INT64_MAX; ++i, size *= 2)
-				*((s64 *)default_allocator().allocate(size)) = zero;
+				*((s64 *)default_allocator().allocate(u32(size))) = zero;
 			break;
 		}
 
