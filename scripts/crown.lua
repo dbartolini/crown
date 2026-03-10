@@ -9,7 +9,7 @@ function crown_project(_name, _kind, _defines)
 		kind (_kind)
 
 		flags {
-			"FatalWarnings"
+			--"FatalWarnings"
 		}
 
 		includedirs {
