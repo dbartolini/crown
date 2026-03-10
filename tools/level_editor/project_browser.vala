@@ -452,7 +452,7 @@ public class ProjectFolderView : Gtk.Box
 				_icon_view.select_path(path);
 				_icon_view.scroll_to_path(path, false, 0.0f, 0.0f);
 			} else if (_browse_mode == BrowseMode.SEARCH) {
-					return Gdk.EVENT_PROPAGATE;
+				return Gdk.EVENT_PROPAGATE;
 			}
 
 			resource_at_path(out type, out name, path);
@@ -842,6 +842,9 @@ public class ProjectBrowser : Gtk.Box
 	// Data
 	public ProjectStore _project_store;
 	public ThumbnailCache _thumbnail_cache;
+	private Gee.ArrayList<string> _nav_history_back = new Gee.ArrayList<string>();
+	private Gee.ArrayList<string> _nav_history_forward = new Gee.ArrayList<string>();
+	private bool _navigating_history = false;
 
 	// Widgets
 	public string _needle;
@@ -876,6 +879,9 @@ public class ProjectBrowser : Gtk.Box
 	public Gtk.ScrolledWindow _scrolled_window;
 	public Gtk.Paned _paned;
 	public Gtk.GestureMultiPress _tree_view_gesture_click;
+	public Gtk.Button _btn_back;
+	public Gtk.Button _btn_forward;
+	public Gtk.Entry _address_bar;
 
 	public bool _hide_core_resources;
 	public BrowseMode _browse_mode;
@@ -1014,7 +1020,35 @@ public class ProjectBrowser : Gtk.Box
 
 		_tree_selection = _tree_view.get_selection();
 		_tree_selection.set_mode(Gtk.SelectionMode.BROWSE);
-		_tree_selection.changed.connect(() => { update_folder_view(); });
+		_tree_selection.changed.connect(() => {
+				string previous_folder = _folder_view._selected_name;
+
+				update_folder_view();
+
+				Gtk.TreeModel selected_model;
+				Gtk.TreeIter selected_iter;
+				if (_tree_selection.get_selected(out selected_model, out selected_iter)) {
+					Value val;
+					string type;
+					string name;
+					selected_model.get_value(selected_iter, ProjectStore.Column.TYPE, out val);
+					type = (string)val;
+					selected_model.get_value(selected_iter, ProjectStore.Column.NAME, out val);
+					name = (string)val;
+
+					if (!_navigating_history && type == "<folder>" && previous_folder != null && previous_folder != name) {
+						_nav_history_back.add(previous_folder);
+						_nav_history_forward.clear();
+						_btn_back.sensitive = !_nav_history_back.is_empty;
+						_btn_forward.sensitive = false;
+					}
+
+					if (type == "<folder>")
+						_address_bar.text = name != "" ? "/" + name + "/" : "/";
+					else
+						_address_bar.text = "/" + ResourceId.parent_folder(name) + "/";
+				}
+			});
 
 		_empty_pixbuf = new Gdk.Pixbuf.from_data({ 0x00, 0x00, 0x00, 0x00 }, Gdk.Colorspace.RGB, true, 8, 1, 1, 4);
 
@@ -1110,9 +1144,68 @@ public class ProjectBrowser : Gtk.Box
 
 		var _tree_view_control = new Gtk.Box(Gtk.Orientation.HORIZONTAL, 0);
 		_tree_view_control.pack_start(_filter_entry_tree, true, true);
-		_tree_view_control.pack_end(_toggle_folder_view, false, false);
+
+		// Create back/forward buttons
+		_btn_back = new Gtk.Button.from_icon_name("go-previous-symbolic", Gtk.IconSize.SMALL_TOOLBAR);
+		_btn_back.set_tooltip_text("Go Back");
+		_btn_back.get_style_context().add_class("flat");
+		_btn_back.can_focus = false;
+		_btn_back.sensitive = false;
+		_btn_back.clicked.connect(navigate_back);
+
+		_btn_forward = new Gtk.Button.from_icon_name("go-next-symbolic", Gtk.IconSize.SMALL_TOOLBAR);
+		_btn_forward.set_tooltip_text("Go Forward");
+		_btn_forward.get_style_context().add_class("flat");
+		_btn_forward.can_focus = false;
+		_btn_forward.sensitive = false;
+		_btn_forward.clicked.connect(navigate_forward);
+
+		// Create address bar
+		_address_bar = new Gtk.Entry();
+		_address_bar.set_placeholder_text("/");
+		_address_bar.hexpand = true;
+		_address_bar.key_press_event.connect((ev) => {
+				if (ev.keyval == Gdk.Key.Return || ev.keyval == Gdk.Key.KP_Enter) {
+					string input = _address_bar.text;
+					if (input.has_prefix("/"))
+						input = input.substring(1);
+					if (input.has_suffix("/"))
+						input = input.slice(0, input.length - 1);
+
+					bool found = (input == "") || _project_store._folders.has_key(input);
+					if (found) {
+						navigate_to(input);
+						_tree_view.grab_focus();
+					} else {
+						string current = _folder_view._selected_name;
+						_address_bar.text = current != "" ? "/" + current + "/" : "/";
+						_address_bar.set_position(-1);
+						loge("Project browser: folder not found: " + input);
+					}
+
+					return Gdk.EVENT_STOP;
+				}
+				return Gdk.EVENT_PROPAGATE;
+			});
+		_address_bar.focus_in_event.connect((ev) => {
+				var app = (LevelEditorApplication)GLib.Application.get_default();
+				app.entry_any_focus_in(_address_bar);
+				return Gdk.EVENT_PROPAGATE;
+			});
+		_address_bar.focus_out_event.connect((ev) => {
+				var app = (LevelEditorApplication)GLib.Application.get_default();
+				app.entry_any_focus_out(_address_bar);
+				return Gdk.EVENT_PROPAGATE;
+			});
+
+		var _nav_bar = new Gtk.Box(Gtk.Orientation.HORIZONTAL, 2);
+		_nav_bar.pack_start(_btn_back, false, false, 0);
+		_nav_bar.pack_start(_btn_forward, false, false, 0);
+		_nav_bar.pack_start(_address_bar, true, true, 4);
+		_nav_bar.pack_end(_toggle_folder_view, false, false, 0);
 
 		_tree_view_content = new Gtk.Box(Gtk.Orientation.VERTICAL, 0);
+		_tree_view_content.pack_start(_nav_bar, false);
 		_tree_view_content.pack_start(_tree_view_control, false);
 		_tree_view_content.pack_start(_scrolled_window, true, true);
 
@@ -1255,7 +1348,6 @@ public class ProjectBrowser : Gtk.Box
 				case SortMode.TYPE_ZA: {
 					int cmp = strcmp((string)type_a, (string)type_b);
 					return _sort_mode == SortMode.TYPE_AZ ? cmp : -cmp;
-
 				}
 
 				case SortMode.SIZE_MIN_MAX:
@@ -1403,12 +1495,38 @@ public class ProjectBrowser : Gtk.Box
 		if (name.has_prefix("core/"))
 			_show_mapped_dirs.set_active(true);
 
-
 		select_resource(type, name);
 		_folder_view.select_resource(type, name);
 	}
 
-	public void on_open_directory(GLib.SimpleAction action, GLib.Variant? param)
+	public void navigate_to(string path)
+	{
+		GLib.Application.get_default().activate_action("open-directory", new GLib.Variant.string(path));
+	}
+
+	public void navigate_back()
+	{
+		if (_nav_history_back.is_empty)
+			return;
+		_navigating_history = true;
+		_nav_history_forward.add(_folder_view._selected_name);
+		string prev = _nav_history_back.remove_at(_nav_history_back.size - 1);
+		GLib.Application.get_default().activate_action("open-directory", new GLib.Variant.string(prev));
+		_navigating_history = false;
+	}
+
+	public void navigate_forward()
+	{
+		if (_nav_history_forward.is_empty)
+			return;
+		_navigating_history = true;
+		_nav_history_back.add(_folder_view._selected_name);
+		string next = _nav_history_forward.remove_at(_nav_history_forward.size - 1);
+		GLib.Application.get_default().activate_action("open-directory", new GLib.Variant.string(next));
+		_navigating_history = false;
+	}
+
+	public void on_open_directory(GLib.SimpleAction action, GLib.Variant ?param)
 	{
 		string dir_name = param.get_string();
 
@@ -1420,18 +1538,21 @@ public class ProjectBrowser : Gtk.Box
 		Gtk.TreePath store_path;
 		if (_project_store.path_for_resource_type_name(out store_path, "<folder>", dir_name)) {
 			Gtk.TreePath filter_path = _tree_filter.convert_child_path_to_path(store_path);
-			if (filter_path == null) // Either the path is not valid or points to a non-visible row in the model.
+			if (filter_path == null)
 				return;
 			Gtk.TreePath sort_path = _tree_sort.convert_child_path_to_path(filter_path);
-			if (sort_path == null) // The path is not valid.
+			if (sort_path == null)
 				return;
-
 			_tree_view.expand_to_path(sort_path);
 			_tree_view.get_selection().select_path(sort_path);
 		}
+
+		_address_bar.text = dir_name != "" ? "/" + dir_name + "/" : "/";
+		_btn_back.sensitive = !_nav_history_back.is_empty;
+		_btn_forward.sensitive = !_nav_history_forward.is_empty;
 	}
 
-	public void on_favorite_resource(GLib.SimpleAction action, GLib.Variant? param)
+	public void on_favorite_resource(GLib.SimpleAction action, GLib.Variant ?param)
 	{
 		string type = (string)param.get_child_value(0);
 		string name = (string)param.get_child_value(1);
@@ -1439,7 +1560,7 @@ public class ProjectBrowser : Gtk.Box
 		_project_store.add_to_favorites(type, name);
 	}
 
-	public void on_unfavorite_resource(GLib.SimpleAction action, GLib.Variant? param)
+	public void on_unfavorite_resource(GLib.SimpleAction action, GLib.Variant ?param)
 	{
 		string type = (string)param.get_child_value(0);
 		string name = (string)param.get_child_value(1);
@@ -1734,11 +1855,11 @@ public class ProjectBrowser : Gtk.Box
 
 	public void select_project_root()
 	{
-		Gtk.TreePath? filter_path = _tree_filter.convert_child_path_to_path(_project_store.project_root_path());
+		Gtk.TreePath ?filter_path = _tree_filter.convert_child_path_to_path(_project_store.project_root_path());
 		if (filter_path == null)
 			return;
 
-		Gtk.TreePath? sort_path = _tree_sort.convert_child_path_to_path(filter_path);
+		Gtk.TreePath ?sort_path = _tree_sort.convert_child_path_to_path(filter_path);
 		if (sort_path == null)
 			return;
 
@@ -1779,7 +1900,7 @@ public class ProjectBrowser : Gtk.Box
 		}
 	}
 
-	public Gtk.RadioButton add_sort_item(Gtk.RadioButton? group, SortMode mode)
+	public Gtk.RadioButton add_sort_item(Gtk.RadioButton ?group, SortMode mode)
 	{
 		var button = new Gtk.RadioButton.with_label_from_widget(group, mode.to_label());
 		button.toggled.connect(() => {
@@ -1929,7 +2050,7 @@ public class ProjectBrowser : Gtk.Box
 
 		Gtk.TreeModel selected_model;
 		Gtk.TreeIter selected_iter;
-		Gtk.TreeRowReference? selected_reference = null;
+		Gtk.TreeRowReference ?selected_reference = null;
 		// Only restore the old selection if it has not been
 		// modified while searching (i.e. nothing is selected
 		// because entering search clears it).
