@@ -21,10 +21,15 @@ Changelog
 * Tools: added ability to move/rename and delete resources from the Project Browser.
 * Tools: Lua suggestions in the Command Bar can now be accepted by pressing Tab.
 * Tools: the Mover component will no longer push dynamic objects and will also handle intersection with triggers on its own, removing the need for supplemental physics components in a unit.
+* Tools: added an option under Preferences -> Viewport to choose the rendering backend used by the editor runtimes.
+* Tools: improved rendering performance of selected objects.
+* Tools: improved performance when moving many units in the Level Editor.
 * Runtime: improved performance when rendering worlds containing many units.
 * Runtime: improved performance of sun shadows rendering.
 * Runtime: Linux: added a new ``--display-server`` option to select between X11 and Wayland backends. X11 remains the default.
 * Runtime: added hot-reloading support for mesh animations.
+* Runtime: added configurable shadow distance to the Global Lighting component.
+* Runtime: added configurable shadow maps quality to the render settings.
 * Data Compiler/Runtime: identical physics colliders are deduplicated in unit/level resources and shared at runtime to reduce resource size and improve performance.
 * Data Compiler: stale unit component overrides are now ignored instead of generating a compile error.
 * Lua: added ``Device.open_uri()`` to open URIs with the default program.
@@ -57,6 +62,8 @@ Changelog
 * Tools: fixed LOD Group component not being generated when importing models with LODs starting at non-zero indices.
 * Tools: fixed a number of issues when duplicating objects and resources.
 * Tools: fixed the camera's minimum near and far ranges in the Inspector.
+* Tools: fixed excessive Lua temporaries usage when manipulating many objects.
+* Tools: fixed a crash when undoing the creation of units containing LODs.
 * Runtime: fixed keyframed physics actors being created with non-zero mass, which made material restitution behave incorrectly.
 * Runtime: fixed ``PhysicsWorld.actor_set_kinematic()`` not updating mass/inertia.
 * Runtime: fixed ``PhysicsWorld.actor_set_kinematic()`` not restoring body deactivation when switching actors back from kinematic.
@@ -67,6 +74,9 @@ Changelog
 * Runtime: fixed shadow maps artifacts on HTML5.
 * Runtime: fixed shadow map coverage of omni lights.
 * Runtime: fixed local shape transforms not being honored.
+* Runtime: fixed rendering artifacts when setting roughness to 0 in materials using the mesh shader.
+* Runtime: Linux: fixed wrong initial state of gamepads on some systems.
+* Runtime: Linux: fixed a crash on some rendering backends.
 * Data Compiler: fixed parsing of malformed (but valid and very common) WAV sounds.
 * Data Compiler: fixed mesh compilers and importers to better detect and avoid empty meshes from reaching the runtime.
 * Lua: fixed ``Quaternion.look()`` returning non-orthonormal rotation matrices.

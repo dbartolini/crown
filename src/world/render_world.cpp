@@ -5,7 +5,6 @@
 
 #include "core/containers/array.inl"
 #include "core/containers/hash_map.inl"
-#include "core/containers/hash_set.inl"
 #include "core/list.inl"
 #include "core/math/aabb.h"
 #include "core/math/color4.inl"
@@ -169,10 +168,24 @@ namespace culling_set
 		Sphere sw;
 		sphere::transform(sw, object.sphere, object.world);
 
+		OBB obbw;
+		obb::transform(obbw, object.obb, object.world);
+
 		array::push_back(set.sphere_w, sw);
+		array::push_back(set.obb_w, obbw);
 		array::push_back(set.id, object.id);
 		array::push_back(set.type, object.type);
 		array::push_back(set.visible, UINT32_MAX);
+	}
+
+	static void clear(CullingSet &set)
+	{
+		array::clear(set.sphere_w);
+		array::clear(set.obb_w);
+		array::clear(set.id);
+		array::clear(set.type);
+		array::clear(set.visible);
+		array::clear(set.render);
 	}
 
 	static void remove(CullingSet &set, CullableType::Enum type, u32 object_id)
@@ -187,11 +200,13 @@ namespace culling_set
 		set.type[ind]     = set.type[last];
 		set.visible[ind]  = set.visible[last];
 		set.sphere_w[ind] = set.sphere_w[last];
+		set.obb_w[ind]    = set.obb_w[last];
 
 		array::pop_back(set.id);
 		array::pop_back(set.type);
 		array::pop_back(set.visible);
 		array::pop_back(set.sphere_w);
+		array::pop_back(set.obb_w);
 	}
 
 	// Fix culling set indices when an instance at index inst is destroyed and the last instance is
@@ -213,23 +228,52 @@ namespace culling_set
 		}
 	}
 
-	static void update(CullingSet &set, CullableType::Enum type, u32 object_id, const Sphere &sphere, const Matrix4x4 &world)
+	static void sync_dirty(CullingSet &set, const RenderWorld &rw)
 	{
-		u32 i;
-		u32 num_objects = array::size(set.id);
-		for (i = 0; i < num_objects; ++i) {
-			if (set.id[i] == object_id && set.type[i] == type)
+		ENTER_PROFILE_SCOPE(__func__);
+
+		const RenderWorld::MeshManager::MeshInstanceData &mid = rw._mesh_manager._data;
+		const RenderWorld::SpriteManager::SpriteInstanceData &sid = rw._sprite_manager._data;
+		const RenderWorld::LodGroupManager::LodGroupInstanceData &lgid = rw._lod_group_manager._data;
+		const RenderWorld::LightManager::LightInstanceData &lid = rw._light_manager._data;
+		const u32 num_objects = array::size(set.id);
+		for (u32 i = 0; i < num_objects; ++i) {
+			const u32 object_id = set.id[i];
+
+			switch (set.type[i]) {
+			case CullableType::MESH:
+				CE_ASSERT(object_id < mid.size, "Index out of bounds");
+				if ((mid.flags[object_id] & RenderableFlags::DIRTY) != 0) {
+					sphere::transform(set.sphere_w[i], mid.sphere[object_id], mid.world[object_id]);
+					obb::transform(set.obb_w[i], mid.obb[object_id], mid.world[object_id]);
+				}
 				break;
-		}
-		if (i == num_objects) {
-			// Not found, add it.
-			add(set, { world, sphere, object_id, type });
-			return;
+
+			case CullableType::SPRITE:
+				CE_ASSERT(object_id < sid.size, "Index out of bounds");
+				if ((sid.flags[object_id] & RenderableFlags::DIRTY) != 0) {
+					sphere::transform(set.sphere_w[i], sid.sphere[object_id], sid.world[object_id]);
+					obb::transform(set.obb_w[i], sid.obb[object_id], sid.world[object_id]);
+				}
+				break;
+
+			case CullableType::LOD_GROUP:
+				CE_ASSERT(object_id < lgid.size, "Index out of bounds");
+				if ((lgid.flags[object_id] & RenderableFlags::DIRTY) != 0) {
+					sphere::transform(set.sphere_w[i], lgid.sphere[object_id], lgid.world[object_id]);
+					obb::transform(set.obb_w[i], lgid.obb[object_id], lgid.world[object_id]);
+				}
+				break;
+
+			case CullableType::LIGHT:
+				CE_ASSERT(object_id < lid.size, "Index out of bounds");
+				if ((lid.flag[object_id] & RenderableFlags::DIRTY) != 0)
+					sphere::transform(set.sphere_w[i], local_sphere(rw._light_manager, object_id), lid.world[object_id]);
+				break;
+			}
 		}
 
-		Sphere sw;
-		sphere::transform(sw, sphere, world);
-		set.sphere_w[i] = sw;
+		LEAVE_PROFILE_SCOPE();
 	}
 
 	static void cull_spheres(CullingSet &set, const Plane3 *planes, u32 num_planes, u32 offset, u32 count)
@@ -280,18 +324,72 @@ namespace culling_set
 		LEAVE_PROFILE_SCOPE();
 	}
 
-	/// Returns the number of objects that passed culling test.
-	static u32 remove_culled(CullingSet &set)
+	static void cull_oobs(CullingSet &set, const Matrix4x4 &view_proj, u32 *indices, u32 offset, u32 count)
 	{
-		array::clear(set.render);
-		u32 num = array::size(set.id);
+		ENTER_PROFILE_SCOPE(__func__);
 
-		for (u32 i = 0; i < num; ++i) {
-			if (set.visible[i] != 0)
-				array::push_back(set.render, i);
+		const u32 num = offset + count;
+		for (u32 i = offset; i < num; ++i) {
+			const u32 index = indices[i];
+			const OBB &obb_w = set.obb_w[index];
+
+			Vector3 vertices[8];
+			obb::to_vertices(vertices, obb_w);
+
+			// An OBB is outside the frustum if all its vertices are outside
+			// any one of the six homogeneous clip planes.
+			u32 outside_left   = UINT32_MAX;
+			u32 outside_right  = UINT32_MAX;
+			u32 outside_bottom = UINT32_MAX;
+			u32 outside_top    = UINT32_MAX;
+			u32 outside_near   = UINT32_MAX;
+			u32 outside_far    = UINT32_MAX;
+			for (u32 j = 0; j < countof(vertices); ++j) {
+				const Vector3 &v = vertices[j];
+				const Vector4 vertex = { v.x, v.y, v.z, 1.0f };
+				const Vector4 clip = vertex * view_proj;
+
+				outside_left   &= u32(clip.x < -clip.w);
+				outside_right  &= u32(clip.x > clip.w);
+				outside_bottom &= u32(clip.y < -clip.w);
+				outside_top    &= u32(clip.y > clip.w);
+				outside_near   &= u32(clip.z < -clip.w);
+				outside_far    &= u32(clip.z > clip.w);
+			}
+
+			set.visible[i] = (outside_left
+				| outside_right
+				| outside_bottom
+				| outside_top
+				| outside_near
+				| outside_far
+				) == 0;
 		}
 
-		return array::size(set.render);
+		LEAVE_PROFILE_SCOPE();
+	}
+
+	/// Removes culled objects from @a indices and returns the number of objects left.
+	/// If @a indices is NULL, uses [0, @a count) as input.
+	static u32 remove_culled(CullingSet &set
+		, const u32 *indices = NULL
+		, u32 count = UINT32_MAX
+		)
+	{
+		if (count == UINT32_MAX)
+			count = array::size(set.id);
+
+		u32 num_visible = 0;
+		if (indices == NULL)
+			array::resize(set.render, count);
+
+		for (u32 i = 0; i < count; ++i) {
+			if (set.visible[i] != 0)
+				set.render[num_visible++] = indices != NULL ? indices[i] : i;
+		}
+
+		array::resize(set.render, num_visible);
+		return num_visible;
 	}
 
 } // namespace culling_set
@@ -324,7 +422,6 @@ RenderWorld::RenderWorld(Allocator &a
 	, _cullable_objects(a)
 	, _cullable_shadow_casters(a)
 	, _cullable_lights(a)
-	, _selection(a)
 	, _fog_unit(UNIT_INVALID)
 	, _global_lighting_unit(UNIT_INVALID)
 	, _bloom_unit(UNIT_INVALID)
@@ -341,6 +438,7 @@ RenderWorld::RenderWorld(Allocator &a
 
 	// Global lighting.
 	memset((void *)&_global_lighting_desc, 0, sizeof(_global_lighting_desc));
+	_global_lighting_desc.shadow_distance = GLOBAL_LIGHTING_DEFAULT_SHADOW_DISTANCE;
 
 	// Bloom.
 	memset((void *)&_bloom_desc, 0, sizeof(_bloom_desc));
@@ -506,7 +604,7 @@ void RenderWorld::sprite_set_sprite(SpriteId sprite, StringId64 sprite_resource_
 	const SpriteResource *resource = (SpriteResource *)_resource_manager->get(RESOURCE_TYPE_SPRITE, sprite_resource_name);
 	_sprite_manager._data.resource[sprite.i] = resource;
 
-	_sprite_manager._data.aabb[sprite.i] = resource->aabb;
+	_sprite_manager._data.obb[sprite.i] = resource->obb;
 	_sprite_manager._data.sphere[sprite.i] = resource->sphere;
 	_sprite_manager._data.flags[sprite.i] |= RenderableFlags::DIRTY;
 	_sprite_manager._dirty = true;
@@ -586,13 +684,11 @@ OBB RenderWorld::sprite_obb(SpriteId sprite)
 {
 	CE_ASSERT(sprite.i < _sprite_manager._data.size, "Index out of bounds");
 
-	const AABB &aabb = _sprite_manager._data.resource[sprite.i]->aabb;
-	const Matrix4x4 &world = _sprite_manager._data.world[sprite.i];
-
 	OBB obb;
-	obb.tm = from_quaternion_translation(QUATERNION_IDENTITY, aabb::center(aabb)) * world;
-	obb.half_extents = (aabb.max - aabb.min) * 0.5f;
-
+	obb::transform(obb
+		, _sprite_manager._data.obb[sprite.i]
+		, _sprite_manager._data.world[sprite.i]
+		);
 	return obb;
 }
 
@@ -685,13 +781,8 @@ void RenderWorld::lod_group_set_obb(LodGroupId lod_group, const OBB &obb)
 
 	_lod_group_manager._data.obb[lod_group.i] = obb;
 	_lod_group_manager._data.sphere[lod_group.i] = obb_sphere(_lod_group_manager._data.obb[lod_group.i]);
-
-	culling_set::update(_cullable_objects
-		, CullableType::LOD_GROUP
-		, lod_group.i
-		, _lod_group_manager._data.sphere[lod_group.i]
-		, _lod_group_manager._data.world[lod_group.i]
-		);
+	_lod_group_manager._data.flags[lod_group.i] |= RenderableFlags::DIRTY;
+	_lod_group_manager._dirty = true;
 }
 
 void RenderWorld::lod_group_set_level(LodGroupId lod_group, s32 level)
@@ -783,6 +874,7 @@ void RenderWorld::light_set_type(LightId light, LightType::Enum type)
 		return;
 
 	_light_manager._data.type[light.i] = type;
+	_light_manager._data.flag[light.i] |= RenderableFlags::DIRTY;
 	_light_manager._dirty = true;
 }
 
@@ -790,6 +882,7 @@ void RenderWorld::light_set_range(LightId light, f32 range)
 {
 	CE_ASSERT(light.i < _light_manager._data.size, "Index out of bounds");
 	_light_manager._data.shader[light.i].range = range;
+	_light_manager._data.flag[light.i] |= RenderableFlags::DIRTY;
 	_light_manager._dirty = true;
 }
 
@@ -803,6 +896,7 @@ void RenderWorld::light_set_spot_angle(LightId light, f32 angle)
 {
 	CE_ASSERT(light.i < _light_manager._data.size, "Index out of bounds");
 	_light_manager._data.shader[light.i].spot_angle = angle;
+	_light_manager._data.flag[light.i] |= RenderableFlags::DIRTY;
 	_light_manager._dirty = true;
 }
 
@@ -953,6 +1047,7 @@ void RenderWorld::global_lighting_destroy(u32 global_lighting)
 {
 	CE_UNUSED(global_lighting);
 	_global_lighting_desc = {};
+	_global_lighting_desc.shadow_distance = GLOBAL_LIGHTING_DEFAULT_SHADOW_DISTANCE;
 	_global_lighting_unit = UNIT_INVALID;
 }
 
@@ -969,6 +1064,11 @@ void RenderWorld::global_lighting_set_skydome_intensity(f32 intensity)
 void RenderWorld::global_lighting_set_ambient_color(Color4 color)
 {
 	_global_lighting_desc.ambient_color = { color.x, color.y, color.z };
+}
+
+void RenderWorld::global_lighting_set_shadow_distance(f32 distance)
+{
+	_global_lighting_desc.shadow_distance = max(distance, 0.0f);
 }
 
 void RenderWorld::bloom_create_instances(const void *components_data
@@ -1166,17 +1266,14 @@ void RenderWorld::update_transforms(const UnitId *begin, const UnitId *end, cons
 		if (_lod_group_manager.has(*begin)) {
 			LodGroupId lod_group = _lod_group_manager.lod_group(*begin);
 			lgd.world[lod_group.i] = *world;
-
-			culling_set::update(_cullable_objects
-				, CullableType::LOD_GROUP
-				, lod_group.i
-				, lgd.sphere[lod_group.i]
-				, lgd.world[lod_group.i]
-				);
+			lgd.flags[lod_group.i] |= RenderableFlags::DIRTY;
+			_lod_group_manager._dirty = true;
 		}
 
 		if (_light_manager.has(*begin)) {
 			LightId light = _light_manager.light(*begin);
+
+			lid.world[light.i] = *world;
 
 			Vector3 pos = translation(*world);
 			Vector3 dir = -z(*world);
@@ -1185,6 +1282,7 @@ void RenderWorld::update_transforms(const UnitId *begin, const UnitId *end, cons
 			lid.shader[light.i].position = pos;
 			lid.shader[light.i].direction = dir;
 
+			lid.flag[light.i] |= RenderableFlags::DIRTY;
 			_light_manager._dirty = true;
 		}
 	}
@@ -1226,109 +1324,112 @@ void RenderWorld::sync_cullable_sets()
 {
 	ENTER_PROFILE_SCOPE(__func__);
 
+	MeshManager::MeshInstanceData &mid = _mesh_manager._data;
+	SpriteManager::SpriteInstanceData &sid = _sprite_manager._data;
+	LodGroupManager::LodGroupInstanceData &lgid = _lod_group_manager._data;
+	LightManager::LightInstanceData &lid = _light_manager._data;
+	bool cullable_objects_dirty = _lod_group_manager._dirty;
+	bool cullable_shadow_casters_dirty = false;
+
+	// Keep DIRTY set until every culling set has consumed it.
+
 	if (_mesh_manager._dirty) {
-		_mesh_manager._dirty = false;
-		MeshManager::MeshInstanceData &idata = _mesh_manager._data;
-
-		for (u32 i = 0; i < idata.size; ++i) {
-			if ((idata.flags[i] & RenderableFlags::DIRTY) == 0)
+		for (u32 i = 0; i < mid.size; ++i) {
+			if ((mid.flags[i] & RenderableFlags::DIRTY) == 0)
 				continue;
-			idata.flags[i] &= ~RenderableFlags::DIRTY;
 
-			u32 changed = idata.flags[i] ^ idata.prev_flags[i];
+			const u32 flags = mid.flags[i] & ~RenderableFlags::DIRTY;
+			const u32 prev_flags = mid.prev_flags[i] & ~RenderableFlags::DIRTY;
+			const u32 cull_flags = (flags &RenderableFlags::LOD_LEVEL) == 0 ? flags : 0;
+			const u32 prev_cull_flags = (prev_flags &RenderableFlags::LOD_LEVEL) == 0 ? prev_flags : 0;
+			const u32 changed = (cull_flags ^ prev_cull_flags)
+				& (RenderableFlags::VISIBLE | RenderableFlags::SHADOW_CASTER)
+				;
+			cullable_objects_dirty |= (cull_flags &RenderableFlags::VISIBLE) != 0;
+			cullable_shadow_casters_dirty |= (cull_flags &RenderableFlags::SHADOW_CASTER) != 0;
 
-			if ((idata.flags[i] & RenderableFlags::LOD_LEVEL) != 0) {
-				idata.prev_flags[i] = idata.flags[i];
-				culling_set::remove(_cullable_objects, CullableType::MESH, i);
-				culling_set::remove(_cullable_shadow_casters, CullableType::MESH, i);
-				continue;
+			if ((changed &RenderableFlags::VISIBLE) != 0) {
+				if ((cull_flags &RenderableFlags::VISIBLE) != 0)
+					culling_set::add(_cullable_objects, { mid.world[i], mid.sphere[i], mid.obb[i], i, CullableType::MESH });
+				else
+					culling_set::remove(_cullable_objects, CullableType::MESH, i);
 			}
 
-			if (changed) {
-				idata.prev_flags[i] = idata.flags[i];
-
-				if ((changed &RenderableFlags::VISIBLE) != 0) {
-					if ((idata.flags[i] & RenderableFlags::VISIBLE) != 0)
-						culling_set::add(_cullable_objects, { idata.world[i], idata.sphere[i], i, CullableType::MESH });
-					else
-						culling_set::remove(_cullable_objects, CullableType::MESH, i);
-				}
-
-				if ((changed &RenderableFlags::SHADOW_CASTER) != 0) {
-					if ((idata.flags[i] & RenderableFlags::SHADOW_CASTER) != 0) {
-						culling_set::add(_cullable_shadow_casters, { idata.world[i], idata.sphere[i], i, CullableType::MESH });
-					} else {
-						culling_set::remove(_cullable_shadow_casters, CullableType::MESH, i);
-					}
-				}
-			} else {
-				if ((idata.flags[i] & RenderableFlags::VISIBLE) != 0)
-					culling_set::update(_cullable_objects, CullableType::MESH, i, idata.sphere[i], idata.world[i]);
-				if ((idata.flags[i] & RenderableFlags::SHADOW_CASTER) != 0)
-					culling_set::update(_cullable_shadow_casters, CullableType::MESH, i, idata.sphere[i], idata.world[i]);
+			if ((changed &RenderableFlags::SHADOW_CASTER) != 0) {
+				if ((cull_flags &RenderableFlags::SHADOW_CASTER) != 0)
+					culling_set::add(_cullable_shadow_casters, { mid.world[i], mid.sphere[i], mid.obb[i], i, CullableType::MESH });
+				else
+					culling_set::remove(_cullable_shadow_casters, CullableType::MESH, i);
 			}
+
+			mid.prev_flags[i] = flags;
 		}
 	}
 
 	if (_sprite_manager._dirty) {
-		_sprite_manager._dirty = false;
-		SpriteManager::SpriteInstanceData &idata = _sprite_manager._data;
-
-		for (u32 i = 0; i < idata.size; ++i) {
-			if ((idata.flags[i] & RenderableFlags::DIRTY) == 0)
+		for (u32 i = 0; i < sid.size; ++i) {
+			if ((sid.flags[i] & RenderableFlags::DIRTY) == 0)
 				continue;
-			idata.flags[i] &= ~RenderableFlags::DIRTY;
 
-			u32 changed = idata.flags[i] ^ idata.prev_flags[i];
+			const u32 flags = sid.flags[i] & ~RenderableFlags::DIRTY;
+			const u32 prev_flags = sid.prev_flags[i] & ~RenderableFlags::DIRTY;
+			const bool visibility_changed = ((flags ^ prev_flags) & RenderableFlags::VISIBLE) != 0;
+			cullable_objects_dirty |= (flags &RenderableFlags::VISIBLE) != 0;
 
-			if (changed) {
-				idata.prev_flags[i] = idata.flags[i];
-
-				if ((changed &RenderableFlags::VISIBLE) != 0) {
-					if ((idata.flags[i] & RenderableFlags::VISIBLE) != 0)
-						culling_set::add(_cullable_objects, { idata.world[i], idata.sphere[i], i, CullableType::SPRITE });
-					else
-						culling_set::remove(_cullable_objects, CullableType::SPRITE, i);
-				}
-			} else {
-				if ((idata.flags[i] & RenderableFlags::VISIBLE) != 0)
-					culling_set::update(_cullable_objects, CullableType::SPRITE, i, idata.sphere[i], idata.world[i]);
+			if (visibility_changed) {
+				if ((flags &RenderableFlags::VISIBLE) != 0)
+					culling_set::add(_cullable_objects, { sid.world[i], sid.sphere[i], sid.obb[i], i, CullableType::SPRITE });
+				else
+					culling_set::remove(_cullable_objects, CullableType::SPRITE, i);
 			}
+
+			sid.prev_flags[i] = flags;
 		}
 	}
 
 	if (_light_manager._dirty) {
-		_light_manager._dirty = false;
-		LightManager::LightInstanceData &idata = _light_manager._data;
+		culling_set::clear(_cullable_lights);
 
-		for (u32 i = 0; i < idata.size; ++i) {
-			/*
-			 * if ((idata.flag[i] & RenderableFlags::DIRTY) == 0)
-			 *  continue;
-			 *
-			 * idata.flag[i] &= ~RenderableFlags::DIRTY;
-			 */
-
-			u32 changed = idata.flag[i] ^ idata.prev_flags[i];
-
-			if (changed)
-				idata.prev_flags[i] = idata.flag[i];
-
-			const bool is_local_light = idata.type[i] == LightType::OMNI
-				|| idata.type[i] == LightType::SPOT
+		for (u32 i = 0; i < lid.size; ++i) {
+			const bool is_local_light = lid.type[i] == LightType::OMNI
+				|| lid.type[i] == LightType::SPOT
 				;
 			if (is_local_light) {
-				Cullable co;
-				co.world  = from_translation(idata.shader[i].position);
-				co.sphere = local_sphere(_light_manager, i);
-				co.id     = i;
-				co.type   = CullableType::LIGHT;
-
-				culling_set::update(_cullable_lights, CullableType::LIGHT, i, co.sphere, co.world);
-			} else if (culling_set::find_object(_cullable_lights, CullableType::LIGHT, i) != UINT32_MAX) {
-				culling_set::remove(_cullable_lights, CullableType::LIGHT, i);
+				const Sphere sphere = local_sphere(_light_manager, i);
+				culling_set::add(_cullable_lights, { lid.world[i], sphere, { MATRIX4X4_IDENTITY, VECTOR3_ZERO }, i, CullableType::LIGHT });
 			}
+
+			lid.prev_flags[i] = lid.flag[i] & ~RenderableFlags::DIRTY;
 		}
+	}
+
+	if (cullable_objects_dirty)
+		culling_set::sync_dirty(_cullable_objects, *this);
+	if (cullable_shadow_casters_dirty)
+		culling_set::sync_dirty(_cullable_shadow_casters, *this);
+
+	if (_mesh_manager._dirty) {
+		for (u32 i = 0; i < mid.size; ++i)
+			mid.flags[i] &= ~RenderableFlags::DIRTY;
+		_mesh_manager._dirty = false;
+	}
+
+	if (_sprite_manager._dirty) {
+		for (u32 i = 0; i < sid.size; ++i)
+			sid.flags[i] &= ~RenderableFlags::DIRTY;
+		_sprite_manager._dirty = false;
+	}
+
+	if (_lod_group_manager._dirty) {
+		for (u32 i = 0; i < lgid.size; ++i)
+			lgid.flags[i] &= ~RenderableFlags::DIRTY;
+		_lod_group_manager._dirty = false;
+	}
+
+	if (_light_manager._dirty) {
+		for (u32 i = 0; i < lid.size; ++i)
+			lid.flag[i] &= ~RenderableFlags::DIRTY;
+		_light_manager._dirty = false;
 	}
 
 	LEAVE_PROFILE_SCOPE();
@@ -1337,20 +1438,19 @@ void RenderWorld::sync_cullable_sets()
 static void draw_mesh(RenderWorld::MeshManager &mesh
 	, u32 object_id
 	, Pipeline *pipeline
-	, const Vector4 &texel_sizes
 	, const FogDesc &fog_desc
 	, GlobalLightingDesc &global_lighting_desc
 	, SceneGraph *scene_graph
 	, Matrix4x4 *cascaded_lights
 	)
 {
-#if CROWN_PLATFORM_EMSCRIPTEN
-	bgfx::setTexture(0, pipeline->_html5_default_sampler, pipeline->_html5_default_texture);
-#endif
 	bgfx::setTexture(LIGHTS_DATA_SLOT, pipeline->_lights_data, pipeline->_lights_data_texture);
 	bgfx::setTexture(CASCADED_SHADOW_MAP_SLOT, pipeline->_u_cascaded_shadow_map, pipeline->_sun_shadow_map_texture);
 	bgfx::setUniform(pipeline->_u_cascaded_lights, &cascaded_lights[0], MAX_NUM_CASCADES);
-	bgfx::setUniform(pipeline->_u_shadow_maps_texel_sizes, &texel_sizes);
+	bgfx::setUniform(pipeline->_u_shadow_map_params
+		, pipeline->_render_settings.shadow_map_params
+		, countof(pipeline->_render_settings.shadow_map_params)
+		);
 	bgfx::setUniform(pipeline->_fog_data, (char *)&fog_desc, sizeof(fog_desc) / sizeof(Vector4));
 	pipeline->set_local_lights_params_uniform();
 	pipeline->set_global_lighting_params(&global_lighting_desc);
@@ -1360,7 +1460,14 @@ static void draw_mesh(RenderWorld::MeshManager &mesh
 	mesh._data.material[object_id]->bind(View::MESH);
 }
 
-void RenderWorld::render(f32 dt, const Matrix4x4 &view, const Matrix4x4 &proj, const Matrix4x4 &persp, UnitId skydome_unit, DebugLine &dl)
+void RenderWorld::render(f32 dt
+	, const Matrix4x4 &view
+	, const Matrix4x4 &proj
+	, const Matrix4x4 &cull_proj
+	, const Matrix4x4 &persp
+	, UnitId skydome_unit
+	, DebugLine &dl
+	)
 {
 	LightManager &lm = _light_manager;
 	LightManager::LightInstanceData &lid = lm._data;
@@ -1368,13 +1475,11 @@ void RenderWorld::render(f32 dt, const Matrix4x4 &view, const Matrix4x4 &proj, c
 	// Reset matrix cache.
 	memset(_mesh_manager._data.matrix_cache, UINT32_MAX, sizeof(u32)*_mesh_manager._data.size);
 
-	sync_cullable_sets();
-
 	const bgfx::Caps *caps = bgfx::getCaps();
 	Matrix4x4 inv_view = view;
 	invert(inv_view);
 	const Vector3 camera_pos = translation(inv_view);
-	const Matrix4x4 view_proj = view * proj;
+	const Matrix4x4 view_proj = view * cull_proj;
 
 	// Skydome.
 	if (skydome_unit.is_valid()) {
@@ -1383,12 +1488,8 @@ void RenderWorld::render(f32 dt, const Matrix4x4 &view, const Matrix4x4 &proj, c
 
 		// Copy camera pos to skydome.
 		_mesh_manager._data.world[skydome_mesh_i] = from_translation(camera_pos);
-		culling_set::update(_cullable_objects
-			, CullableType::MESH
-			, skydome_mesh_i
-			, _mesh_manager._data.sphere[skydome_mesh_i]
-			, _mesh_manager._data.world[skydome_mesh_i]
-			);
+		_mesh_manager._data.flags[skydome_mesh_i] |= RenderableFlags::DIRTY;
+		_mesh_manager._dirty = true;
 
 		Material *skydome_material = mesh_material(skydome_mesh);
 		skydome_material->set_matrix4x4(STRING_ID_32("u_persp", UINT32_C(0x404ac2c2)), persp);
@@ -1400,12 +1501,33 @@ void RenderWorld::render(f32 dt, const Matrix4x4 &view, const Matrix4x4 &proj, c
 		}
 	}
 
+	sync_cullable_sets();
+
 	// Frustum culling of visible objects.
 	Frustum view_frustum;
-	frustum::from_matrix(view_frustum, view_proj, caps->homogeneousDepth, bx::Handedness::Right);
+	frustum::from_matrix(view_frustum, view_proj, true, bx::Handedness::Right);
 	culling_set::cull_spheres(_cullable_objects, view_frustum, 0, array::size(_cullable_objects.id));
 	u32 visible_objects = culling_set::remove_culled(_cullable_objects);
+	culling_set::cull_oobs(_cullable_objects
+		, view_proj
+		, array::begin(_cullable_objects.render)
+		, 0
+		, visible_objects
+		);
+	visible_objects = culling_set::remove_culled(_cullable_objects
+		, array::begin(_cullable_objects.render)
+		, visible_objects
+		);
 	RECORD_FLOAT("world.visible_objects", (f32)visible_objects);
+
+	// Limit shadow rendering independently from the camera far plane.
+	Frustum shadow_frustum;
+	frustum::from_matrix(shadow_frustum, proj, caps->homogeneousDepth, bx::Handedness::Right);
+	const f32 shadow_distance = max(_global_lighting_desc.shadow_distance, 0.0f);
+	const f32 shadow_near_distance = fabs(shadow_frustum.planes[4].d);
+	const f32 shadow_far_distance = min(fabs(shadow_frustum.planes[5].d), shadow_distance);
+	shadow_frustum.planes[5].d = -shadow_far_distance;
+	const bool shadow_range_valid = shadow_far_distance > shadow_near_distance;
 
 	// Count sprites for transient buffer allocation and select LOD groups once
 	// before render/selection passes consume selected_mesh.
@@ -1447,7 +1569,6 @@ void RenderWorld::render(f32 dt, const Matrix4x4 &view, const Matrix4x4 &proj, c
 	Matrix4x4 cascaded_lights[MAX_NUM_CASCADES];
 
 	array::clear(lm._directional_lights);
-	array::clear(lm._local_lights);
 	array::clear(lm._local_lights_spot);
 	array::clear(lm._local_lights_omni);
 	array::clear(lm._lights_data);
@@ -1471,14 +1592,17 @@ void RenderWorld::render(f32 dt, const Matrix4x4 &view, const Matrix4x4 &proj, c
 		const u32 L = lm._directional_lights[i];
 		const bool cast_shadows = (lid.flag[L] & RenderableFlags::SHADOW_CASTER) != 0;
 		const bool sun_shadows = (_pipeline->_render_settings.flags & RenderSettingsFlags::SUN_SHADOWS) != 0;
-		const bool render_shadow = i == 0 && cast_shadows && sun_shadows;
+		const bool render_shadow = i == 0
+			&& cast_shadows
+			&& sun_shadows
+			&& shadow_range_valid
+			;
 
 		// CSMs are only computed for the brightest directional light (index = 0) in the scene.
 		if (render_shadow) {
 			Matrix4x4 light_proj;
 			Matrix4x4 light_view;
 			Frustum splits[MAX_NUM_CASCADES];
-			Frustum frustum;
 
 			// Compute light view matrix.
 			const Vector3 &light_dir = lid.shader[L].direction;
@@ -1488,8 +1612,7 @@ void RenderWorld::render(f32 dt, const Matrix4x4 &view, const Matrix4x4 &proj, c
 			bx::mtxLookAt(to_float_ptr(light_view), eye, at, up, bx::Handedness::Right);
 
 			// Split the view frustum into MAX_NUM_CASCADES frustums.
-			frustum::from_matrix(frustum, proj, caps->homogeneousDepth, bx::Handedness::Right);
-			frustum::split(splits, MAX_NUM_CASCADES, frustum, 0.75f);
+			frustum::split(splits, MAX_NUM_CASCADES, shadow_frustum, 0.75f);
 
 			// Render the scene once per cascade.
 			for (u32 i = 0; i < MAX_NUM_CASCADES; ++i) {
@@ -1594,17 +1717,15 @@ void RenderWorld::render(f32 dt, const Matrix4x4 &view, const Matrix4x4 &proj, c
 		culling_set::cull_spheres(_cullable_lights, view_frustum, 0, array::size(_cullable_lights.id));
 		culling_set::remove_culled(_cullable_lights);
 
-		for (u32 i = 0; i < array::size(_cullable_lights.render); ++i) {
-			const u32 light_id = _cullable_lights.id[_cullable_lights.render[i]];
-			array::push_back(lm._local_lights, light_id);
-		}
-
-		// Sort culled lights by distance to camera.
-		std::sort(array::begin(lm._local_lights)
-			, array::end(lm._local_lights)
-			, [lm, camera_pos](const u32 &in_a, const u32 &in_b) {
-				const f32 dist_a = distance_squared(camera_pos, lm._data.shader[in_a].position);
-				const f32 dist_b = distance_squared(camera_pos, lm._data.shader[in_b].position);
+		// Sort culled lights by distance to camera, retaining the culling-set
+		// index so the bounds computed during culling can be reused below.
+		std::sort(array::begin(_cullable_lights.render)
+			, array::end(_cullable_lights.render)
+			, [this, camera_pos](const u32 &in_a, const u32 &in_b) {
+				const u32 light_a = _cullable_lights.id[in_a];
+				const u32 light_b = _cullable_lights.id[in_b];
+				const f32 dist_a = distance_squared(camera_pos, _light_manager._data.shader[light_a].position);
+				const f32 dist_b = distance_squared(camera_pos, _light_manager._data.shader[light_b].position);
 				return dist_a < dist_b;
 			});
 
@@ -1617,13 +1738,22 @@ void RenderWorld::render(f32 dt, const Matrix4x4 &view, const Matrix4x4 &proj, c
 
 		// Render local lights. Shadow maps are generated only for the first
 		// LOCAL_LIGHTS_MAX_SHADOW_CASTERS lights that can cast shadows.
-		for (u32 i = 0; i < array::size(lm._local_lights) && num_lights < MAX_NUM_LIGHTS; ++i) {
-			LightManager::ShaderData &shader = lid.shader[lm._local_lights[i]];
+		for (u32 i = 0; i < array::size(_cullable_lights.render) && num_lights < MAX_NUM_LIGHTS; ++i) {
+			const u32 cull_index = _cullable_lights.render[i];
+			const u32 light_id = _cullable_lights.id[cull_index];
+			LightManager::ShaderData &shader = lid.shader[light_id];
+			const Sphere &light_sphere = _cullable_lights.sphere_w[cull_index];
 
-			if (lid.type[lm._local_lights[i]] == LightType::SPOT) {
-				const bool cast_shadows = (lid.flag[lm._local_lights[i]] & RenderableFlags::SHADOW_CASTER) != 0;
+			const f32 shadow_radius = shadow_distance + light_sphere.r;
+			const bool within_shadow_distance = shadow_range_valid
+				&& distance_squared(camera_pos, light_sphere.c) <= shadow_radius*shadow_radius
+				;
+
+			if (lid.type[light_id] == LightType::SPOT) {
+				const bool cast_shadows = (lid.flag[light_id] & RenderableFlags::SHADOW_CASTER) != 0;
 				const bool render_shadow = cast_shadows
 					&& local_shadows
+					&& within_shadow_distance
 					&& num_tiles < LOCAL_LIGHTS_MAX_SHADOW_CASTERS
 					;
 
@@ -1632,7 +1762,6 @@ void RenderWorld::render(f32 dt, const Matrix4x4 &view, const Matrix4x4 &proj, c
 				if (render_shadow) {
 					cur_tile = num_tiles++;
 
-					Sphere light_sphere = sphere::from_cone(shader.position, shader.direction, shader.range, shader.spot_angle);
 					culling_set::cull_spheres(_cullable_shadow_casters, light_sphere, 0, array::size(_cullable_shadow_casters.id));
 					culling_set::remove_culled(_cullable_shadow_casters);
 
@@ -1682,11 +1811,12 @@ void RenderWorld::render(f32 dt, const Matrix4x4 &view, const Matrix4x4 &proj, c
 					++sm_local_view_id;
 				}
 
-				array::push_back(lm._local_lights_spot, lm._local_lights[i]);
-			} else if (lid.type[lm._local_lights[i]] == LightType::OMNI) {
-				const bool cast_shadows = (lid.flag[lm._local_lights[i]] & RenderableFlags::SHADOW_CASTER) != 0;
+				array::push_back(lm._local_lights_spot, light_id);
+			} else if (lid.type[light_id] == LightType::OMNI) {
+				const bool cast_shadows = (lid.flag[light_id] & RenderableFlags::SHADOW_CASTER) != 0;
 				const bool render_shadow = cast_shadows
 					&& local_shadows
+					&& within_shadow_distance
 					&& num_tiles < LOCAL_LIGHTS_MAX_SHADOW_CASTERS
 					;
 
@@ -1722,7 +1852,6 @@ void RenderWorld::render(f32 dt, const Matrix4x4 &view, const Matrix4x4 &proj, c
 						, bx::Handedness::Right
 						);
 
-					Sphere light_sphere = { shader.position, shader.range };
 					culling_set::cull_spheres(_cullable_shadow_casters, light_sphere, 0, array::size(_cullable_shadow_casters.id));
 					culling_set::remove_culled(_cullable_shadow_casters);
 
@@ -1804,7 +1933,7 @@ void RenderWorld::render(f32 dt, const Matrix4x4 &view, const Matrix4x4 &proj, c
 					}
 				}
 
-				array::push_back(lm._local_lights_omni, lm._local_lights[i]);
+				array::push_back(lm._local_lights_omni, light_id);
 			} else {
 				CE_FATAL("Unknown local light type");
 			}
@@ -1842,14 +1971,6 @@ void RenderWorld::render(f32 dt, const Matrix4x4 &view, const Matrix4x4 &proj, c
 	_pipeline->_color_grading_desc = _color_grading_desc;
 	_pipeline->_tonemap = _tonemap_desc;
 
-	const Vector4 texel_sizes =
-	{
-		1.0f/_pipeline->_render_settings.sun_shadow_map_size.x,
-		1.0f/_pipeline->_render_settings.sun_shadow_map_size.y,
-		1.0f/_pipeline->_render_settings.local_lights_shadow_map_size.x,
-		1.0f/_pipeline->_render_settings.local_lights_shadow_map_size.y
-	};
-
 	bgfx::TransientVertexBuffer sprite_vertex_buffer;
 	bgfx::TransientIndexBuffer sprite_index_buffer;
 	f32 *sprite_vertex_data = NULL;
@@ -1876,7 +1997,13 @@ void RenderWorld::render(f32 dt, const Matrix4x4 &view, const Matrix4x4 &proj, c
 		}
 	}
 
-	// Render objects.
+	union
+	{
+		u32 u;
+		f32 f;
+	} u2f;
+
+	// Render objects and outlines.
 	u32 sprite_slot = 0;
 	for (u32 ii = 0; ii < visible_objects; ++ii) {
 		const u32 ci = _cullable_objects.render[ii];
@@ -1887,12 +2014,22 @@ void RenderWorld::render(f32 dt, const Matrix4x4 &view, const Matrix4x4 &proj, c
 			draw_mesh(_mesh_manager
 				, object_id
 				, _pipeline
-				, texel_sizes
 				, _fog_desc
 				, _global_lighting_desc
 				, _scene_graph
 				, cascaded_lights
 				);
+
+			if ((_mesh_manager._data.flags[object_id] & RenderableFlags::SELECTED) != 0) {
+				const UnitId unit = _mesh_manager._data.unit[object_id];
+				u2f.u = unit._idx;
+				const Vector4 data = { u2f.f, 0.0f, 0.0f, 0.0f };
+				bgfx::setUniform(_pipeline->_unit_id, &data);
+
+				_mesh_manager.set_instance_data(object_id, *_scene_graph);
+				bgfx::setState(_pipeline->_selection_shader.state);
+				bgfx::submit(View::SELECTION, _pipeline->_selection_shader.program);
+			}
 			break;
 
 		case CullableType::LOD_GROUP: {
@@ -1907,12 +2044,22 @@ void RenderWorld::render(f32 dt, const Matrix4x4 &view, const Matrix4x4 &proj, c
 			draw_mesh(_mesh_manager
 				, mesh_i
 				, _pipeline
-				, texel_sizes
 				, _fog_desc
 				, _global_lighting_desc
 				, _scene_graph
 				, cascaded_lights
 				);
+
+			if ((_lod_group_manager._data.flags[object_id] & RenderableFlags::SELECTED) != 0) {
+				const UnitId unit = _lod_group_manager._data.unit[object_id];
+				u2f.u = unit._idx;
+				const Vector4 data = { u2f.f, 0.0f, 0.0f, 0.0f };
+				bgfx::setUniform(_pipeline->_unit_id, &data);
+
+				_mesh_manager.set_instance_data(mesh_i, *_scene_graph);
+				bgfx::setState(_pipeline->_selection_shader.state);
+				bgfx::submit(View::SELECTION, _pipeline->_selection_shader.program);
+			}
 			break;
 		}
 
@@ -1928,89 +2075,22 @@ void RenderWorld::render(f32 dt, const Matrix4x4 &view, const Matrix4x4 &proj, c
 				_sprite_manager._data.material[object_id]->bind(_sprite_manager._data.layer[object_id] + View::SPRITE_0
 					, _sprite_manager._data.depth[object_id]
 					);
+
+				if ((_sprite_manager._data.flags[object_id] & RenderableFlags::SELECTED) != 0) {
+					bgfx::setTransform(to_float_ptr(_sprite_manager._data.world[object_id]));
+					bgfx::setVertexBuffer(0, &sprite_vertex_buffer);
+					bgfx::setIndexBuffer(&sprite_index_buffer, sprite_slot*6, 6);
+
+					const UnitId unit = _sprite_manager._data.unit[object_id];
+					u2f.u = unit._idx;
+					const Vector4 data = { u2f.f, 0.0f, 0.0f, 0.0f };
+					bgfx::setUniform(_pipeline->_unit_id, &data);
+					bgfx::setState(_pipeline->_selection_shader.state);
+					bgfx::submit(View::SELECTION, _pipeline->_selection_shader.program);
+				}
 			}
 			++sprite_slot;
 			break;
-
-		case CullableType::LIGHT:
-			break;
-		}
-	}
-
-	// Render outlines.
-	union
-	{
-		u32 u;
-		f32 f;
-	} u2f;
-
-	sprite_slot = 0;
-	for (u32 ii = 0; ii < visible_objects; ++ii) {
-		const u32 ci = _cullable_objects.render[ii];
-		const u32 object_id = _cullable_objects.id[ci];
-
-		switch (_cullable_objects.type[ci]) {
-		case CullableType::MESH: {
-			UnitId unit_id = _mesh_manager._data.unit[object_id];
-			if (!hash_set::has(_selection, unit_id))
-				break;
-
-			u2f.u = unit_id._idx;
-			Vector4 data = { u2f.f, 0.0f, 0.0f, 0.0f };
-			bgfx::setUniform(_pipeline->_unit_id, &data);
-
-			_mesh_manager.set_instance_data(object_id, *_scene_graph);
-			bgfx::setState(_pipeline->_selection_shader.state);
-			bgfx::submit(View::SELECTION, _pipeline->_selection_shader.program);
-			break;
-		}
-
-		case CullableType::LOD_GROUP: {
-			UnitId unit_id = _lod_group_manager._data.unit[object_id];
-			if (!hash_set::has(_selection, unit_id))
-				break;
-
-			const MeshId mesh_to_draw = _lod_group_manager._data.selected_mesh[object_id];
-			if (!is_valid(mesh_to_draw))
-				break;
-
-			const u32 mesh_i = _mesh_manager.index(mesh_to_draw);
-			if ((_mesh_manager._data.flags[mesh_i] & RenderableFlags::VISIBLE) == 0)
-				break;
-
-			u2f.u = unit_id._idx;
-			Vector4 data = { u2f.f, 0.0f, 0.0f, 0.0f };
-			bgfx::setUniform(_pipeline->_unit_id, &data);
-
-			_mesh_manager.set_instance_data(mesh_i, *_scene_graph);
-			bgfx::setState(_pipeline->_selection_shader.state);
-			bgfx::submit(View::SELECTION, _pipeline->_selection_shader.program);
-			break;
-		}
-
-		case CullableType::SPRITE: {
-			UnitId unit_id = _sprite_manager._data.unit[object_id];
-			if (!hash_set::has(_selection, unit_id)) {
-				++sprite_slot;
-				break;
-			}
-
-			if (sprite_buffer_allocated) {
-				bgfx::setTransform(to_float_ptr(_sprite_manager._data.world[object_id]));
-				bgfx::setVertexBuffer(0, &sprite_vertex_buffer);
-				bgfx::setIndexBuffer(&sprite_index_buffer, sprite_slot*6, 6);
-
-				u2f.u = unit_id._idx;
-				Vector4 data = { u2f.f, 0.0f, 0.0f, 0.0f };
-				bgfx::setUniform(_pipeline->_unit_id, &data);
-
-				bgfx::setState(_pipeline->_selection_shader.state);
-				bgfx::submit(View::SELECTION, _pipeline->_selection_shader.program);
-			}
-
-			++sprite_slot;
-			break;
-		}
 
 		case CullableType::LIGHT:
 			break;
@@ -2039,10 +2119,10 @@ void RenderWorld::debug_draw(DebugLine &dl)
 	const SpriteManager::SpriteInstanceData &sid = _sprite_manager._data;
 
 	for (u32 i = 0; i < sid.size; ++i) {
-		const AABB &aabb = sid.aabb[i];
+		const OBB &obb = sid.obb[i];
 		const Sphere &sphere = sid.sphere[i];
 		const Matrix4x4 &world = sid.world[i];
-		dl.add_aabb(aabb::transform(aabb, world), COLOR4_RED);
+		dl.add_obb(obb.tm * world, obb.half_extents, COLOR4_RED);
 
 		Sphere out;
 		sphere::transform(out, sphere, world);
@@ -2065,6 +2145,25 @@ void RenderWorld::debug_draw(DebugLine &dl)
 void RenderWorld::enable_debug_drawing(bool enable)
 {
 	_debug_drawing = enable;
+}
+
+void RenderWorld::selection(UnitId unit, bool selected)
+{
+	const u32 selected_flag = selected ? RenderableFlags::SELECTED : 0u;
+	const MeshId mesh = _mesh_manager.mesh(unit);
+	if (is_valid(mesh)) {
+		const u32 mesh_i = _mesh_manager.index(mesh);
+		_mesh_manager._data.flags[mesh_i] = (_mesh_manager._data.flags[mesh_i] & ~RenderableFlags::SELECTED) | selected_flag;
+	}
+
+	const SpriteId sprite = _sprite_manager.sprite(unit);
+	if (is_valid(sprite)) {
+		_sprite_manager._data.flags[sprite.i] = (_sprite_manager._data.flags[sprite.i] & ~RenderableFlags::SELECTED) | selected_flag;
+	}
+
+	const LodGroupId lod_group = _lod_group_manager.lod_group(unit);
+	if (is_valid(lod_group))
+		_lod_group_manager._data.flags[lod_group.i] = (_lod_group_manager._data.flags[lod_group.i] & ~RenderableFlags::SELECTED) | selected_flag;
 }
 
 void RenderWorld::unit_destroyed_callback(UnitId unit)
@@ -2137,8 +2236,9 @@ void RenderWorld::reload_meshes(const MeshResource *old_resource, const MeshReso
 		LodGroupManager::LodGroupInstanceData &lgd = _lod_group_manager._data;
 		for (u32 i = 0; i < lgd.size; ++i) {
 			_lod_group_manager.update_bounds(i);
-			culling_set::update(_cullable_objects, CullableType::LOD_GROUP, i, lgd.sphere[i], lgd.world[i]);
+			lgd.flags[i] |= RenderableFlags::DIRTY;
 		}
+		_lod_group_manager._dirty = true;
 	}
 #else
 	CE_UNUSED_2(old_resource, new_resource);
@@ -2151,7 +2251,7 @@ void RenderWorld::reload_sprites(const SpriteResource *old_resource, const Sprit
 		if (_sprite_manager._data.resource[i] == old_resource) {
 			_sprite_manager._data.resource[i] = new_resource;
 			_sprite_manager._data.frame[i] %= new_resource->num_frames;
-			_sprite_manager._data.aabb[i] = new_resource->aabb;
+			_sprite_manager._data.obb[i] = new_resource->obb;
 			_sprite_manager._data.sphere[i] = new_resource->sphere;
 			_sprite_manager._data.flags[i] |= RenderableFlags::DIRTY;
 			_sprite_manager._dirty = true;
@@ -2370,6 +2470,8 @@ void RenderWorld::MeshManager::set_geometry(u32 mesh_i, const MeshResource *mr, 
 	_data.mesh[mesh_i].ibh = mg->index_buffer;
 	_data.obb[mesh_i]      = mg->obb;
 	_data.sphere[mesh_i]   = mg->sphere;
+	_data.flags[mesh_i]   |= RenderableFlags::DIRTY;
+	_dirty                 = true;
 #if CROWN_CAN_RELOAD
 	_data.geometry_name[mesh_i] = geometry;
 #endif
@@ -2473,7 +2575,7 @@ void RenderWorld::SpriteManager::allocate(u32 num)
 		+ num*sizeof(Material **) + alignof(Material *)
 		+ num*sizeof(u32) + alignof(u32)
 		+ num*sizeof(Matrix4x4) + alignof(Matrix4x4)
-		+ num*sizeof(AABB) + alignof(AABB)
+		+ num*sizeof(OBB) + alignof(OBB)
 		+ num*sizeof(Sphere) + alignof(Sphere)
 		+ num*sizeof(u32) + alignof(u32)
 		+ num*sizeof(u32) + alignof(u32)
@@ -2495,8 +2597,8 @@ void RenderWorld::SpriteManager::allocate(u32 num)
 	new_data.material = (Material **            )memory::align_top(new_data.resource + num, alignof(Material *));
 	new_data.frame    = (u32 *                  )memory::align_top(new_data.material + num, alignof(u32));
 	new_data.world    = (Matrix4x4 *            )memory::align_top(new_data.frame + num,    alignof(Matrix4x4));
-	new_data.aabb     = (AABB *                 )memory::align_top(new_data.world + num,    alignof(AABB));
-	new_data.sphere   = (Sphere *               )memory::align_top(new_data.aabb + num,     alignof(Sphere));
+	new_data.obb      = (OBB *                  )memory::align_top(new_data.world + num,    alignof(OBB));
+	new_data.sphere   = (Sphere *               )memory::align_top(new_data.obb + num,      alignof(Sphere));
 	new_data.flags    = (u32 *                  )memory::align_top(new_data.sphere + num,   alignof(u32));
 	new_data.prev_flags = (u32 *               )memory::align_top(new_data.flags + num,    alignof(u32));
 	new_data.layer    = (u32 *                  )memory::align_top(new_data.prev_flags + num, alignof(u32));
@@ -2510,7 +2612,7 @@ void RenderWorld::SpriteManager::allocate(u32 num)
 	memcpy(new_data.material, _data.material, _data.size * sizeof(Material **));
 	memcpy(new_data.frame, _data.frame, _data.size * sizeof(u32));
 	memcpy(new_data.world, _data.world, _data.size * sizeof(Matrix4x4));
-	memcpy(new_data.aabb, _data.aabb, _data.size * sizeof(AABB));
+	memcpy(new_data.obb, _data.obb, _data.size * sizeof(OBB));
 	memcpy(new_data.sphere, _data.sphere, _data.size * sizeof(Sphere));
 	memcpy(new_data.flags, _data.flags, _data.size * sizeof(u32));
 	memcpy(new_data.prev_flags, _data.prev_flags, _data.size * sizeof(u32));
@@ -2558,7 +2660,7 @@ void RenderWorld::SpriteManager::create_instances(const void *components_data
 		_data.material[last]   = _render_world->_material_manager->get(mat_res);
 		_data.frame[last]      = 0;
 		_data.world[last]      = _render_world->_scene_graph->world_pose(ti);
-		_data.aabb[last]       = sr->aabb;
+		_data.obb[last]        = sr->obb;
 		_data.sphere[last]     = sr->sphere;
 		_data.flags[last]      = sprites[i].flags | RenderableFlags::DIRTY;
 		_data.prev_flags[last] = 0;
@@ -2589,7 +2691,7 @@ void RenderWorld::SpriteManager::destroy(SpriteId inst)
 	_data.material[inst.i]   = _data.material[last];
 	_data.frame[inst.i]      = _data.frame[last];
 	_data.world[inst.i]      = _data.world[last];
-	_data.aabb[inst.i]       = _data.aabb[last];
+	_data.obb[inst.i]        = _data.obb[last];
 	_data.sphere[inst.i]     = _data.sphere[last];
 	_data.flags[inst.i]      = _data.flags[last];
 	_data.prev_flags[inst.i] = _data.prev_flags[last];
@@ -2617,7 +2719,7 @@ void RenderWorld::SpriteManager::swap(u32 inst_a, u32 inst_b)
 	exchange(_data.material[inst_a],   _data.material[inst_b]);
 	exchange(_data.frame[inst_a],      _data.frame[inst_b]);
 	exchange(_data.world[inst_a],      _data.world[inst_b]);
-	exchange(_data.aabb[inst_a],       _data.aabb[inst_b]);
+	exchange(_data.obb[inst_a],        _data.obb[inst_b]);
 	exchange(_data.sphere[inst_a],     _data.sphere[inst_b]);
 	exchange(_data.flags[inst_a],      _data.flags[inst_b]);
 	exchange(_data.prev_flags[inst_a], _data.prev_flags[inst_b]);
@@ -2737,6 +2839,7 @@ void RenderWorld::LodGroupManager::allocate(u32 num)
 		+ num*sizeof(MeshId) + alignof(MeshId)
 		+ num*sizeof(f32) + alignof(f32)
 		+ num*sizeof(MeshId) + alignof(MeshId)
+		+ num*sizeof(u32) + alignof(u32)
 		;
 
 	LodGroupInstanceData new_data;
@@ -2757,6 +2860,7 @@ void RenderWorld::LodGroupManager::allocate(u32 num)
 	new_data.previous_mesh = (MeshId *)memory::align_top(new_data.previous_level + num, alignof(MeshId));
 	new_data.fade_time = (f32 *)memory::align_top(new_data.previous_mesh + num, alignof(f32));
 	new_data.selected_mesh = (MeshId *)memory::align_top(new_data.fade_time + num, alignof(MeshId));
+	new_data.flags = (u32 *)memory::align_top(new_data.selected_mesh + num, alignof(u32));
 
 	memcpy(new_data.unit, _data.unit, _data.size * sizeof(UnitId));
 	memcpy(new_data.first_entry, _data.first_entry, _data.size * sizeof(u32));
@@ -2771,6 +2875,7 @@ void RenderWorld::LodGroupManager::allocate(u32 num)
 	memcpy(new_data.previous_mesh, _data.previous_mesh, _data.size * sizeof(MeshId));
 	memcpy(new_data.fade_time, _data.fade_time, _data.size * sizeof(f32));
 	memcpy(new_data.selected_mesh, _data.selected_mesh, _data.size * sizeof(MeshId));
+	memcpy(new_data.flags, _data.flags, _data.size * sizeof(u32));
 
 	_allocator->deallocate(_data.buffer);
 	_data = new_data;
@@ -2816,6 +2921,7 @@ void RenderWorld::LodGroupManager::create_instances(const void *components_data
 		_data.previous_mesh[group_idx] = { UINT32_MAX };
 		_data.fade_time[group_idx] = 0.0f;
 		_data.selected_mesh[group_idx] = { UINT32_MAX };
+		_data.flags[group_idx] = 0u;
 
 		u32 first_entry_idx = UINT32_MAX;
 		u32 prev_entry_idx = UINT32_MAX;
@@ -2865,6 +2971,7 @@ void RenderWorld::LodGroupManager::create_instances(const void *components_data
 		culling_set::add(_render_world->_cullable_objects
 			, { _data.world[group_idx]
 				, _data.sphere[group_idx]
+				, _data.obb[group_idx]
 				, group_idx
 				, CullableType::LOD_GROUP
 			}
@@ -2972,6 +3079,7 @@ void RenderWorld::LodGroupManager::destroy(LodGroupId lod_group)
 	_data.previous_mesh[lod_group.i] = _data.previous_mesh[last];
 	_data.fade_time[lod_group.i] = _data.fade_time[last];
 	_data.selected_mesh[lod_group.i] = _data.selected_mesh[last];
+	_data.flags[lod_group.i] = _data.flags[last];
 
 	--_data.size;
 
@@ -3140,6 +3248,7 @@ void RenderWorld::LightManager::allocate(u32 num)
 		+ num*sizeof(UnitId) + alignof(UnitId)
 		+ num*sizeof(u32) + alignof(u32)
 		+ num*sizeof(u32) + alignof(u32)
+		+ num*sizeof(Matrix4x4) + alignof(Matrix4x4)
 		+ num*sizeof(ShaderData) + alignof(ShaderData)
 		+ num*sizeof(f32) + alignof(f32)
 		+ num*sizeof(f32) + alignof(f32)
@@ -3155,12 +3264,14 @@ void RenderWorld::LightManager::allocate(u32 num)
 	new_data.flag = (u32 *)memory::align_top(new_data.unit + num, alignof(u32));
 	new_data.prev_flags = (u32 *)memory::align_top(new_data.flag + num, alignof(u32));
 	new_data.type = (u32 *)memory::align_top(new_data.prev_flags + num, alignof(u32));
-	new_data.shader = (ShaderData *)memory::align_top(new_data.type + num, alignof(ShaderData));
+	new_data.world = (Matrix4x4 *)memory::align_top(new_data.type + num, alignof(Matrix4x4));
+	new_data.shader = (ShaderData *)memory::align_top(new_data.world + num, alignof(ShaderData));
 
 	memcpy(new_data.unit, _data.unit, _data.size * sizeof(*new_data.unit));
 	memcpy(new_data.flag, _data.flag, _data.size * sizeof(*new_data.flag));
 	memcpy(new_data.prev_flags, _data.prev_flags, _data.size * sizeof(*new_data.prev_flags));
 	memcpy(new_data.type, _data.type, _data.size * sizeof(*new_data.type));
+	memcpy(new_data.world, _data.world, _data.size * sizeof(*new_data.world));
 	memcpy(new_data.shader, _data.shader, _data.size * sizeof(ShaderData));
 
 	_allocator->deallocate(_data.buffer);
@@ -3197,9 +3308,10 @@ void RenderWorld::LightManager::create_instances(const void *components_data
 		const u32 last = _data.size;
 
 		_data.unit[last]               = unit;
-		_data.flag[last]               = lights[i].flags;
+		_data.flag[last]               = lights[i].flags | RenderableFlags::DIRTY;
 		_data.prev_flags[last]         = 0;
 		_data.type[last]               = lights[i].type;
+		_data.world[last]              = tm;
 		_data.shader[last].color       = lights[i].color;
 		_data.shader[last].intensity   = lights[i].intensity;
 		_data.shader[last].position    = translation(tm);
@@ -3236,6 +3348,7 @@ void RenderWorld::LightManager::destroy(LightId light)
 	_data.flag[light.i] = _data.flag[last];
 	_data.prev_flags[light.i] = _data.prev_flags[last];
 	_data.type[light.i] = _data.type[last];
+	_data.world[light.i] = _data.world[last];
 	_data.shader[light.i] = _data.shader[last];
 
 	--_data.size;
@@ -3287,7 +3400,7 @@ void RenderWorld::LightManager::debug_draw(u32 start_index, u32 num, DebugLine &
 
 			if (bounds) {
 				Sphere s;
-				sphere::transform(s, local_sphere(*this, i), from_translation(pos)); // FIXME: add world to _data.
+				sphere::transform(s, local_sphere(*this, i), _data.world[i]);
 				dl.add_sphere(s.c, s.r, COLOR4_YELLOW);
 			}
 			break;

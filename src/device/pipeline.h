@@ -5,9 +5,10 @@
 
 #pragma once
 
-#include "world/types.h"
+#include "resource/material_resource.h"
 #include "resource/render_config_resource.h"
 #include "resource/shader_resource.h"
+#include "world/types.h"
 #include <bgfx/bgfx.h>
 
 #define LIGHT_SIZE 22     // Size of a light in vec4 units.
@@ -15,7 +16,7 @@
 #define MAX_NUM_SPRITE_LAYERS 8
 #define MAX_NUM_CASCADES 4
 #define LIGHTS_DATA_SLOT 12
-#define CASCADED_SHADOW_MAP_SLOT 10
+#define CASCADED_SHADOW_MAP_SLOT MATERIAL_MAX_TEXTURE_SLOTS
 #define LOCAL_LIGHTS_SHADOW_MAP_SLOT 11
 #define LOCAL_LIGHTS_MAX_SHADOW_CASTERS 16 // Maximum number of local shadow-casting lights per frame.
 CE_STATIC_ASSERT(LOCAL_LIGHTS_MAX_SHADOW_CASTERS <= MAX_NUM_LIGHTS);
@@ -99,7 +100,7 @@ struct Pipeline
 	bgfx::FrameBufferHandle _sun_shadow_map_frame_buffer;
 	bgfx::UniformHandle _u_cascaded_shadow_map;
 	bgfx::UniformHandle _u_cascaded_lights;
-	bgfx::UniformHandle _u_shadow_maps_texel_sizes;
+	bgfx::UniformHandle _u_shadow_map_params;
 	bgfx::TextureHandle _local_lights_shadow_map_texture;
 	bgfx::FrameBufferHandle _local_lights_shadow_map_frame_buffer;
 	bgfx::UniformHandle _u_local_lights_shadow_map;
@@ -126,12 +127,6 @@ struct Pipeline
 	ColorGradingDesc _color_grading_desc;
 	bgfx::UniformHandle _tonemap_type;
 	TonemapDesc _tonemap;
-
-	// Default sampler/texture to keep WebGL renderer running
-	// when a shader references a texture (even if unused) but
-	// none are set via setTexture().
-	bgfx::UniformHandle _html5_default_sampler;
-	bgfx::TextureHandle _html5_default_texture;
 
 	// Default shaders.
 	ShaderData _blit_shader;

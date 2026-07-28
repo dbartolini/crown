@@ -2802,7 +2802,8 @@ void load_api(LuaEnvironment &env)
 		});
 	env.add_module_function("RenderWorld", "global_lighting_create", [](lua_State *L) {
 			LuaStack stack(L, +1);
-			GlobalLightingDesc desc;
+			GlobalLightingDesc desc = {};
+			desc.shadow_distance = GLOBAL_LIGHTING_DEFAULT_SHADOW_DISTANCE;
 			stack.push_id(stack.get_render_world(1)->global_lighting_create(stack.get_unit(2), desc).i);
 			return 1;
 		});
@@ -2833,6 +2834,11 @@ void load_api(LuaEnvironment &env)
 	env.add_module_function("RenderWorld", "global_lighting_set_ambient_color", [](lua_State *L) {
 			LuaStack stack(L);
 			stack.get_render_world(1)->global_lighting_set_ambient_color(stack.get_color4(2));
+			return 0;
+		});
+	env.add_module_function("RenderWorld", "global_lighting_set_shadow_distance", [](lua_State *L) {
+			LuaStack stack(L);
+			stack.get_render_world(1)->global_lighting_set_shadow_distance(stack.get_float(2));
 			return 0;
 		});
 	env.add_module_function("RenderWorld", "bloom_create", [](lua_State *L) {
@@ -2960,12 +2966,7 @@ void load_api(LuaEnvironment &env)
 		});
 	env.add_module_function("RenderWorld", "selection", [](lua_State *L) {
 			LuaStack stack(L);
-			RenderWorld *rw = stack.get_render_world(1);
-			UnitId unit = stack.get_unit(2);
-			if (stack.get_bool(3))
-				hash_set::insert(rw->_selection, unit);
-			else
-				hash_set::remove(rw->_selection, unit);
+			stack.get_render_world(1)->selection(stack.get_unit(2), stack.get_bool(3));
 			return 0;
 		});
 
@@ -4451,8 +4452,8 @@ void load_api(LuaEnvironment &env)
 
 	env.add_module_function("Input", "events", [](lua_State *L) {
 			LuaStack stack(L, +1);
-			InputEvent *events = device()->_input_manager->_events;
-			u32 num_events = device()->_input_manager->_num_events;
+			InputEvent *events = array::begin(device()->_input_manager->_events);
+			u32 num_events = array::size(device()->_input_manager->_events);
 
 			stack.push_table(num_events);
 			for (u32 i = 0; i < num_events; ++i) {

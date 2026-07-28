@@ -33,6 +33,7 @@ struct Cullable
 {
 	Matrix4x4 world;          ///< World pose of the object.
 	Sphere sphere;            ///< Culling sphere of the object in local space.
+	OBB obb;
 	u32 id;                   ///< ID of the object.
 	CullableType::Enum type;  ///< Type of the object.
 };
@@ -40,6 +41,7 @@ struct Cullable
 struct CullingSet
 {
 	Array<Sphere> sphere_w;
+	Array<OBB> obb_w;
 	Array<u32> id;
 	Array<CullableType::Enum> type;
 	Array<u32> visible;
@@ -47,6 +49,7 @@ struct CullingSet
 
 	explicit CullingSet(Allocator &a)
 		: sphere_w(a)
+		, obb_w(a)
 		, id(a)
 		, type(a)
 		, visible(a)
@@ -301,6 +304,9 @@ struct RenderWorld
 	void global_lighting_set_ambient_color(Color4 color);
 
 	///
+	void global_lighting_set_shadow_distance(f32 distance);
+
+	///
 	void bloom_create_instances(const void *components_data
 		, u32 num
 		, const UnitId *unit_lookup
@@ -385,10 +391,20 @@ struct RenderWorld
 	void sync_cullable_sets();
 
 	///
-	void render(f32 dt, const Matrix4x4 &view, const Matrix4x4 &proj, const Matrix4x4 &persp, UnitId skydome_unit, DebugLine &dl);
+	void render(f32 dt
+		, const Matrix4x4 &view
+		, const Matrix4x4 &proj
+		, const Matrix4x4 &cull_proj
+		, const Matrix4x4 &persp
+		, UnitId skydome_unit
+		, DebugLine &dl
+		);
 
 	/// Sets whether to @a enable debug drawing
 	void enable_debug_drawing(bool enable);
+
+	/// Sets whether @a unit is selected.
+	void selection(UnitId unit, bool selected);
 
 	/// Fills @a dl with debug lines
 	void debug_draw(DebugLine &dl);
@@ -535,7 +551,7 @@ struct RenderWorld
 			Material **material;
 			u32 *frame;
 			Matrix4x4 *world;
-			AABB *aabb;
+			OBB *obb;
 			Sphere *sphere;
 			u32 *flags;
 			u32 *prev_flags;
@@ -621,6 +637,7 @@ struct RenderWorld
 			MeshId *previous_mesh;
 			f32 *fade_time;
 			MeshId *selected_mesh;
+			u32 *flags;
 		};
 
 		Allocator *_allocator;
@@ -629,6 +646,7 @@ struct RenderWorld
 		Array<LodGroupEntry> _entries;
 		u32 _free_list;
 		HashMap<UnitId, u32> _map;
+		bool _dirty;
 
 		///
 		LodGroupManager(Allocator &a, RenderWorld *rw)
@@ -637,6 +655,7 @@ struct RenderWorld
 			, _entries(a)
 			, _free_list(UINT32_MAX)
 			, _map(a)
+			, _dirty(false)
 		{
 			memset(&_data, 0, sizeof(_data));
 		}
@@ -716,6 +735,7 @@ struct RenderWorld
 			u32 *flag;            // RenderableFlags::Enum
 			u32 *prev_flags;
 			u32 *type;            // LightType::Enum
+			Matrix4x4 *world;
 			ShaderData *shader;
 		};
 
@@ -726,7 +746,6 @@ struct RenderWorld
 		bool _dirty;
 		Array<ShaderData> _lights_data; // Shader array to send to GPU.
 		Array<u32> _directional_lights; // Indices to directional lights sorted by intensity.
-		Array<u32> _local_lights;       // Indices to local lights sorted by distance to camera.
 		Array<u32> _local_lights_omni;  // Indices to spot lights that will be rendered this frame.
 		Array<u32> _local_lights_spot;  // Indices to omni lights that will be rendered this frame.
 
@@ -738,7 +757,6 @@ struct RenderWorld
 			, _dirty(true)
 			, _lights_data(a)
 			, _directional_lights(a)
-			, _local_lights(a)
 			, _local_lights_omni(a)
 			, _local_lights_spot(a)
 		{
@@ -799,9 +817,6 @@ struct RenderWorld
 	CullingSet _cullable_lights;
 
 	UnitDestroyCallback _unit_destroy_callback;
-
-	// Outlines.
-	HashSet<UnitId> _selection;
 
 	// Fog.
 	UnitId _fog_unit;

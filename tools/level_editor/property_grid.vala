@@ -135,7 +135,7 @@ class ObjectsSetEditor : Gtk.Box
 				widget.destroy();
 			});
 
-		if (_grid._id == GUID_ZERO) {
+		if (_grid._id == GUID_ZERO || !_grid._db.is_alive(_grid._id)) {
 			_editor_grid = null;
 			_editor.foreach((widget) => {
 					widget.destroy();
@@ -599,7 +599,7 @@ public class PropertyGrid : Gtk.Grid
 		read_dynamic_properties_ranges_except({ def });
 
 		UndoRedo? ur = null;
-		if (undo_redo <= 0)
+		if (undo_redo == 0 || undo_redo == -1)
 			ur = _db.disable_undo();
 
 		changed = restore_dynamic_properties_values_except(dynamic_properties, dynamic_values, { def }) || changed;
@@ -608,7 +608,7 @@ public class PropertyGrid : Gtk.Grid
 		if (changed && undo_redo != -1)
 			_db.add_restore_point(ActionType.CHANGE_OBJECTS, new Guid?[] { _id });
 
-		if (undo_redo <= 0)
+		if (undo_redo == 0 || undo_redo == -1)
 			_db.restore_undo(ur);
 
 		if (_database_editor != null && _selection_anchor_id != GUID_ZERO)
