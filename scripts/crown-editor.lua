@@ -59,6 +59,16 @@ project "crown-editor"
 		"glib-2.0",
 		"gtk+-3.0",
 	}
+	configuration { "linux" }
+		links {
+			"wayland-client",
+		}
+		linkoptions {
+			"-lX11",
+			"-lXi",
+			"-lXfixes",
+		}
+	configuration {}
 
 	buildoptions {
 		"-Wno-deprecated-declarations",
@@ -116,6 +126,13 @@ project "crown-editor"
 	}
 
 	configuration { "linux" }
+		files {
+			CROWN_DIR .. "infdrag/pointer-constraints-unstable-v1.c",
+			CROWN_DIR .. "infdrag/relative-pointer-unstable-v1.c",
+		}
+		buildoptions {
+			'-I"' .. path.join(CROWN_DIR, "infdrag") .. '"',
+		}
 		removefiles {
 			CROWN_DIR .. "tools/widgets/gtk/gtkcolorpickerquartz.c",
 			CROWN_DIR .. "tools/widgets/gtk/gtkcolorpickerwin32.c",

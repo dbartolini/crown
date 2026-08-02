@@ -3,6 +3,18 @@
  * SPDX-License-Identifier: GPL-3.0-or-later
  */
 
+[CCode (cname = "crown_input_double_drag_sampler_start")]
+extern void* input_double_drag_sampler_start(Gdk.Display display, Gdk.Window window, Gdk.Device device, int anchor_x, int anchor_y);
+
+[CCode (cname = "crown_input_double_drag_sampler_drain")]
+extern void input_double_drag_sampler_drain(void* sampler, out double delta_x, out double delta_y, out int samples);
+
+[CCode (cname = "crown_input_double_drag_sampler_released")]
+extern bool input_double_drag_sampler_released(void* sampler);
+
+[CCode (cname = "crown_input_double_drag_sampler_stop")]
+extern void input_double_drag_sampler_stop(void* sampler, out double delta_x, out double delta_y, out int samples);
+
 namespace Crown
 {
 public class InputDouble : InputField
@@ -11,6 +23,10 @@ public class InputDouble : InputField
 	public const string INFINITY_LABEL = "Infinity";
 	public const int DEFAULT_PREVIEW_DECIMALS = 4;
 	public const int DEFAULT_EDIT_DECIMALS = 5;
+	public const int DRAG_ACTIVATION_INTERVAL_MS = 1;
+	public const int DRAG_UPDATE_INTERVAL_MS = 8;
+	public const double DRAG_ACTIVATION_MARGIN = 5.0;
+	public const int64 DRAG_LOG_INTERVAL_US = 2*1000*1000;
 
 	public InputDoubleFlags _flags;
 	public bool _inconsistent;
@@ -27,13 +43,23 @@ public class InputDouble : InputField
 	public Gtk.EventControllerMotion _controller_motion;
 	public Gtk.EventControllerScroll _controller_scroll;
 
+	public uint _drag_update_timeout_id;
+	public uint _drag_activation_timeout_id;
+	public void* _drag_sampler;
+
 	public bool _pressed;
 	public bool _dragging;
-	public int _drag_mouse_x;
-	public int _drag_mouse_y;
-	public int _drag_start_x;
-	public int _drag_start_y;
+	public bool _drag_value_dirty;
+	public bool _resetting_click_gesture;
+	public double _drag_mouse_x;
+	public double _drag_mouse_y;
 	public double _drag_start_value;
+	public int64 _motion_frequency_start_time;
+	public int _motion_frequency_samples;
+	public int _diagnostic_drains;
+	public int _diagnostic_property_updates;
+	public int64 _diagnostic_last_drain_log_time;
+	public int64 _diagnostic_last_property_log_time;
 
 	public override void set_inconsistent(bool inconsistent)
 	{
@@ -113,7 +139,6 @@ public class InputDouble : InputField
 		_controller_motion = new Gtk.EventControllerMotion(_event_box);
 		_controller_motion.enter.connect(on_enter);
 		_controller_motion.leave.connect(on_leave);
-		_controller_motion.motion.connect(on_motion);
 
 		_gesture_click = new Gtk.GestureMultiPress(_event_box);
 		_gesture_click.pressed.connect(on_button_pressed);
@@ -134,7 +159,31 @@ public class InputDouble : InputField
 			});
 #endif
 
+		this.destroy.connect(on_destroy);
 		this.add(_overlay);
+	}
+
+	public void on_destroy()
+	{
+		logi("InputDouble drag: widget destroyed pressed=%s dragging=%s sampler=%s".printf(_pressed.to_string(), _dragging.to_string(), (_drag_sampler != null).to_string()));
+		_pressed = false;
+		stop_drag_timers();
+		stop_drag_sampler(false);
+	}
+
+	public void stop_drag_timers()
+	{
+		if (_drag_update_timeout_id != 0)
+			GLib.Source.remove(_drag_update_timeout_id);
+		if (_drag_activation_timeout_id != 0)
+			GLib.Source.remove(_drag_activation_timeout_id);
+		_drag_update_timeout_id = 0;
+		_drag_activation_timeout_id = 0;
+	}
+
+	public void set_pointer_cursor(string name)
+	{
+		_event_box.get_window().set_cursor(new Gdk.Cursor.from_name(Gdk.Display.get_default(), name));
 	}
 
 	public void on_button_pressed(int n_press, double x, double y)
@@ -151,29 +200,57 @@ public class InputDouble : InputField
 
 		_pressed = true;
 		_dragging = false;
-		_drag_mouse_x = 0;
-		_drag_mouse_y = 0;
-		_drag_start_x = pointer_root_x;
-		_drag_start_y = pointer_root_y;
+		_drag_value_dirty = false;
+		_drag_mouse_x = 0.0;
+		_drag_mouse_y = 0.0;
 		_drag_start_value = _value;
+		_motion_frequency_start_time = GLib.get_monotonic_time();
+		_motion_frequency_samples = 0;
+		_diagnostic_drains = 0;
+		_diagnostic_property_updates = 0;
+		_diagnostic_last_drain_log_time = _motion_frequency_start_time;
+		_diagnostic_last_property_log_time = _motion_frequency_start_time;
+		logi("InputDouble drag: pressed n_press=%d root=(%d,%d) value=%f window=%s".printf(n_press, pointer_root_x, pointer_root_y, _drag_start_value, (_event_box.get_window() != null).to_string()));
+
+		if (_drag_sampler == null) {
+			Gdk.Device pointer = this.get_display().get_default_seat().get_pointer();
+			_drag_sampler = input_double_drag_sampler_start(this.get_display(), _event_box.get_window(), pointer, pointer_root_x, pointer_root_y);
+		}
+		if (_drag_sampler == null) {
+			loge("InputDouble drag: sampler failed to start");
+			return;
+		}
+
+		logi("InputDouble drag: sampler started");
+		if (_drag_activation_timeout_id == 0)
+			_drag_activation_timeout_id = GLib.Timeout.add(DRAG_ACTIVATION_INTERVAL_MS, on_drag_activation_update);
+		if (_drag_update_timeout_id == 0)
+			_drag_update_timeout_id = GLib.Timeout.add(DRAG_UPDATE_INTERVAL_MS, on_drag_update);
+		logi("InputDouble drag: activation timer id=%u interval=%dms property timer id=%u interval=%dms".printf(_drag_activation_timeout_id, DRAG_ACTIVATION_INTERVAL_MS, _drag_update_timeout_id, DRAG_UPDATE_INTERVAL_MS));
 	}
 
 	public void on_button_released(int n_press, double x, double y)
 	{
-		logi("button released");
+		if (!_pressed)
+			return;
+
+		logi("InputDouble drag: released dragging=%s dirty=%s accumulated=(%f,%f)".printf(_dragging.to_string(), _drag_value_dirty.to_string(), _drag_mouse_x, _drag_mouse_y));
 		_pressed = false;
 
+		stop_drag_timers();
+		stop_drag_sampler(true);
+		logi("InputDouble drag: sampler stopped after release dragging=%s dirty=%s accumulated=(%f,%f)".printf(_dragging.to_string(), _drag_value_dirty.to_string(), _drag_mouse_x, _drag_mouse_y));
+
 		if (_dragging) {
-			logi("was dragging");
+			logi("InputDouble drag: committing dragged value");
+			update_drag_value();
 			_dragging = false;
 
 			double drag_end_value = _value;
 			set_value_safe(_drag_start_value, -1); // Avoids unnecessary update
 			set_value_safe(drag_end_value); // Fires the last commit
 
-			Gdk.Display display = Gdk.Display.get_default();
-			Gdk.Cursor deffault = new Gdk.Cursor.from_name(display, "default");
-			_event_box.get_window().set_cursor(deffault);
+			set_pointer_cursor("col-resize");
 
 			return;
 		}
@@ -197,15 +274,23 @@ public class InputDouble : InputField
 
 	public void on_gesture_cancelled(Gdk.EventSequence? sequence)
 	{
+		if (_resetting_click_gesture) {
+			logi("InputDouble drag: gesture reset after sampler-owned release");
+			return;
+		}
+
+		logi("InputDouble drag: gesture cancelled dragging=%s dirty=%s".printf(_dragging.to_string(), _drag_value_dirty.to_string()));
 		_pressed = false;
+		_drag_value_dirty = false;
+
+		stop_drag_timers();
+		stop_drag_sampler(false);
 
 		if (_dragging) {
 			_dragging = false;
 			set_value_safe(_drag_start_value, 0); // Revert to old value
 
-			Gdk.Display display = Gdk.Display.get_default();
-			Gdk.Cursor deffault = new Gdk.Cursor.from_name(display, "default");
-			_event_box.get_window().set_cursor(deffault);
+			set_pointer_cursor("default");
 		}
 	}
 
@@ -214,9 +299,7 @@ public class InputDouble : InputField
 		if (_dragging)
 			return;
 
-		Gdk.Display display = Gdk.Display.get_default();
-		Gdk.Cursor col_resize = new Gdk.Cursor.from_name(display, "col-resize");
-		_event_box.get_window().set_cursor(col_resize);
+		set_pointer_cursor("col-resize");
 	}
 
 	public void on_leave()
@@ -224,49 +307,135 @@ public class InputDouble : InputField
 		if (_dragging)
 			return;
 
-		Gdk.Display display = Gdk.Display.get_default();
-		Gdk.Cursor deffault = new Gdk.Cursor.from_name(display, "default");
-		_event_box.get_window().set_cursor(deffault);
+		set_pointer_cursor("default");
 	}
 
-	public void on_motion(double x, double y)
+	public void process_drag_samples(double delta_x, double delta_y, int samples)
 	{
-		if (!_pressed)
-			return;
+		int64 now = GLib.get_monotonic_time();
+		_drag_mouse_x += delta_x;
+		_drag_mouse_y += delta_y;
 
-		Gdk.Screen screen;
-		int pointer_root_x;
-		int pointer_root_y;
-		this.get_display().get_default_seat().get_pointer().get_position(out screen, out pointer_root_x, out pointer_root_y);
-
-		int dx = pointer_root_x - _drag_start_x;
-
-		if (dx == 0)
-			return;
-
-		_drag_mouse_x += dx;
-
-		this.get_display().get_default_seat().get_pointer().warp(screen
-			, _drag_start_x
-			, _drag_start_y
-			);
-
-		const int ACTIVATION_MARGIN = 5;
+		int64 elapsed = now - _motion_frequency_start_time;
+		_motion_frequency_samples += samples;
+		if (elapsed >= DRAG_LOG_INTERVAL_US) {
+			double frequency = 1000.0*1000.0*(double)_motion_frequency_samples/(double)elapsed;
+			logi("motion %.1f Hz delta %f %f".printf(frequency, delta_x, delta_y));
+			_motion_frequency_start_time = now;
+			_motion_frequency_samples = 0;
+		}
 
 		if (!_dragging) {
-			if (_drag_mouse_x.abs() > ACTIVATION_MARGIN) {
+			if (_drag_mouse_x.abs() > DRAG_ACTIVATION_MARGIN) {
 				_dragging = true;
+				_drag_value_dirty = true;
+				logi("InputDouble drag: activated accumulated=(%f,%f) margin=%f".printf(_drag_mouse_x, _drag_mouse_y, DRAG_ACTIVATION_MARGIN));
 
-				_drag_mouse_x += _drag_mouse_x > 0 ? -ACTIVATION_MARGIN : ACTIVATION_MARGIN;
-
-				Gdk.Display display = Gdk.Display.get_default();
-				Gdk.Cursor none = new Gdk.Cursor.from_name(display, "none");
-				_event_box.get_window().set_cursor(none);
+				set_pointer_cursor("none");
 			}
-		} else {
-			double scale = 0.01;
-			set_value_safe(_drag_start_value + _drag_mouse_x*scale);
+		} else if (delta_x != 0) {
+			_drag_value_dirty = true;
 		}
+	}
+
+	public bool on_drag_activation_update()
+	{
+		if (!_pressed || _dragging) {
+			_drag_activation_timeout_id = 0;
+			return GLib.Source.REMOVE;
+		}
+
+		if (drain_drag_sampler()) {
+			_drag_activation_timeout_id = 0;
+			logi("InputDouble drag: release received by sampler during activation");
+			on_button_released(1, 0.0, 0.0);
+			reset_click_gesture_after_sampler_release();
+			return GLib.Source.REMOVE;
+		}
+		if (_dragging) {
+			_drag_activation_timeout_id = 0;
+			return GLib.Source.REMOVE;
+		}
+
+		return GLib.Source.CONTINUE;
+	}
+
+	public void reset_click_gesture_after_sampler_release()
+	{
+		_resetting_click_gesture = true;
+		_gesture_click.reset();
+		_resetting_click_gesture = false;
+	}
+
+	public bool drain_drag_sampler()
+	{
+		if (_drag_sampler == null)
+			return false;
+
+		double delta_x;
+		double delta_y;
+		int samples;
+		input_double_drag_sampler_drain(_drag_sampler, out delta_x, out delta_y, out samples);
+		process_drag_samples(delta_x, delta_y, samples);
+
+		_diagnostic_drains += 1;
+		int64 now = GLib.get_monotonic_time();
+		if (_diagnostic_drains <= 10 || now - _diagnostic_last_drain_log_time >= DRAG_LOG_INTERVAL_US) {
+			logi("InputDouble drag: drain=%d samples=%d delta=(%f,%f) accumulated=(%f,%f) dragging=%s dirty=%s".printf(_diagnostic_drains, samples, delta_x, delta_y, _drag_mouse_x, _drag_mouse_y, _dragging.to_string(), _drag_value_dirty.to_string()));
+			_diagnostic_last_drain_log_time = now;
+		}
+
+		return input_double_drag_sampler_released(_drag_sampler);
+	}
+
+	public void stop_drag_sampler(bool process_samples)
+	{
+		if (_drag_sampler == null)
+			return;
+
+		double delta_x;
+		double delta_y;
+		int samples;
+		input_double_drag_sampler_stop(_drag_sampler, out delta_x, out delta_y, out samples);
+		_drag_sampler = null;
+		logi("InputDouble drag: final drain process=%s samples=%d delta=(%f,%f)".printf(process_samples.to_string(), samples, delta_x, delta_y));
+		if (process_samples)
+			process_drag_samples(delta_x, delta_y, samples);
+	}
+
+	public bool on_drag_update()
+	{
+		if (!_pressed) {
+			_drag_update_timeout_id = 0;
+			return GLib.Source.REMOVE;
+		}
+
+		if (drain_drag_sampler()) {
+			logi("InputDouble drag: release received by sampler");
+			on_button_released(1, 0.0, 0.0);
+			reset_click_gesture_after_sampler_release();
+			return GLib.Source.REMOVE;
+		}
+		update_drag_value();
+		return GLib.Source.CONTINUE;
+	}
+
+	public void update_drag_value()
+	{
+		if (!_dragging || !_drag_value_dirty)
+			return;
+
+		const double SCALE = 0.01;
+		double dx_adjusted = _drag_mouse_x - _drag_mouse_x.clamp(-DRAG_ACTIVATION_MARGIN, DRAG_ACTIVATION_MARGIN);
+		double new_value = _drag_start_value + dx_adjusted*SCALE;
+		_drag_value_dirty = false;
+		_diagnostic_property_updates += 1;
+		int64 now = GLib.get_monotonic_time();
+		if (_diagnostic_property_updates <= 10 || now - _diagnostic_last_property_log_time >= DRAG_LOG_INTERVAL_US) {
+			logi("InputDouble drag: property-update=%d old=%f new=%f accumulated-x=%f".printf(_diagnostic_property_updates, _value, new_value, _drag_mouse_x));
+			_diagnostic_last_property_log_time = now;
+		}
+		set_value_safe(new_value);
 	}
 
 	public void on_activate()
