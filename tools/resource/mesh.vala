@@ -70,10 +70,33 @@ public struct Mesh
 	public void decode(GLib.HashTable<string, Value?> mesh)
 	{
 		if (mesh.contains("source")) {
+			string source_path = _project.absolute_path((string)mesh["source"]);
+			if (source_path.down().has_suffix(".gltf") || source_path.down().has_suffix(".glb")) {
+				cgltf.Options options = {};
+				cgltf.Data data;
+				cgltf.Result result = cgltf.parse_file(ref options, source_path, out data);
+				if (result != cgltf.Result.SUCCESS) {
+					loge("cgltf: failed to parse '%s' (%d)".printf(source_path, result));
+					return;
+				}
+				unowned cgltf.Scene? scene = data.scene != null
+					? data.scene
+					: (data.scenes_count != 0 ? cgltf.scene_at(data, 0) : null)
+					;
+				if (scene == null)
+					return;
+				GLTFNames names = new GLTFNames(data);
+				for (size_t i = 0; i < data.nodes_count; ++i) {
+					unowned cgltf.Node node = cgltf.node_at(data, i);
+					if (node.mesh != null && GLTFImporter.node_in_scene(scene, node))
+						_nodes.add(names.node(data, node));
+				}
+				return;
+			}
+
 			ufbx.Error error = {};
 			ufbx.LoadOpts load_opts = {};
 			load_opts.ignore_all_content = true;
-			string source_path = _project.absolute_path((string)mesh["source"]);
 			if (source_path.down().has_suffix(".obj"))
 				load_opts.file_format = ufbx.FileFormat.OBJ;
 			ufbx.Scene? scene = ufbx.Scene.load_file(source_path, load_opts, ref error);

@@ -206,6 +206,7 @@ public class FBXImportDialog : Gtk.Window
 	public Gtk.Button _import;
 	public Gtk.Button _cancel;
 	public Gtk.HeaderBar _header_bar;
+	public bool _is_gltf;
 
 	public FBXImportDialog(Database database
 		, string destination_dir
@@ -213,6 +214,7 @@ public class FBXImportDialog : Gtk.Window
 		, Import import_result
 		, owned FBXImportOptions options
 		, string options_path
+		, bool is_gltf = false
 		)
 	{
 		_project = database._project;
@@ -223,6 +225,7 @@ public class FBXImportDialog : Gtk.Window
 		_import_result = import_result;
 		_options = (owned)options;
 		_options_path = options_path;
+		_is_gltf = is_gltf;
 
 		_general_set = new PropertyGridSet();
 
@@ -303,7 +306,7 @@ public class FBXImportDialog : Gtk.Window
 
 		_header_bar = new Gtk.HeaderBar();
 #if CROWN_GTK3
-		_header_bar.title = _("Import FBX...");
+		_header_bar.title = is_gltf ? _("Import glTF...") : _("Import FBX...");
 		_header_bar.show_close_button = true;
 #else
 		_header_bar.show_title_buttons = true;
@@ -345,7 +348,10 @@ public class FBXImportDialog : Gtk.Window
 	void import()
 	{
 		read_options();
-		FBXImporter.import_with_options(_import_result, _options, _project, _destination_dir, _filenames, _options_path);
+		if (_is_gltf)
+			GLTFImporter.import_with_options(_import_result, _options, _project, _destination_dir, _filenames, _options_path);
+		else
+			FBXImporter.import_with_options(_import_result, _options, _project, _destination_dir, _filenames, _options_path);
 		close();
 	}
 

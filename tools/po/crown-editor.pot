@@ -1915,6 +1915,10 @@ msgstr ""
 msgid "Import FBX..."
 msgstr ""
 
+#: tools/resource/mesh_resource_fbx.vala:300
+msgid "Import glTF..."
+msgstr ""
+
 #: tools/resource/mesh_resource_obj.vala:328
 msgid "Import OBJ..."
 msgstr ""

@@ -52,6 +52,12 @@ Import an FBX mesh:
 
     ./crown-launcher editor --source-dir $CROWN/samples/01-physics --import chair.fbx units/chair
 
+Import a binary glTF scene:
+
+.. code::
+
+    ./crown-launcher editor --source-dir $CROWN/samples/01-physics --import chair.glb units/chair
+
 Import a PNG as a sprite:
 
 .. code::

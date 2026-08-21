@@ -3,17 +3,18 @@
 Importing Scenes
 ================
 
-Crown can import most useful elements from 3D scenes saved in FBX or OBJ format.
+Crown can import most useful elements from 3D scenes saved in glTF 2.0, FBX or
+OBJ format.
 The sections below refer mostly to FBX models because FBX is the most popular
 format, but the same principles apply to other supported formats. Specific
 formats are mentioned where necessary.
 
-FBX import dialog
------------------
+glTF and FBX import dialog
+--------------------------
 
-When you import an FBX file, Crown opens a dialog where you can select import
-options and choose which parts of the scene to bring into the project. The FBX
-import dialog is divided into two main sections:
+When you import a ``.gltf``, ``.glb`` or FBX file, Crown opens a dialog where
+you can select import options and choose which parts of the scene to bring into
+the project. The import dialog is divided into two main sections:
 
 * Units: import geometry, lights, cameras, materials and any associated
   textures.
@@ -23,7 +24,7 @@ import dialog is divided into two main sections:
 .. figure:: images/import_fbx.png
    :align: center
 
-   The FBX import dialog.
+   The scene import dialog.
 
 Preparing Models for Export
 ---------------------------
@@ -31,7 +32,9 @@ Preparing Models for Export
 Crown uses Y-forward Z-up axes. To keep models correctly oriented after import,
 use those axes when exporting from DCC programs whenever possible.
 
-This is especially important when working with OBJ scenes, because the format
+glTF scenes use right-handed Y-up coordinates, which Crown converts to its
+right-handed Z-up coordinates automatically. Axis export settings are most
+important when working with OBJ scenes, because the format
 generally does not store the axes used at export time. In that case, Crown has
 no way to automatically detect whether it should insert an extra root node to
 correct the orientation. FBX scenes, on the other hand, include this
@@ -39,7 +42,7 @@ information, and Crown uses it to insert a corrective root node when necessary.
 Even so, it is best to export with settings that match Crown's conventions.
 
 The settings below are Blender-specific. Other 3D applications may expose the
-same export choices under different names. For both FBX and OBJ exports, set
+same export choices under different names. For FBX and OBJ exports, set
 ``Forward`` to ``Y`` and ``Up`` to ``Z``.
 
 FBX
@@ -65,22 +68,22 @@ is available; otherwise, some texture maps may go undetected by the importer.
 
    Blender OBJ export settings for axes and material metadata.
 
-One FBX per clip
-----------------
+One scene file per clip
+-----------------------
 
 A common workflow for animated 3D models is to export the geometry and
-skeleton together in one FBX file, and export each animation clip as a
-separate FBX file. Crown supports and recommends this approach because it
-simplifies asset management and make faster iterations possible.
+skeleton together in one glTF or FBX file, and export each animation clip as a
+separate file. Crown supports and recommends this approach because it
+simplifies asset management and makes faster iterations possible.
 
 To import models organized in this way, always follow these 2 steps:
 
 1) Importing geometry and skeleton
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Start by importing the FBX that contains the geometry and skeleton. In the
-Project Browser create or select the target folder, make sure ``Import
-Animations`` is unchecked, then click ``Import`` to begin:
+Start by importing the glTF or FBX file that contains the geometry and
+skeleton. In the Project Browser create or select the target folder, make sure
+``Import Animations`` is unchecked, then click ``Import`` to begin:
 
 .. figure:: images/import_fbx_unchecked_animations.svg
    :align: center
@@ -99,10 +102,9 @@ Project Browser:
 2) Importing animation clips
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-After importing geometry and skeleton, import the FBX files that contain the
-individual animation clips. Right-click the same folder, choose
-``Import...``, and select the FBX files with the clips. In the importer
-dialog:
+After importing geometry and skeleton, import the glTF or FBX files that
+contain the individual animation clips. Right-click the same folder, choose
+``Import...``, and select the files with the clips. In the importer dialog:
 
 * Uncheck the entire **Unit** section to avoid importing any undesired resource.
 * Uncheck ``New Skeleton`` to indicate that the skeleton already exists.

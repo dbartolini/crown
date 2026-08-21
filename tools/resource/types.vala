@@ -30,6 +30,7 @@ const string OBJECT_TYPE_MATERIAL                = "material";
 const string OBJECT_TYPE_MESH                    = "mesh";
 const string OBJECT_TYPE_MESH_ANIMATION          = "mesh_animation";
 const string OBJECT_TYPE_MESH_BONE               = "mesh_bone";
+const string OBJECT_TYPE_GLTF_RIGID_ATTACHMENT   = "gltf_rigid_attachment";
 const string OBJECT_TYPE_MESH_RENDERER           = "mesh_renderer";
 const string OBJECT_TYPE_MESH_SKELETON           = "mesh_skeleton";
 const string OBJECT_TYPE_MOVER                   = "mover";
@@ -2279,9 +2280,40 @@ public static void create_object_types(Database database)
 	{
 		PropertyDefinition()
 		{
+			type = PropertyType.STRING,
+			name = "node_name",
+		},
+		PropertyDefinition()
+		{
+			type = PropertyType.STRING,
+			name = "skin_name",
+		},
+		PropertyDefinition()
+		{
+			type = PropertyType.STRING,
+			name = "bone_name",
+		},
+		PropertyDefinition()
+		{
+			type = PropertyType.STRING,
+			name = "root_name",
+		},
+	};
+	StringId64 gltf_rigid_attachment_type = database.create_object_type(OBJECT_TYPE_GLTF_RIGID_ATTACHMENT, properties);
+
+	properties =
+	{
+		PropertyDefinition()
+		{
 			type = PropertyType.RESOURCE,
 			name = "source",
 			resource_type = OBJECT_TYPE_MESH,
+		},
+		PropertyDefinition()
+		{
+			type = PropertyType.OBJECTS_SET,
+			name = "rigid_attachments",
+			object_type = gltf_rigid_attachment_type,
 		},
 	};
 	database.create_object_type(OBJECT_TYPE_MESH, properties);
@@ -2597,6 +2629,11 @@ public static void create_object_types(Database database)
 		},
 		PropertyDefinition()
 		{
+			type = PropertyType.STRING,
+			name = "skin_name",
+		},
+		PropertyDefinition()
+		{
 			type = PropertyType.RESOURCE,
 			name = "target_skeleton",
 			resource_type = OBJECT_TYPE_MESH_SKELETON,
@@ -2651,6 +2688,11 @@ public static void create_object_types(Database database)
 			name = "mesh_resource",
 			label = _("Source Mesh"),
 			resource_type = OBJECT_TYPE_MESH,
+		},
+		PropertyDefinition()
+		{
+			type = PropertyType.STRING,
+			name = "skin_name",
 		},
 		PropertyDefinition()
 		{

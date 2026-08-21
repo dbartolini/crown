@@ -113,6 +113,7 @@ project "crown-editor"
 		"--target-glib=2.64.6",
 		"--pkg tinyexpr",
 		"--pkg md5",
+		"--pkg cgltf",
 		"--pkg ufbx",
 	}
 	if _OPTIONS["with-gtk4"] then
@@ -128,8 +129,10 @@ project "crown-editor"
 	buildoptions {
 		'-I"' .. path.join(CROWN_DIR, "3rdparty/tinyexpr") .. '"',
 		'-I"' .. path.join(CROWN_DIR, "3rdparty/md5") .. '"',
+		'-I"' .. path.join(CROWN_DIR, "3rdparty/cgltf") .. '"',
 		'-I"' .. path.join(CROWN_DIR, "3rdparty/ufbx") .. '"',
 		'-I"' .. path.join(CROWN_DIR, "3rdparty/stb") .. '"',
+		'-I"' .. path.join(CROWN_DIR, "tools/resource") .. '"',
 	}
 
 	files {
@@ -138,6 +141,7 @@ project "crown-editor"
 		CROWN_DIR .. "tools/level_editor/resources/org.crownengine.Crown.gresource.xml",
 		CROWN_DIR .. "3rdparty/tinyexpr/tinyexpr.c",
 		CROWN_DIR .. "3rdparty/md5/md5.c",
+		CROWN_DIR .. "3rdparty/cgltf/cgltf.c",
 		CROWN_DIR .. "3rdparty/ufbx/ufbx.c",
 		CROWN_DIR .. "scripts/win32/app.rc",
 	}
