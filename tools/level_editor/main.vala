@@ -554,7 +554,7 @@ public static int main(string[] args)
 				if (field.key == "MESSAGE") {
 					switch (log_level) {
 					case LEVEL_DEBUG:
-#if CROWN_DEBUG
+#if CROWN_DEBUG && CROWN_GTK3
 						logi((string)field.value);
 #endif
 						break;
@@ -854,7 +854,7 @@ public static int main(string[] args)
 	if (ii == po_paths.length)
 		_po_dir = File.new_for_path(".");
 
-#if CROWN_PLATFORM_LINUX
+#if CROWN_PLATFORM_LINUX && CROWN_GTK3
 	Gdk.set_allowed_backends("x11");
 #endif
 

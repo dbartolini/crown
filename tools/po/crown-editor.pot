@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-09 22:25+0200\n"
+"POT-Creation-Date: 2026-10-10 17:45+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -2902,6 +2902,43 @@ msgstr ""
 msgid "Reveal in Project Browser"
 msgstr ""
 
+#: tools/widgets/editor_view.vala:960
+msgid "Cannot create viewport export socket."
+msgstr ""
+
+#: tools/widgets/editor_view.vala:995
+msgid "Viewport export connection failed."
+msgstr ""
+
+#: tools/widgets/editor_view.vala:1005
+msgid "Invalid viewport export packet."
+msgstr ""
+
+#: tools/widgets/editor_view.vala:1010
+msgid "The selected renderer cannot export a DMA-BUF viewport."
+msgstr ""
+
+#: tools/widgets/editor_view.vala:1011
+msgid "The renderer could not export a DMA-BUF viewport."
+msgstr ""
+
+#: tools/widgets/editor_view.vala:1019
+msgid "Invalid viewport frame."
+msgstr ""
+
+#: tools/widgets/editor_view.vala:1031
+msgid "The viewport DMA-BUF format or modifier is unsupported by GTK."
+msgstr ""
+
+#: tools/widgets/editor_view.vala:1055
+msgid "GTK could not import the viewport DMA-BUF."
+msgstr ""
+
+#: tools/widgets/editor_view.vala:1062
+#, c-format
+msgid "Could not import viewport DMA-BUF: %s"
+msgstr ""
+
 #: tools/widgets/editor_viewport.vala:24
 msgid "Perspective"
 msgstr ""
@@ -2932,6 +2969,10 @@ msgstr ""
 
 #: tools/widgets/editor_viewport.vala:38
 msgid "View Unknown"
+msgstr ""
+
+#: tools/widgets/editor_viewport.vala:293
+msgid "DMA-BUF viewport export is available on Linux."
 msgstr ""
 
 #: tools/widgets/input_color4.vala:480
