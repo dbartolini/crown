@@ -60,9 +60,7 @@ namespace bgfx
 	///
 	void setPlatformData(const PlatformData& _data);
 
-	/// Internal data.
-	///
-	/// @attention C99's equivalent binding is `bgfx_internal_data_t`.
+	/// Information returned by `exportTexture()`.
 	///
 	struct InternalData
 	{
@@ -132,6 +130,28 @@ namespace bgfx
 		, uint8_t _numMips
 		, TextureFormat::Enum _format
 		, uint64_t _flags = BGFX_TEXTURE_NONE|BGFX_SAMPLER_NONE
+		);
+
+	/// Internal data.
+	///
+	/// @attention C99's equivalent binding is `bgfx_internal_data_t`.
+	///
+	struct ExternalTextureInfo
+	{
+		uint16_t width;     //!< Texture width.
+		uint16_t height;    //!< Texture height.
+		uint32_t stride;    //!< Texture stride.
+		uint32_t offset;    //!< Texture offset.
+		uint32_t size;      //!< Texture size.
+		uint32_t fourcc;    //!< Linux DRM fourcc.
+		uint64_t modifier;  //!< Linux DRM format modifier.
+		void* handle;       //!< DMA-BUF file descriptor on Linux.
+	};
+
+	/// Queue texture export and return the frame when `_info` is ready.
+	uint32_t exportTexture(
+		  ExternalTextureInfo& _info
+		, TextureHandle _handle
 		);
 
 } // namespace bgfx
