@@ -331,7 +331,7 @@ static void device_command_crash(ConsoleServer &cs, u32 client_id, const JsonArr
 	}
 }
 
-static void device_message_resize(ConsoleServer & /*cs*/, u32 /*client_id*/, const char *json, void * /*user_data*/)
+static void device_message_resize(ConsoleServer & /*cs*/, u32 /*client_id*/, const char *json, void *user_data)
 {
 	TempAllocator256 ta;
 	JsonObject obj(ta);
@@ -342,7 +342,16 @@ static void device_message_resize(ConsoleServer & /*cs*/, u32 /*client_id*/, con
 	width = sjson::parse_int(obj["width"]);
 	height = sjson::parse_int(obj["height"]);
 
-	device()->_window->resize((u16)width, (u16)height);
+	if (width < 1 || height < 1 || width > UINT16_MAX || height > UINT16_MAX)
+		return;
+	Device *dev = (Device *)user_data;
+	if (dev->_options._headless) {
+		dev->_width = (u16)width;
+		dev->_height = (u16)height;
+	} else {
+		dev->_window->resize((u16)width, (u16)height);
+	}
+	++dev->_needs_draw;
 }
 
 static void device_message_frame(ConsoleServer & /*cs*/, u32 /*client_id*/, const char * /*json*/, void *user_data)
@@ -488,7 +497,8 @@ bool Device::frame()
 	if (CE_UNLIKELY(_width != _prev_width || _height != _prev_height)) {
 		_prev_width = _width;
 		_prev_height = _height;
-		bgfx::reset(_width, _height, (_boot_config.vsync ? BGFX_RESET_VSYNC : BGFX_RESET_NONE));
+		if (!_options._headless)
+			bgfx::reset(_width, _height, (_boot_config.vsync ? BGFX_RESET_VSYNC : BGFX_RESET_NONE));
 		_pipeline->reset(_width, _height);
 
 		// Force pipeline reset in one cycle.
@@ -765,20 +775,27 @@ int Device::main_loop()
 	}
 #endif
 
-	_window = window::create(_allocator);
-	_window->open(_options._window_x
-		, _options._window_y
-		, _width
-		, _height
-		, _options._parent_window
-		);
+	if (!_options._headless) {
+		_window = window::create(_allocator);
+		_window->open(_options._window_x
+			, _options._window_y
+			, _width
+			, _height
+			, _options._parent_window
+			);
+	}
 
 	_bgfx_allocator = CE_NEW(_allocator, BgfxAllocator)(default_allocator());
 	_bgfx_callback  = CE_NEW(_allocator, BgfxCallback)(default_allocator());
 
 	bgfx::Init init;
-	init.resolution.width  = _width;
-	init.resolution.height = _height;
+	if (_options._headless) {
+		init.resolution.width  = 0;
+		init.resolution.height = 0;
+	} else {
+		init.resolution.width  = _width;
+		init.resolution.height = _height;
+	}
 	init.resolution.reset  = _boot_config.vsync ? BGFX_RESET_VSYNC : BGFX_RESET_NONE;
 #if CROWN_PLATFORM_EMSCRIPTEN || CROWN_PLATFORM_LINUX
 	// Avoids gray text fringe on HTML5 and translucent window on OpenGL + Wayland.
@@ -787,9 +804,11 @@ int Device::main_loop()
 #endif
 	init.callback  = _bgfx_callback;
 	init.allocator = _bgfx_allocator;
-	init.platformData.ndt = _window->native_display();
-	init.platformData.nwh = _window->native_handle();
-	init.platformData.type = (bgfx::NativeWindowHandleType::Enum)(uintptr_t)_window->native_handle_type();
+	if (_window != NULL) {
+		init.platformData.ndt = _window->native_display();
+		init.platformData.nwh = _window->native_handle();
+		init.platformData.type = (bgfx::NativeWindowHandleType::Enum)(uintptr_t)_window->native_handle_type();
+	}
 	init.vendorId = BGFX_PCI_ID_NONE;
 	init.deviceId = _boot_config.device_id;
 	init.type = renderer_type_to_bgfx(_renderer_type);
@@ -812,8 +831,10 @@ int Device::main_loop()
 		CE_DELETE(_allocator, _bgfx_callback);
 		CE_DELETE(_allocator, _bgfx_allocator);
 
-		_window->close();
-		window::destroy(_allocator, *_window);
+		if (_window != NULL) {
+			_window->close();
+			window::destroy(_allocator, *_window);
+		}
 		display::destroy(_allocator, *_display);
 
 		CE_DELETE(_allocator, _data_filesystem);
@@ -822,10 +843,12 @@ int Device::main_loop()
 		return EXIT_FAILURE;
 	}
 
-	_window->set_title(_boot_config.window_title.c_str());
-	if (!_options._hidden)
-		_window->show();
-	_window->set_fullscreen(_boot_config.fullscreen);
+	if (_window != NULL) {
+		_window->set_title(_boot_config.window_title.c_str());
+		if (!_options._hidden)
+			_window->show();
+		_window->set_fullscreen(_boot_config.fullscreen);
+	}
 
 	{
 		DynamicString save_dir(default_allocator());
@@ -868,7 +891,8 @@ int Device::main_loop()
 	_lua_environment->execute_string(_options._lua_string.c_str());
 
 	_pipeline = CE_NEW(_allocator, Pipeline)(*_shader_manager);
-	_pipeline->create(_width, _height, merged_render_settings(this));
+	_pipeline->create(_width, _height, merged_render_settings(this)
+		, _options._headless ? PipelineOutput::OFFSCREEN : PipelineOutput::WINDOW);
 
 	stat_globals::init(_allocator
 		, *_resource_manager
@@ -928,8 +952,10 @@ int Device::main_loop()
 	CE_DELETE(_allocator, _bgfx_callback);
 	CE_DELETE(_allocator, _bgfx_allocator);
 
-	_window->close();
-	window::destroy(_allocator, *_window);
+	if (_window != NULL) {
+		_window->close();
+		window::destroy(_allocator, *_window);
+	}
 	display::destroy(_allocator, *_display);
 
 	CE_DELETE(_allocator, _data_filesystem);
@@ -1111,7 +1137,7 @@ void Device::refresh(const char *json)
 				if (_render_config_resource == old_resource) {
 					_render_config_resource = (RenderConfigResource *)new_resource;
 					_pipeline->destroy();
-					_pipeline->create(_width, _height, merged_render_settings(this));
+					_pipeline->create(_width, _height, merged_render_settings(this), _pipeline->_output);
 				}
 			} else if (resource_type == RESOURCE_TYPE_SPRITE) {
 				ListNode *cur;
@@ -1166,8 +1192,12 @@ void Device::refresh(const char *json)
 
 void Device::screenshot(const char *path)
 {
-	bgfx::requestScreenShot(BGFX_INVALID_HANDLE, path);
-	++device()->_needs_draw; // 1 frame for the request to be fulfilled.
+	if (_options._headless) {
+		// TODO
+	} else {
+		bgfx::requestScreenShot(BGFX_INVALID_HANDLE, path);
+		++device()->_needs_draw; // 1 frame for the request to be fulfilled.
+	}
 }
 
 Device *_device = NULL;

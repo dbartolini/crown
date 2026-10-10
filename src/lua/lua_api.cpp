@@ -4596,75 +4596,77 @@ void load_api(LuaEnvironment &env)
 			return 0;
 		});
 
-	env.add_module_function("Window", "show", [](lua_State *L) {
-			LuaStack stack(L);
-			device()->_window->show();
-			return 0;
-		});
-	env.add_module_function("Window", "hide", [](lua_State *L) {
-			LuaStack stack(L);
-			device()->_window->hide();
-			return 0;
-		});
-	env.add_module_function("Window", "resize", [](lua_State *L) {
-			LuaStack stack(L);
-			device()->_window->resize(stack.get_int(1), stack.get_int(2));
-			return 0;
-		});
-	env.add_module_function("Window", "move", [](lua_State *L) {
-			LuaStack stack(L);
-			device()->_window->move(stack.get_int(1), stack.get_int(2));
-			return 0;
-		});
-	env.add_module_function("Window", "minimize", [](lua_State * /*L*/) {
-			device()->_window->minimize();
-			return 0;
-		});
-	env.add_module_function("Window", "maximize", [](lua_State * /*L*/) {
-			device()->_window->maximize();
-			return 0;
-		});
-	env.add_module_function("Window", "restore", [](lua_State * /*L*/) {
-			device()->_window->restore();
-			return 0;
-		});
-	env.add_module_function("Window", "title", [](lua_State *L) {
-			LuaStack stack(L, +1);
-			stack.push_string(device()->_window->title());
-			return 1;
-		});
-	env.add_module_function("Window", "set_title", [](lua_State *L) {
-			LuaStack stack(L);
-			device()->_window->set_title(stack.get_string(1));
-			return 0;
-		});
-	env.add_module_function("Window", "show_cursor", [](lua_State *L) {
-			LuaStack stack(L);
-			device()->_window->show_cursor(stack.get_bool(1));
-			return 0;
-		});
-	env.add_module_function("Window", "is_fullscreen", window_is_fullscreen);
-	env.add_module_function("Window", "set_fullscreen", [](lua_State *L) {
-			LuaStack stack(L);
-			device()->_window->set_fullscreen(stack.get_bool(1));
-			return 0;
-		});
-	env.add_module_function("Window", "set_cursor", [](lua_State *L) {
-			LuaStack stack(L);
-			const char *name = stack.get_string(1);
-			const MouseCursor::Enum mc = name_to_mouse_cursor(name);
-			LUA_ASSERT(mc != MouseCursor::COUNT, stack, "Unknown mouse cursor: '%s'", name);
-			device()->_window->set_cursor(mc);
-			return 0;
-		});
-	env.add_module_function("Window", "set_cursor_mode", [](lua_State *L) {
-			LuaStack stack(L, +1);
-			const char *name = stack.get_string(1);
-			const CursorMode::Enum cm = name_to_cursor_mode(name);
-			LUA_ASSERT(cm != CursorMode::COUNT, stack, "Unknown cursor mode: '%s'", name);
-			stack.push_bool(device()->_window->set_cursor_mode(cm));
-			return 1;
-		});
+	if (device()->_window != NULL) {
+		env.add_module_function("Window", "show", [](lua_State *L) {
+				LuaStack stack(L);
+				device()->_window->show();
+				return 0;
+			});
+		env.add_module_function("Window", "hide", [](lua_State *L) {
+				LuaStack stack(L);
+				device()->_window->hide();
+				return 0;
+			});
+		env.add_module_function("Window", "resize", [](lua_State *L) {
+				LuaStack stack(L);
+				device()->_window->resize(stack.get_int(1), stack.get_int(2));
+				return 0;
+			});
+		env.add_module_function("Window", "move", [](lua_State *L) {
+				LuaStack stack(L);
+				device()->_window->move(stack.get_int(1), stack.get_int(2));
+				return 0;
+			});
+		env.add_module_function("Window", "minimize", [](lua_State * /*L*/) {
+				device()->_window->minimize();
+				return 0;
+			});
+		env.add_module_function("Window", "maximize", [](lua_State * /*L*/) {
+				device()->_window->maximize();
+				return 0;
+			});
+		env.add_module_function("Window", "restore", [](lua_State * /*L*/) {
+				device()->_window->restore();
+				return 0;
+			});
+		env.add_module_function("Window", "title", [](lua_State *L) {
+				LuaStack stack(L, +1);
+				stack.push_string(device()->_window->title());
+				return 1;
+			});
+		env.add_module_function("Window", "set_title", [](lua_State *L) {
+				LuaStack stack(L);
+				device()->_window->set_title(stack.get_string(1));
+				return 0;
+			});
+		env.add_module_function("Window", "show_cursor", [](lua_State *L) {
+				LuaStack stack(L);
+				device()->_window->show_cursor(stack.get_bool(1));
+				return 0;
+			});
+		env.add_module_function("Window", "is_fullscreen", window_is_fullscreen);
+		env.add_module_function("Window", "set_fullscreen", [](lua_State *L) {
+				LuaStack stack(L);
+				device()->_window->set_fullscreen(stack.get_bool(1));
+				return 0;
+			});
+		env.add_module_function("Window", "set_cursor", [](lua_State *L) {
+				LuaStack stack(L);
+				const char *name = stack.get_string(1);
+				const MouseCursor::Enum mc = name_to_mouse_cursor(name);
+				LUA_ASSERT(mc != MouseCursor::COUNT, stack, "Unknown mouse cursor: '%s'", name);
+				device()->_window->set_cursor(mc);
+				return 0;
+			});
+		env.add_module_function("Window", "set_cursor_mode", [](lua_State *L) {
+				LuaStack stack(L, +1);
+				const char *name = stack.get_string(1);
+				const CursorMode::Enum cm = name_to_cursor_mode(name);
+				LUA_ASSERT(cm != CursorMode::COUNT, stack, "Unknown cursor mode: '%s'", name);
+				stack.push_bool(device()->_window->set_cursor_mode(cm));
+				return 1;
+			});
+	}
 
 	env.add_module_function("Input", "events", [](lua_State *L) {
 			LuaStack stack(L, +1);

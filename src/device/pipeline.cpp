@@ -143,6 +143,7 @@ static void lookup_default_shaders(Pipeline &pl)
 
 Pipeline::Pipeline(ShaderManager &sm)
 	: _shader_manager(&sm)
+	, _output(PipelineOutput::WINDOW)
 	, _color_sdr(BGFX_INVALID_HANDLE)
 	, _depth_texture(BGFX_INVALID_HANDLE)
 	, _color_map(BGFX_INVALID_HANDLE)
@@ -206,9 +207,10 @@ bool Pipeline::selection_enabled() const
 		;
 }
 
-void Pipeline::create(u16 width, u16 height, const RenderSettings &render_settings)
+void Pipeline::create(u16 width, u16 height, const RenderSettings &render_settings, PipelineOutput::Enum output)
 {
 	_render_settings = render_settings;
+	_output = output;
 
 	_color_map = bgfx::createUniform("s_color_map", bgfx::UniformType::Sampler);
 
@@ -774,6 +776,8 @@ void Pipeline::reset(u16 width, u16 height)
 			}
 		} else if (id == View::LIGHTS) {
 			view_name = "lights_data";
+			if (_output == PipelineOutput::OFFSCREEN)
+				bgfx::setViewFrameBuffer(id, _colors[0]);
 		} else if (id == View::MESH) {
 			view_name = "mesh";
 			bgfx::setViewRect(id, 0, 0, width, height);
@@ -1014,7 +1018,8 @@ void Pipeline::render(u16 width, u16 height, const Matrix4x4 &view, const Matrix
 		} else if (id == View::GRAPH) {
 			bgfx::touch(id);
 		} else if (id == View::BLIT) {
-			bgfx::touch(id);
+			if (_output == PipelineOutput::WINDOW)
+				bgfx::touch(id);
 		}
 	}
 
@@ -1138,10 +1143,12 @@ void Pipeline::render(u16 width, u16 height, const Matrix4x4 &view, const Matrix
 	}
 
 	// Blit to backbuffer.
-	bgfx::setTexture(0, _color_map, bgfx::getTexture(_color_sdr), samplerFlags);
-	screenSpaceQuad(width, height, 0.0f, caps->originBottomLeft);
-	bgfx::setState(_blit_shader.state);
-	bgfx::submit(View::BLIT, _blit_shader.program);
+	if (_output == PipelineOutput::WINDOW) {
+		bgfx::setTexture(0, _color_map, bgfx::getTexture(_color_sdr), samplerFlags);
+		screenSpaceQuad(width, height, 0.0f, caps->originBottomLeft);
+		bgfx::setState(_blit_shader.state);
+		bgfx::submit(View::BLIT, _blit_shader.program);
+	}
 }
 
 void Pipeline::begin_light_cookie_atlas()

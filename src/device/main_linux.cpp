@@ -1825,19 +1825,22 @@ struct LinuxDevice
 
 	explicit LinuxDevice(Allocator &a)
 		: _allocator(&a)
+		, _options(NULL)
 		, _events(a)
 		, _queue(push_event)
 		, _joypad(_queue)
+		, _system(NULL)
 		, display_server(DisplayServer::COUNT)
 	{
 	}
 
 	int run(DeviceOptions *opts)
 	{
-		int init_ret = -1;
+		int init_ret = opts->_headless ? 0 : -1;
 		const char *display = NULL;
 
-		if (opts->_display_server.value() == DisplayServer::WAYLAND
+		if (!opts->_headless
+			&& opts->_display_server.value() == DisplayServer::WAYLAND
 			&& (display = getenv("WAYLAND_DISPLAY")) != NULL
 			&& strlen32(display) != 0) {
 			_system = CE_NEW(*_allocator, SystemWayland)(_queue);
@@ -1895,7 +1898,9 @@ struct LinuxDevice
 		while (!s_exit) {
 			FD_ZERO(&fdset);
 			FD_SET(exit_pipe[0], &fdset);
-			int maxfd = _system->set_fds(&fdset, exit_pipe[0]);
+			int maxfd = _system != NULL
+				? _system->set_fds(&fdset, exit_pipe[0])
+				: exit_pipe[0];
 			maxfd = _joypad.set_fds(&fdset, maxfd);
 
 			if (select(maxfd + 1, &fdset, NULL, NULL, NULL) <= 0)
@@ -1904,7 +1909,8 @@ struct LinuxDevice
 			if (FD_ISSET(exit_pipe[0], &fdset)) {
 				break;
 			} else {
-				_system->handle_events(&fdset);
+				if (_system != NULL)
+					_system->handle_events(&fdset);
 				_joypad.update(&fdset);
 			}
 		}
@@ -1913,8 +1919,10 @@ struct LinuxDevice
 
 		main_thread.stop();
 
-		_system->shutdown();
-		CE_DELETE(*_allocator, _system);
+		if (_system != NULL) {
+			_system->shutdown();
+			CE_DELETE(*_allocator, _system);
+		}
 
 		::close(exit_pipe[0]);
 		::close(exit_pipe[1]);
@@ -2614,11 +2622,26 @@ struct DisplayWayland : public Display
 	}
 };
 
+struct DisplayHeadless : public Display
+{
+	void modes(Array<DisplayMode> &modes) override
+	{
+		CE_UNUSED(modes);
+	}
+
+	void set_mode(u32 id) override
+	{
+		CE_UNUSED(id);
+	}
+};
+
 namespace display
 {
 	Display *create(Allocator &a)
 	{
-		if (s_linux_device->display_server == DisplayServer::X11)
+		if (s_linux_device->_options->_headless)
+			return CE_NEW(a, DisplayHeadless)();
+		else if (s_linux_device->display_server == DisplayServer::X11)
 			return CE_NEW(a, DisplayXRandr)();
 		else
 			return CE_NEW(a, DisplayWayland)();

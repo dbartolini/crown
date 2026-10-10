@@ -325,6 +325,7 @@ static bool push_event(const OsEvent &ev);
 struct WindowsDevice
 {
 	HWND _hwnd;
+	DWORD _main_thread_id;
 	HCURSOR _hcursor;
 	MPSCQueue<OsEvent, CROWN_MAX_OS_EVENTS> _events;
 	DeviceEventQueue _queue;
@@ -338,6 +339,7 @@ struct WindowsDevice
 
 	WindowsDevice(Allocator &a, DeviceOptions &opts)
 		: _hwnd(NULL)
+		, _main_thread_id(0)
 		, _hcursor(NULL)
 		, _events(a)
 		, _queue(push_event)
@@ -383,48 +385,50 @@ struct WindowsDevice
 		wnd.hIconSm = LoadIcon(NULL, IDI_APPLICATION);
 		RegisterClassExA(&wnd);
 
-		DWORD style = 0;
-		DWORD exstyle = 0;
-		if (_options->_parent_window == 0) {
-			style |= WS_OVERLAPPEDWINDOW;
-		} else {
-			style |= WS_POPUP;
-			exstyle |= WS_EX_TRANSPARENT | WS_EX_LAYERED | WS_EX_NOACTIVATE;
+		if (!_options->_headless) {
+			DWORD style = 0;
+			DWORD exstyle = 0;
+			if (_options->_parent_window == 0) {
+				style |= WS_OVERLAPPEDWINDOW;
+			} else {
+				style |= WS_POPUP;
+				exstyle |= WS_EX_TRANSPARENT | WS_EX_LAYERED | WS_EX_NOACTIVATE;
+			}
+			if (_options->_keep_above)
+				exstyle |= WS_EX_TOPMOST;
+
+			RECT rect;
+			rect.left   = 0;
+			rect.top    = 0;
+			rect.right  = _options->_window_width.value();
+			rect.bottom = _options->_window_height.value();
+			AdjustWindowRect(&rect, style, FALSE);
+
+			_hwnd = CreateWindowExA(exstyle
+				, "crown"
+				, "Crown"
+				, style
+				, _options->_window_x
+				, _options->_window_y
+				, rect.right - rect.left
+				, rect.bottom - rect.top
+				, 0
+				, NULL
+				, instance
+				, NULL
+				);
+			CE_ASSERT(_hwnd != NULL, "CreateWindowA: GetLastError = %d", GetLastError());
+
+			if (_options->_parent_window != 0)
+				SetParent(_hwnd, (HWND)(UINT_PTR)_options->_parent_window);
+
+			RAWINPUTDEVICE rid;
+			rid.usUsagePage = 0x01;
+			rid.usUsage = 0x06;
+			rid.dwFlags = RIDEV_NOLEGACY;
+			rid.hwndTarget = _hwnd;
+			RegisterRawInputDevices(&rid, 1, sizeof(rid));
 		}
-		if (_options->_keep_above)
-			exstyle |= WS_EX_TOPMOST;
-
-		RECT rect;
-		rect.left   = 0;
-		rect.top    = 0;
-		rect.right  = _options->_window_width.value();
-		rect.bottom = _options->_window_height.value();
-		AdjustWindowRect(&rect, style, FALSE);
-
-		_hwnd = CreateWindowExA(exstyle
-			, "crown"
-			, "Crown"
-			, style
-			, _options->_window_x
-			, _options->_window_y
-			, rect.right - rect.left
-			, rect.bottom - rect.top
-			, 0
-			, NULL
-			, instance
-			, NULL
-			);
-		CE_ASSERT(_hwnd != NULL, "CreateWindowA: GetLastError = %d", GetLastError());
-
-		if (_options->_parent_window != 0)
-			SetParent(_hwnd, (HWND)(UINT_PTR)_options->_parent_window);
-
-		RAWINPUTDEVICE rid;
-		rid.usUsagePage = 0x01;
-		rid.usUsage = 0x06;
-		rid.dwFlags = RIDEV_NOLEGACY;
-		rid.hwndTarget = _hwnd;
-		RegisterRawInputDevices(&rid, 1, sizeof(rid));
 
 		_hcursor = LoadCursorA(NULL, IDC_ARROW);
 
@@ -440,12 +444,19 @@ struct WindowsDevice
 		_win_cursors[MouseCursor::SIZE_VERTICAL]       = LoadCursorA(NULL, IDC_SIZENS);
 		_win_cursors[MouseCursor::WAIT]                = LoadCursorA(NULL, IDC_WAIT);
 
+		_main_thread_id = GetCurrentThreadId();
+		MSG msg;
+		PeekMessageA(&msg, NULL, WM_USER, WM_USER, PM_NOREMOVE);
+
 		Thread main_thread;
 		main_thread.start([](void *user_data) {
 				WindowsDevice *win = (WindowsDevice *)user_data;
 				int ec = crown::main_runtime(*win->_options);
 				s_exit = true;
-				PostMessageA(win->_hwnd, WM_USER + 1, 0, 0);
+				if (win->_hwnd != NULL)
+					PostMessageA(win->_hwnd, WM_USER + 1, 0, 0);
+				else
+					PostThreadMessageA(win->_main_thread_id, WM_QUIT, 0, 0);
 				return ec;
 			}
 			, this
@@ -464,7 +475,6 @@ struct WindowsDevice
 			);
 
 		// Windows event loop.
-		MSG msg;
 		msg.message = WM_NULL;
 		while (GetMessage(&msg, NULL, 0U, 0U) != 0) {
 			TranslateMessage(&msg);
@@ -486,7 +496,8 @@ struct WindowsDevice
 		DestroyIcon((HICON)_win_cursors[MouseCursor::HAND]);
 		DestroyIcon((HICON)_win_cursors[MouseCursor::ARROW]);
 
-		DestroyWindow(_hwnd);
+		if (_hwnd != NULL)
+			DestroyWindow(_hwnd);
 
 		return main_thread.exit_code();
 	}
