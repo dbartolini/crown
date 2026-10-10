@@ -388,6 +388,20 @@ RenderSettings merged_render_settings(const Device *device)
 	return rs;
 }
 
+static void device_message_release_export_buffer(ConsoleServer &cs, u32 client_id, const char *json, void *user_data)
+{
+	CE_UNUSED_2(cs, client_id);
+	TempAllocator256 ta;
+	JsonObject obj(ta);
+	sjson::parse(obj, json);
+	const u32 generation = sjson::parse_int(obj["generation"]);
+	const u32 id = sjson::parse_int(obj["buffer_id"]);
+	Device *dev = (Device *)user_data;
+	const bool redraw = dev->_pipeline->release_export_buffer(generation, id);
+	if (dev->_options._pumped && redraw)
+		++dev->_needs_draw;
+}
+
 Device::Device(const DeviceOptions &opts, ConsoleServer &cs)
 	: _allocator(default_allocator(), CROWN_MAX_SUBSYSTEMS_HEAP)
 	, _options(opts)
@@ -615,6 +629,13 @@ bool Device::frame()
 
 	_pipeline->end_frame();
 	bgfx::frame();
+	if (_pipeline->export_pending()) {
+		// The queued export runs after the blit on bgfx's render thread.
+		// Advance twice so the result and FD are ready even in pumped mode.
+		bgfx::frame();
+		bgfx::frame();
+		_pipeline->finish_export();
+	}
 
 	if (_needs_draw-- == 1)
 		_needs_draw = (int)!_options._pumped;
@@ -631,10 +652,11 @@ int Device::main_loop()
 	_console_server->register_command_name("game",    "Pause/resume the engine.", device_command_game, this);
 	_console_server->register_command_name("crash",   "Crash the engine.", device_command_crash, this);
 
-	_console_server->register_message_type("resize",  device_message_resize,  this);
-	_console_server->register_message_type("frame",   device_message_frame,   this);
-	_console_server->register_message_type("quit",    device_message_quit,    this);
-	_console_server->register_message_type("refresh", device_message_refresh, this);
+	_console_server->register_message_type("resize",                device_message_resize,                this);
+	_console_server->register_message_type("frame",                 device_message_frame,                 this);
+	_console_server->register_message_type("quit",                  device_message_quit,                  this);
+	_console_server->register_message_type("refresh",               device_message_refresh,               this);
+	_console_server->register_message_type("release_export_buffer", device_message_release_export_buffer, this);
 
 #if !CROWN_PLATFORM_EMSCRIPTEN
 	_console_server->listen(_options._console_port
@@ -804,7 +826,7 @@ int Device::main_loop()
 #endif
 	init.callback  = _bgfx_callback;
 	init.allocator = _bgfx_allocator;
-	if (_window != NULL) {
+	if (!_options._headless) {
 		init.platformData.ndt = _window->native_display();
 		init.platformData.nwh = _window->native_handle();
 		init.platformData.type = (bgfx::NativeWindowHandleType::Enum)(uintptr_t)_window->native_handle_type();
@@ -891,8 +913,13 @@ int Device::main_loop()
 	_lua_environment->execute_string(_options._lua_string.c_str());
 
 	_pipeline = CE_NEW(_allocator, Pipeline)(*_shader_manager);
-	_pipeline->create(_width, _height, merged_render_settings(this)
-		, _options._headless ? PipelineOutput::OFFSCREEN : PipelineOutput::WINDOW);
+	_pipeline->create(_width
+		, _height
+		, merged_render_settings(this)
+		, _options._export
+		, _options._export_socket.empty() ? NULL : _options._export_socket.c_str()
+		, _options._headless ? PipelineOutput::OFFSCREEN : PipelineOutput::WINDOW
+		);
 
 	stat_globals::init(_allocator
 		, *_resource_manager
@@ -937,6 +964,7 @@ int Device::main_loop()
 	graph_globals::shutdown();
 
 	_pipeline->destroy();
+	_pipeline->destroy_exports();
 	bgfx::frame(); // Wait for pending uploads to finish.
 	CE_DELETE(_allocator, _pipeline);
 	CE_DELETE(_allocator, _lua_environment);
@@ -1137,7 +1165,13 @@ void Device::refresh(const char *json)
 				if (_render_config_resource == old_resource) {
 					_render_config_resource = (RenderConfigResource *)new_resource;
 					_pipeline->destroy();
-					_pipeline->create(_width, _height, merged_render_settings(this), _pipeline->_output);
+					_pipeline->create(_width
+						, _height
+						, merged_render_settings(this)
+						, _options._export
+						, _options._export_socket.empty() ? NULL : _options._export_socket.c_str()
+						, _pipeline->_output
+						);
 				}
 			} else if (resource_type == RESOURCE_TYPE_SPRITE) {
 				ListNode *cur;

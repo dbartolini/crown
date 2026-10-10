@@ -51,6 +51,8 @@ static void help(const char *msg = NULL)
 		"  --hidden                        Make the main window initially invisible.\n"
 		"  --keep-above                    Keep the main window above other windows.\n"
 		"  --headless                      Render offscreen without creating a window.\n"
+		"  --export                        Enable backbuffer texture exporting.\n"
+		"  --export-socket <path>          Send exported frames to this Unix socket.\n"
 		"  --display-server <server>       Set the display server backend.\n"
 		"      wayland\n"
 		"      x11\n"
@@ -80,6 +82,7 @@ DeviceOptions::DeviceOptions(Allocator &a, int argc, const char **argv)
 	, _data_dir(DynamicString(a))
 	, _bundle_dir(DynamicString(a))
 	, _port_file(DynamicString(a))
+	, _export_socket(DynamicString(a))
 	, _boot_dir(NULL)
 	, _platform(NULL)
 	, _lua_string(DynamicString(a))
@@ -92,6 +95,7 @@ DeviceOptions::DeviceOptions(Allocator &a, int argc, const char **argv)
 	, _hidden(false)
 	, _keep_above(false)
 	, _headless(false)
+	, _export(false)
 	, _parent_window(0)
 	, _console_port(0)
 	, _window_x(0)
@@ -183,6 +187,14 @@ int DeviceOptions::parse(bool *quit)
 		return EXIT_FAILURE;
 	}
 #endif
+	_export = cl.has_option("export");
+	const char *export_socket = cl.get_parameter(0, "export-socket");
+	if (export_socket)
+		_export_socket = export_socket;
+	if (_export && _export_socket.empty()) {
+		help("--export requires --export-socket.");
+		return EXIT_FAILURE;
+	}
 
 	if (cl.has_option("renderer")) {
 		const char *renderer = cl.get_parameter(0, "renderer");

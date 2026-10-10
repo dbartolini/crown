@@ -36,6 +36,7 @@ struct DeviceOptions
 	DynamicString _data_dir;
 	DynamicString _bundle_dir;
 	DynamicString _port_file;
+	DynamicString _export_socket;
 	const char *_boot_dir;
 	const char *_platform;
 	DynamicString _lua_string;
@@ -48,6 +49,7 @@ struct DeviceOptions
 	bool _hidden;
 	bool _keep_above;
 	bool _headless;
+	bool _export;
 	u32 _parent_window;
 	u16 _console_port;
 	u16 _window_x;
